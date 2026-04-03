@@ -1,0 +1,22 @@
+[package]
+name = "packet-gateway"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+aya = { workspace = true }
+aya-log = { workspace = true }
+tokio = { workspace = true }
+redis = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+dotenv = { workspace = true }
+clap = { version = "4.5", features = ["derive"] }
+
+[[bin]]
+name = "packet-gateway"
+path = "src/main.rs"

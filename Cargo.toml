@@ -1,0 +1,65 @@
+[workspace]
+members = [
+    "apps/charging-engine",
+    "apps/packet-gateway",
+]
+resolver = "2"
+
+[workspace.package]
+version = "1.0.0"
+authors = ["TaaS Team <team@taas-platform.com>"]
+edition = "2021"
+rust-version = "1.94"
+license = "MIT"
+
+[workspace.dependencies]
+# Async runtime
+tokio = { version = "1.40", features = ["full"] }
+async-std = "1.13"
+
+# eBPF with Aya (for packet-gateway)
+aya = { version = "0.13", features = ["async_tokio"] }
+aya-ebpf = "0.1"
+aya-log = "0.2"
+aya-log-ebpf = "0.1"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Database
+redis = { version = "0.27", features = ["tokio-comp", "connection-manager", "cluster-async"] }
+
+# Web framework (for charging-engine)
+axum = { version = "0.7", features = ["macros"] }
+tower = "0.5"
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+hyper = "1.5"
+
+# Networking
+bytes = "1.7"
+prost = "0.13"
+
+# Logging and tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Error handling
+anyhow = "1.0"
+thiserror = "2.0"
+
+# Configuration
+dotenv = "0.15"
+config = "0.14"
+
+# Time handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# Utilities
+uuid = { version = "1.10", features = ["v4", "serde"] }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true

@@ -1,0 +1,28 @@
+{
+  "name": "telecom-platform",
+  "version": "1.0.0",
+  "description": "Sovereign Telecom-as-a-Service Platform",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter web-dashboard dev",
+    "build": "pnpm -r run build",
+    "lint": "pnpm -r run lint",
+    "test": "pnpm -r run test",
+    "clean": "pnpm -r exec rm -rf .next dist node_modules"
+  },
+  "keywords": [
+    "telecom",
+    "5g",
+    "esim",
+    "taas",
+    "cellular",
+    "connectivity"
+  ],
+  "author": "TaaS Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.0.0"
+}
