@@ -1,6 +1,6 @@
 go 1.26
 
 use (
-    ./apps/api-server
-    ./apps/carrier-connector
+	./apps/api-server
+	./apps/carrier-connector
 )

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -17,7 +16,7 @@ import (
 )
 
 var (
-	logger zerolog.Logger
+	logger   zerolog.Logger
 	dbClient *mongo.Client
 )
 
