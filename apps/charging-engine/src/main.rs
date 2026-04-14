@@ -1,18 +1,8 @@
 mod api;
-mod charging_new as charging;
-mod errors_new as errors;
-mod models;
-
-// Include the new modular components
-mod charging_types;
-mod charging_engine;
-mod credit_management;
-mod rating_billing;
-mod monitoring_sync;
-mod sync_operations;
+mod charging;
 mod monitoring;
-mod error_types;
-mod error_helpers;
+mod errors;
+mod models;
 
 use anyhow::Result;
 use std::sync::Arc;

@@ -1,7 +1,7 @@
 use chrono::Utc;
 use tracing::{info, debug, warn};
 
-use crate::charging_types::{UsageEvent, UsageType, RatingPlan};
+use super::types::{UsageEvent, UsageType, RatingPlan};
 use crate::errors::{ChargingError, ChargingResult, ErrorContext};
 
 impl super::ChargingEngine {

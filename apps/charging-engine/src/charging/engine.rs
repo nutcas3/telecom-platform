@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::time::Duration;
 
-use crate::charging_types::{RatingPlan, SubscriberAccount};
+use super::types::{RatingPlan, SubscriberAccount};
 use crate::errors::{ChargingError, ChargingResult, ErrorContext};
 
 pub struct ChargingEngine {

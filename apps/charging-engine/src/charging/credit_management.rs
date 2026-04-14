@@ -1,7 +1,7 @@
 use redis::AsyncCommands;
 use tracing::{info, warn, error, debug};
 
-use crate::charging_types::{SubscriberAccount, UsageEvent};
+use super::types::{SubscriberAccount, UsageEvent};
 use crate::errors::{ChargingError, ChargingResult, ErrorContext};
 
 impl super::ChargingEngine {
