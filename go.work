@@ -4,4 +4,5 @@ use (
 	./apps/api-server
 	./apps/carrier-connector
 	./apps/cli
+	./terraform/provider
 )
