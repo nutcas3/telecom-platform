@@ -1,6 +1,7 @@
-go 1.26
+go 1.26.1
 
 use (
 	./apps/api-server
 	./apps/carrier-connector
+	./apps/cli
 )
