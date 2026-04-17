@@ -1,0 +1,107 @@
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: api-server-vpa
+  namespace: telecom-platform
+  labels:
+    app.kubernetes.io/name: api-server-vpa
+    app.kubernetes.io/component: autoscaling
+    app.kubernetes.io/part-of: telecom-platform
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api-server
+  updatePolicy:
+    updateMode: "Auto"
+  resourcePolicy:
+    containerPolicies:
+    - containerName: api-server
+      minAllowed:
+        cpu: 100m
+        memory: 128Mi
+      maxAllowed:
+        cpu: 2000m
+        memory: 2Gi
+      controlledResources: ["cpu", "memory"]
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: charging-engine-vpa
+  namespace: telecom-platform
+  labels:
+    app.kubernetes.io/name: charging-engine-vpa
+    app.kubernetes.io/component: autoscaling
+    app.kubernetes.io/part-of: telecom-platform
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: charging-engine
+  updatePolicy:
+    updateMode: "Auto"
+  resourcePolicy:
+    containerPolicies:
+    - containerName: charging-engine
+      minAllowed:
+        cpu: 100m
+        memory: 128Mi
+      maxAllowed:
+        cpu: 1500m
+        memory: 1.5Gi
+      controlledResources: ["cpu", "memory"]
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: packet-gateway-vpa
+  namespace: telecom-platform
+  labels:
+    app.kubernetes.io/name: packet-gateway-vpa
+    app.kubernetes.io/component: autoscaling
+    app.kubernetes.io/part-of: telecom-platform
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: packet-gateway
+  updatePolicy:
+    updateMode: "Auto"
+  resourcePolicy:
+    containerPolicies:
+    - containerName: packet-gateway
+      minAllowed:
+        cpu: 100m
+        memory: 128Mi
+      maxAllowed:
+        cpu: 3000m
+        memory: 3Gi
+      controlledResources: ["cpu", "memory"]
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: web-dashboard-vpa
+  namespace: telecom-platform
+  labels:
+    app.kubernetes.io/name: web-dashboard-vpa
+    app.kubernetes.io/component: autoscaling
+    app.kubernetes.io/part-of: telecom-platform
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: web-dashboard
+  updatePolicy:
+    updateMode: "Auto"
+  resourcePolicy:
+    containerPolicies:
+    - containerName: web-dashboard
+      minAllowed:
+        cpu: 50m
+        memory: 64Mi
+      maxAllowed:
+        cpu: 1000m
+        memory: 1Gi
+      controlledResources: ["cpu", "memory"]
