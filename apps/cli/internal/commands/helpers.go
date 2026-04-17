@@ -30,8 +30,11 @@ func newUIContext(cfg *types.CLIConfig) *uiContext {
 	}
 }
 
-// header prints a styled section header.
+// header prints a styled section header, prefixed with a subtle brand line so
+// callers can always identify the output as originating from the Telecom
+// Platform CLI.
 func (u *uiContext) header(title string) {
+	fmt.Println(u.colorizer.Colorize("Telecom Platform CLI", ui.StyleMuted))
 	fmt.Println(u.colorizer.Colorize(title, ui.StyleHeader))
 }
 

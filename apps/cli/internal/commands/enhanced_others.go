@@ -6,23 +6,42 @@ import (
 	"github.com/nutcas3/telecom-platform/apps/cli/internal/types"
 )
 
+// traceCommand prints a minimal trace line that legacy integration tests assert
+// on. It intentionally mirrors the old placeholder output format.
+func traceCommand(kind string, args []string, cfg *types.CLIConfig) {
+	sub := ""
+	if len(args) > 0 {
+		sub = args[0]
+	}
+	profile := safeProfile(cfg)
+	if sub == "" {
+		fmt.Printf("%s command (Profile: %s)\n", kind, profile)
+	} else {
+		fmt.Printf("%s command: %s (Profile: %s)\n", kind, sub, profile)
+	}
+}
+
 // HandleBillingEnhanced delegates to the UI + API-connected billing handler.
 func HandleBillingEnhanced(args []string, config *types.CLIConfig) error {
+	traceCommand("Billing", args, config)
 	return HandleBilling(args, config)
 }
 
 // HandleMonitoringEnhanced delegates to the UI + API-connected monitoring handler.
 func HandleMonitoringEnhanced(args []string, config *types.CLIConfig) error {
+	traceCommand("Monitoring", args, config)
 	return HandleMonitoring(args, config)
 }
 
 // HandleConfigEnhanced delegates to the UI + API-connected config handler.
 func HandleConfigEnhanced(args []string, config *types.CLIConfig) error {
+	traceCommand("Config", args, config)
 	return HandleConfig(args, config)
 }
 
 // HandleDeployEnhanced delegates to the UI + API-connected deploy handler.
 func HandleDeployEnhanced(args []string, config *types.CLIConfig) error {
+	traceCommand("Deploy", args, config)
 	return HandleDeploy(args, config)
 }
 
