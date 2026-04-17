@@ -298,6 +298,8 @@ func (r *Resolver) SearchUsageEvents(ctx context.Context, query string, limit in
 	return r.charging.SearchUsageEvents(ctx, query, limit)
 }
 
+// --- Mutation resolvers ---
+
 func (r *Resolver) CreateSubscriber(ctx context.Context, input CreateSubscriberInput) (*models.Subscriber, error) {
 	req := &services.CreateSubscriberRequest{
 		MSISDN:    input.MSISDN,
@@ -441,6 +443,8 @@ func (r *Resolver) TriggerSystemMaintenance(ctx context.Context) (bool, error) {
 	return r.charging.TriggerMaintenance(ctx)
 }
 
+// --- Subscription resolvers ---
+
 func (r *Resolver) SubscriberUpdates(ctx context.Context, subscriberId string) (<-chan *models.Subscriber, error) {
 	return r.subscriber.SubscribeToSubscriberUpdates(ctx, subscriberId)
 }
@@ -450,14 +454,14 @@ func (r *Resolver) UsageUpdates(ctx context.Context, imsi string) (<-chan *model
 }
 
 func (r *Resolver) AlertUpdates(ctx context.Context, severity models.AlertSeverity) (<-chan *models.Alert, error) {
-	// Convert severity to string for the service call
-	severityStr := string(severity)
-	return r.subscriber.SubscribeToAlertUpdates(ctx, &severityStr)
+	return r.subscriber.SubscribeToAlertUpdates(ctx, severity)
 }
 
 func (r *Resolver) SystemStatsUpdates(ctx context.Context) (<-chan *models.SystemStats, error) {
 	return r.charging.SubscribeToSystemStatsUpdates(ctx)
 }
+
+// --- Filter / sort helpers ---
 
 func buildUsageEventFilter(imsi *string, filter *UsageEventFilter) string {
 	conditions := []string{}
@@ -487,10 +491,13 @@ func buildUsageEventFilter(imsi *string, filter *UsageEventFilter) string {
 	return ""
 }
 
+// --- ResolverRoot interface implementation ---
+
 func (r *Resolver) Query() QueryResolver               { return r }
 func (r *Resolver) Mutation() MutationResolver         { return r }
 func (r *Resolver) Subscription() SubscriptionResolver { return r }
 
+// ChargingSessions placeholder query resolver
 func (r *Resolver) ChargingSessions(ctx context.Context, first *int, after *string, imsi *string, status *SessionStatus) (*ChargingSessionConnection, error) {
 	return &ChargingSessionConnection{
 		Edges:      []*ChargingSessionEdge{},
@@ -503,6 +510,8 @@ func (r *Resolver) ChargingSessions(ctx context.Context, first *int, after *stri
 func (r *Resolver) ChargingSession(ctx context.Context, sessionId string) (*ChargingSession, error) {
 	return nil, fmt.Errorf("charging session %s not found", sessionId)
 }
+
+// --- GraphQL handler setup ---
 
 func SetupGraphQLHandler(router *gin.Engine, resolver *Resolver) {
 	graphqlHandler := handler.NewDefaultServer(
