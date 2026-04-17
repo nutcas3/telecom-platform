@@ -188,11 +188,88 @@ func (d *Database) UpdateSession(ctx context.Context, session *models.Session) e
 	return d.DB.WithContext(ctx).Save(session).Error
 }
 
+func (d *Database) CreateTransaction(ctx context.Context, transaction *models.Transaction) error {
+	return d.DB.WithContext(ctx).Create(transaction).Error
+}
+
+func (d *Database) UpdateSubscriberBalance(ctx context.Context, subscriberID uint, amount float64) error {
+	return d.DB.WithContext(ctx).Model(&models.Subscriber{}).Where("id = ?", subscriberID).
+		UpdateColumn("balance", gorm.Expr("balance + ?", amount)).Error
+}
+
+func (d *Database) CreatePaymentMethod(ctx context.Context, pm *models.PaymentMethod) error {
+	return d.DB.WithContext(ctx).Create(pm).Error
+}
+
+func (d *Database) GetPaymentMethod(ctx context.Context, id string) (*models.PaymentMethod, error) {
+	var pm models.PaymentMethod
+	err := d.DB.WithContext(ctx).Where("id = ?", id).First(&pm).Error
+	if err != nil {
+		return nil, err
+	}
+	return &pm, nil
+}
+
+func (d *Database) DeletePaymentMethod(ctx context.Context, id string) error {
+	return d.DB.WithContext(ctx).Where("id = ?", id).Delete(&models.PaymentMethod{}).Error
+}
+
+func (d *Database) ListPaymentMethods(ctx context.Context, subscriberID uint) ([]models.PaymentMethod, error) {
+	var methods []models.PaymentMethod
+	err := d.DB.WithContext(ctx).Where("subscriber_id = ?", subscriberID).Find(&methods).Error
+	return methods, err
+}
+
+func (d *Database) GetTransaction(ctx context.Context, transactionID string) (*models.Transaction, error) {
+	var tx models.Transaction
+	err := d.DB.WithContext(ctx).Where("transaction_id = ?", transactionID).First(&tx).Error
+	if err != nil {
+		return nil, err
+	}
+	return &tx, nil
+}
+
+func (d *Database) GetTransactionByGatewayID(ctx context.Context, gatewayID string) (*models.Transaction, error) {
+	var tx models.Transaction
+	err := d.DB.WithContext(ctx).Where("transaction_id = ?", gatewayID).First(&tx).Error
+	if err != nil {
+		return nil, err
+	}
+	return &tx, nil
+}
+
+func (d *Database) GetTransactionByChargeID(ctx context.Context, chargeID string) (*models.Transaction, error) {
+	var tx models.Transaction
+	err := d.DB.WithContext(ctx).Where("transaction_id = ?", chargeID).First(&tx).Error
+	if err != nil {
+		return nil, err
+	}
+	return &tx, nil
+}
+
+func (d *Database) UpdateTransaction(ctx context.Context, tx *models.Transaction) error {
+	return d.DB.WithContext(ctx).Save(tx).Error
+}
+
+func (d *Database) ListTransactions(ctx context.Context, subscriberID uint) ([]models.Transaction, error) {
+	var transactions []models.Transaction
+	err := d.DB.WithContext(ctx).Where("subscriber_id = ?", subscriberID).Order("created_at DESC").Find(&transactions).Error
+	return transactions, err
+}
+
+func (d *Database) CreateAlert(ctx context.Context, alert *models.Alert) error {
+	return d.DB.WithContext(ctx).Create(alert).Error
+}
+
+func (d *Database) CreateNotification(ctx context.Context, notification *models.Notification) error {
+	return d.DB.WithContext(ctx).Create(notification).Error
+}
+
 // Request types for database operations
 type ListSubscribersRequest struct {
-	Page           int                    `json:"page"`
-	PageSize       int                    `json:"page_size"`
+	Page           int                     `json:"page"`
+	PageSize       int                     `json:"page_size"`
 	Status         models.SubscriberStatus `json:"status"`
-	OrganizationID string                 `json:"organization_id"`
-	Search         string                 `json:"search"`
+	OrganizationID string                  `json:"organization_id"`
+	Search         string                  `json:"search"`
 }

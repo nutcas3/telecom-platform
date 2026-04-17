@@ -19,8 +19,9 @@ type Subscriber struct {
 	Email          string `json:"email" gorm:"uniqueIndex"`
 	OrganizationID string `json:"organization_id"`
 
-	Status SubscriberStatus `json:"status" gorm:"default:'active'"`
-	PlanID uint             `json:"plan_id"`
+	Status  SubscriberStatus `json:"status" gorm:"default:'active'"`
+	PlanID  uint             `json:"plan_id"`
+	Balance float64          `json:"balance" gorm:"default:0"`
 
 	AuthKey     string `json:"auth_key" gorm:"not null"`
 	OPc         string `json:"opc" gorm:"not null"`
