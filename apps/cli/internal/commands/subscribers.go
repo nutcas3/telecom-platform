@@ -52,8 +52,12 @@ func listSubscribers(u *uiContext) error {
 	u.header("Active Subscribers")
 
 	subs, err := u.client.ListSubscribers()
-	if err != nil {
-		u.warn("Using placeholder data: " + err.Error())
+	if err != nil || len(subs) == 0 {
+		if err != nil {
+			u.warn("Using placeholder data: " + err.Error())
+		} else {
+			u.muted("(API returned no subscribers - showing sample data)")
+		}
 		t := u.newTable()
 		t.AddColumn("IMSI", 16, "left")
 		t.AddColumn("Name", 22, "left")

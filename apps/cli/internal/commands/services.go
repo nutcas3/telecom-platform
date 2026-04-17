@@ -59,8 +59,12 @@ func listServices(u *uiContext) error {
 	t.AddColumn("Version", 10, "left")
 	t.AddColumn("Uptime", 10, "right")
 
-	if err != nil {
-		u.warn("Using placeholder data: " + err.Error())
+	if err != nil || len(services) == 0 {
+		if err != nil {
+			u.warn("Using placeholder data: " + err.Error())
+		} else {
+			u.muted("(API returned no services - showing sample data)")
+		}
 		placeholders := [][]string{
 			{"api-server", "Running", "v1.0.0", "2h15m"},
 			{"charging-engine", "Running", "v1.0.0", "2h15m"},
