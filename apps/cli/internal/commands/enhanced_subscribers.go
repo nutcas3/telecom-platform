@@ -32,7 +32,8 @@ func HandleSubscribersEnhanced(args []string, config *types.CLIConfig) error {
 	default:
 		u := newUIContext(config)
 		u.errorln("Unknown subscribers command: " + command)
-		return HandleSubscribers(nil, config)
+		_ = HandleSubscribers(nil, config)
+		return fmt.Errorf("unknown subscribers command: %s", command)
 	}
 }
 
