@@ -1,0 +1,204 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: logstash
+  namespace: elasticsearch
+  labels:
+    app.kubernetes.io/name: logstash
+    app.kubernetes.io/component: logging
+    app.kubernetes.io/part-of: telecom-platform
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: logstash
+      app.kubernetes.io/component: logging
+      app.kubernetes.io/part-of: telecom-platform
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: logstash
+        app.kubernetes.io/component: logging
+        app.kubernetes.io/part-of: telecom-platform
+    spec:
+      containers:
+      - name: logstash
+        image: docker.elastic.co/logstash/logstash:8.10.0
+        ports:
+        - containerPort: 5044
+          name: beats
+        - containerPort: 9600
+          name: http
+        env:
+        - name: LS_JAVA_OPTS
+          value: "-Xmx512m -Xms512m"
+        - name: ELASTICSEARCH_HOSTS
+          value: "http://elasticsearch-master:9200"
+        - name: LOG_LEVEL
+          value: "info"
+        resources:
+          requests:
+            cpu: 200m
+            memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+        volumeMounts:
+        - name: config
+          mountPath: /usr/share/logstash/pipeline
+        - name: settings
+          mountPath: /usr/share/logstash/config
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 5
+      volumes:
+      - name: config
+        configMap:
+          name: logstash-config
+      - name: settings
+        configMap:
+          name: logstash-settings
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: logstash
+  namespace: elasticsearch
+  labels:
+    app.kubernetes.io/name: logstash
+    app.kubernetes.io/component: logging
+    app.kubernetes.io/part-of: telecom-platform
+spec:
+  ports:
+  - port: 5044
+    name: beats
+    targetPort: 5044
+  - port: 9600
+    name: http
+    targetPort: 9600
+  selector:
+    app.kubernetes.io/name: logstash
+    app.kubernetes.io/component: logging
+    app.kubernetes.io/part-of: telecom-platform
+  type: ClusterIP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-config
+  namespace: elasticsearch
+  labels:
+    app.kubernetes.io/name: logstash
+    app.kubernetes.io/component: logging
+    app.kubernetes.io/part-of: telecom-platform
+data:
+  logstash.conf: |
+    input {
+      beats {
+        port => 5044
+      }
+      http {
+        port => 8080
+        codec => json
+      }
+    }
+    
+    filter {
+      # Parse JSON logs
+      if [message] {
+        json {
+          source => "message"
+        }
+      }
+      
+      # Add environment tag
+      mutate {
+        add_field => { "environment" => "production" }
+      }
+      
+      # Parse timestamp
+      if [timestamp] {
+        date {
+          match => [ "timestamp", "ISO8601" ]
+        }
+      }
+      
+      # Add telecom platform specific fields
+      if [service] {
+        mutate {
+          add_field => { "[@metadata][service]" => "%{service}" }
+        }
+      }
+      
+      # GDPR compliance - anonymize sensitive data
+      if [phone] {
+        mutate {
+          replace => { "phone" => "XXX-XXX-XXXX" }
+        }
+      }
+      
+      if [email] {
+        mutate {
+          replace => { "email" => "XXXX@XXXX.com" }
+        }
+      }
+    }
+    
+    output {
+      elasticsearch {
+        hosts => ["elasticsearch-master:9200"]
+        index => "telecom-platform-logs-%{+YYYY.MM.dd}"
+        template_name => "telecom-platform"
+        template_pattern => "telecom-platform-*"
+        template => {
+          "index_patterns" => ["telecom-platform-*"],
+          "settings" => {
+            "number_of_shards" => 3,
+            "number_of_replicas" => 1,
+            "index.lifecycle.name" => "telecom-platform-policy",
+            "index.lifecycle.rollover_alias" => "telecom-platform-logs"
+          },
+          "mappings" => {
+            "properties" => {
+              "@timestamp" => { "type" => "date" },
+              "level" => { "type" => "keyword" },
+              "service" => { "type" => "keyword" },
+              "environment" => { "type" => "keyword" },
+              "message" => { "type" => "text" },
+              "user_id" => { "type" => "keyword" },
+              "request_id" => { "type" => "keyword" },
+              "duration_ms" => { "type" => "long" },
+              "status_code" => { "type" => "integer" }
+            }
+          }
+        }
+      }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-settings
+  namespace: elasticsearch
+  labels:
+    app.kubernetes.io/name: logstash
+    app.kubernetes.io/component: logging
+    app.kubernetes.io/part-of: telecom-platform
+data:
+  logstash.yml: |
+    http.host: "0.0.0.0"
+    xpack.monitoring.elasticsearch.hosts: [ "http://elasticsearch-master:9200" ]
+    xpack.monitoring.enabled: true
+    path.config: /usr/share/logstash/pipeline
+    pipeline.workers: 2
+    pipeline.batch.size: 125
+    pipeline.batch.delay: 50
