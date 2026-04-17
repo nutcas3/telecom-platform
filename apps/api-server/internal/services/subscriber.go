@@ -261,3 +261,308 @@ type ListSubscribersResponse struct {
 	Page        int                 `json:"page"`
 	PageSize    int                 `json:"page_size"`
 }
+
+// GetAccount gets subscriber account information
+func (s *SubscriberService) GetAccount(ctx context.Context, imsi string) (*models.SubscriberAccount, error) {
+	subscriber, err := s.db.GetSubscriberByIMSI(ctx, models.IMSI(imsi))
+	if err != nil {
+		return nil, err
+	}
+
+	// Use the subscriber's service plan for limits
+	account := &models.SubscriberAccount{
+		IMSI:        string(subscriber.IMSI),
+		Balance:     100.0, // Placeholder - would get from billing system
+		DataLimit:   float64(subscriber.Plan.DataLimit),
+		DataUsed:    0.0, // Placeholder - would get from usage records
+		VoiceLimit:  float64(subscriber.Plan.VoiceLimit),
+		VoiceUsed:   0.0, // Placeholder - would get from usage records
+		SMSLimit:    float64(subscriber.Plan.SMSLimit),
+		SMSUsed:     0.0, // Placeholder - would get from usage records
+		Status:      string(subscriber.Status),
+		LastUpdated: time.Now(),
+	}
+
+	return account, nil
+}
+
+// ListInvoices lists invoices for a subscriber
+func (s *SubscriberService) ListInvoices(ctx context.Context, limit int, offset int, imsi *string, status *models.InvoiceStatus) ([]*models.Invoice, int64, error) {
+	// This would get actual invoices in a real implementation
+	// For now, return placeholder data
+	invoices := []*models.Invoice{
+		{
+			ID:           1,
+			SubscriberID: 1,
+			Amount:       25.50,
+			Currency:     "USD",
+			Status:       *status,
+			DueDate:      time.Now().Add(30 * 24 * time.Hour),
+			CreatedAt:    time.Now(),
+			LineItems: []models.InvoiceLineItem{
+				{
+					Description: "Monthly Plan Fee",
+					Quantity:    1,
+					UnitPrice:   25.00,
+					Amount:      25.00,
+				},
+				{
+					Description: "Data Overage",
+					Quantity:    1,
+					UnitPrice:   0.50,
+					Amount:      0.50,
+				},
+			},
+		},
+	}
+	return invoices, int64(len(invoices)), nil
+}
+
+// GetInvoice gets a specific invoice
+func (s *SubscriberService) GetInvoice(ctx context.Context, id string) (*models.Invoice, error) {
+	// This would get actual invoice in a real implementation
+	// For now, return placeholder data
+	invoice := &models.Invoice{
+		ID:           1,
+		SubscriberID: 1,
+		Amount:       25.50,
+		Currency:     "USD",
+		Status:       models.InvoiceStatusPaid,
+		DueDate:      time.Now().Add(30 * 24 * time.Hour),
+		CreatedAt:    time.Now(),
+		LineItems: []models.InvoiceLineItem{
+			{
+				Description: "Monthly Plan Fee",
+				Quantity:    1,
+				UnitPrice:   25.00,
+				Amount:      25.00,
+			},
+		},
+	}
+	return invoice, nil
+}
+
+// ListRatingPlans lists available rating plans
+func (s *SubscriberService) ListRatingPlans(ctx context.Context) ([]*models.RatingPlan, error) {
+	// This would get actual rating plans in a real implementation
+	// For now, return placeholder data
+	plans := []*models.RatingPlan{
+		{
+			PlanID:     "basic",
+			Name:       "Basic Plan",
+			DataRate:   0.01,
+			VoiceRate:  0.05,
+			SMSRate:    0.10,
+			MonthlyFee: 10.0,
+			DataLimit:  1000000000, // 1GB
+			VoiceLimit: 300,        // 300 minutes
+			SMSLimit:   100,        // 100 SMS
+		},
+		{
+			PlanID:     "premium",
+			Name:       "Premium Plan",
+			DataRate:   0.005,
+			VoiceRate:  0.02,
+			SMSRate:    0.05,
+			MonthlyFee: 25.0,
+			DataLimit:  5000000000, // 5GB
+			VoiceLimit: 1000,       // 1000 minutes
+			SMSLimit:   500,        // 500 SMS
+		},
+	}
+	return plans, nil
+}
+
+// GetRatingPlan gets a specific rating plan
+func (s *SubscriberService) GetRatingPlan(ctx context.Context, planId string) (*models.RatingPlan, error) {
+	// This would get actual rating plan in a real implementation
+	// For now, return placeholder data
+	plan := &models.RatingPlan{
+		PlanID:     planId,
+		Name:       "Basic Plan",
+		DataRate:   0.01,
+		VoiceRate:  0.05,
+		SMSRate:    0.10,
+		MonthlyFee: 10.0,
+		DataLimit:  1000000000, // 1GB
+		VoiceLimit: 300,        // 300 minutes
+		SMSLimit:   100,        // 100 SMS
+	}
+	return plan, nil
+}
+
+// ListAlerts lists alerts
+func (s *SubscriberService) ListAlerts(ctx context.Context, limit int, offset int, subscriberId *int, severity *models.AlertSeverity, resolved *bool) ([]*models.Alert, int64, error) {
+	// This would get actual alerts in a real implementation
+	// For now, return placeholder data
+	alerts := []*models.Alert{
+		{
+			ID:           1,
+			Type:         models.AlertTypeLowBalance,
+			Severity:     *severity,
+			Message:      "Low balance warning",
+			SubscriberID: subscriberId,
+			Timestamp:    time.Now(),
+			Resolved:     *resolved,
+		},
+	}
+	return alerts, int64(len(alerts)), nil
+}
+
+// SearchSubscribers searches subscribers
+func (s *SubscriberService) SearchSubscribers(ctx context.Context, query string, limit int) ([]*models.Subscriber, error) {
+	// This would search actual subscribers in a real implementation
+	// For now, return placeholder data
+	subscribers := []*models.Subscriber{
+		{
+			ID:        1,
+			IMSI:      "123456789012345",
+			MSISDN:    "1234567890",
+			FirstName: "John",
+			LastName:  "Doe",
+			Email:     "john.doe@example.com",
+			Status:    models.SubscriberStatusActive,
+			PlanID:    1,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+	}
+	return subscribers, nil
+}
+
+// ResolveAlert resolves an alert
+func (s *SubscriberService) ResolveAlert(ctx context.Context, alertId string) (*models.Alert, error) {
+	// This would resolve actual alert in a real implementation
+	// For now, return placeholder data
+	alert := &models.Alert{
+		ID:        1,
+		Type:      models.AlertTypeLowBalance,
+		Severity:  models.AlertSeverityLow,
+		Message:   "Low balance warning",
+		Timestamp: time.Now(),
+		Resolved:  true,
+	}
+	return alert, nil
+}
+
+// CreateAlert creates an alert
+func (s *SubscriberService) CreateAlert(ctx context.Context, req *models.CreateAlertRequest) (*models.Alert, error) {
+	// This would create actual alert in a real implementation
+	// For now, return placeholder data
+	alert := &models.Alert{
+		ID:           1,
+		Type:         req.Type,
+		Severity:     req.Severity,
+		Message:      req.Message,
+		SubscriberID: req.SubscriberID,
+		Timestamp:    time.Now(),
+		Resolved:     false,
+	}
+	return alert, nil
+}
+
+// SubscribeToSubscriberUpdates subscribes to subscriber updates
+func (s *SubscriberService) SubscribeToSubscriberUpdates(ctx context.Context, subscriberId string) (<-chan *models.Subscriber, error) {
+	// This would set up actual subscription in a real implementation
+	// For now, return a closed channel
+	ch := make(chan *models.Subscriber)
+	close(ch)
+	return ch, nil
+}
+
+// SubscribeToAlertUpdates subscribes to alert updates
+func (s *SubscriberService) SubscribeToAlertUpdates(ctx context.Context, severity models.AlertSeverity) (<-chan *models.Alert, error) {
+	// This would set up actual subscription in a real implementation
+	// For now, return a closed channel
+	ch := make(chan *models.Alert)
+	close(ch)
+	return ch, nil
+}
+
+// AddPaymentMethod adds a payment method
+func (s *SubscriberService) AddPaymentMethod(ctx context.Context, subscriberId int, req *models.AddPaymentMethodRequest) (*models.PaymentMethod, error) {
+	// This would add actual payment method in a real implementation
+	// For now, return placeholder data
+	paymentMethod := &models.PaymentMethod{
+		ID:          "pm_123",
+		Type:        req.Type,
+		CustomerID:  "customer_123",
+		Last4:       "1234",
+		Brand:       "visa",
+		ExpiryMonth: 12,
+		ExpiryYear:  2025,
+		IsDefault:   req.IsDefault,
+		CreatedAt:   time.Now(),
+	}
+	return paymentMethod, nil
+}
+
+// RemovePaymentMethod removes a payment method
+func (s *SubscriberService) RemovePaymentMethod(ctx context.Context, paymentMethodId string) (bool, error) {
+	// This would remove actual payment method in a real implementation
+	// For now, return success
+	return true, nil
+}
+
+// SetDefaultPaymentMethod sets default payment method
+func (s *SubscriberService) SetDefaultPaymentMethod(ctx context.Context, paymentMethodId string) (*models.PaymentMethod, error) {
+	// This would set actual default payment method in a real implementation
+	// For now, return placeholder data
+	paymentMethod := &models.PaymentMethod{
+		ID:          paymentMethodId,
+		Type:        models.PaymentMethodTypeCreditCard,
+		CustomerID:  "customer_123",
+		Last4:       "1234",
+		Brand:       "visa",
+		ExpiryMonth: 12,
+		ExpiryYear:  2025,
+		IsDefault:   true,
+		CreatedAt:   time.Now(),
+	}
+	return paymentMethod, nil
+}
+
+// TopUpBalance tops up subscriber balance
+func (s *SubscriberService) TopUpBalance(ctx context.Context, imsi string, req *models.TopUpRequest) (*models.SubscriberAccount, error) {
+	// This would top up actual balance in a real implementation
+	// For now, return placeholder data
+	account := &models.SubscriberAccount{
+		IMSI:        imsi,
+		Balance:     150.0,      // Previous balance + top-up
+		DataLimit:   1000000000, // 1GB
+		DataUsed:    500000000,  // 500MB
+		VoiceLimit:  300,
+		VoiceUsed:   45,
+		SMSLimit:    100,
+		SMSUsed:     8,
+		Status:      "active",
+		LastUpdated: time.Now(),
+	}
+	return account, nil
+}
+
+// DeleteSubscriber deletes a subscriber
+func (s *SubscriberService) DeleteSubscriber(ctx context.Context, subscriberId uint) (bool, error) {
+	// This would delete actual subscriber in a real implementation
+	// For now, return success
+	return true, nil
+}
+
+// ActivateSubscriber activates a subscriber
+func (s *SubscriberService) ActivateSubscriber(ctx context.Context, subscriberId uint) (*models.Subscriber, error) {
+	// This would activate actual subscriber in a real implementation
+	// For now, return placeholder data
+	subscriber := &models.Subscriber{
+		ID:        subscriberId,
+		IMSI:      "123456789012345",
+		MSISDN:    "1234567890",
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "john.doe@example.com",
+		Status:    models.SubscriberStatusActive,
+		PlanID:    1,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	return subscriber, nil
+}
