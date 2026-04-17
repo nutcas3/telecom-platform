@@ -32,6 +32,11 @@ func NewClient(cfg *types.CLIConfig) *Client {
 	}
 }
 
+// BaseURL returns the configured API endpoint (useful for UI display).
+func (c *Client) BaseURL() string {
+	return c.baseURL
+}
+
 // doGetJSON performs a GET request and decodes JSON into out
 func (c *Client) doGetJSON(path string, out any) error {
 	req, err := http.NewRequest("GET", c.baseURL+path, nil)
