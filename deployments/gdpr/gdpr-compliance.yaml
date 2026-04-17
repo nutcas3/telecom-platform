@@ -1,0 +1,258 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gdpr-compliance-config
+  namespace: telecom-platform
+  labels:
+    app.kubernetes.io/name: gdpr-compliance
+    app.kubernetes.io/component: compliance
+    app.kubernetes.io/part-of: telecom-platform
+data:
+  gdpr-policy.yaml: |
+  
+    dataRetention:
+      logs: "30d"
+      metrics: "90d"
+      audit: "365d"
+      billing: "7y"
+      personalData: "5y"
+      consent: "3y"
+    
+    privacy:
+      encryption:
+        enabled: true
+        algorithm: "AES-256-GCM"
+        keyRotation: "90d"
+      anonymization:
+        enabled: true
+        fields: ["phone", "email", "name", "address"]
+        method: "hash"
+      consent:
+        required: true
+        ageVerification: true
+        withdrawalPeriod: "30d"
+    
+    audit:
+      enabled: true
+      logAccess: true
+      logModifications: true
+      logExports: true
+      retentionDays: 365
+    
+    dataSubjectRights:
+      access: true
+      rectification: true
+      erasure: true
+      portability: true
+      objection: true
+      restriction: true
+    
+    breachNotification:
+      enabled: true
+      timeframe: "72h"
+      authorities: ["dpa@telecom-platform.com"]
+      template: "gdpr-breach-notification"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: gdpr-compliance-secrets
+  namespace: telecom-platform
+  labels:
+    app.kubernetes.io/name: gdpr-compliance
+    app.kubernetes.io/component: compliance
+    app.kubernetes.io/part-of: telecom-platform
+type: Opaque
+data:
+  encryption-key: "c3VwZXItc2VjcmV0LWVuY3J5cHRpb24ta2V5LTI1Ni1iaXRz" # base64 encoded
+  dpa-contact: "ZHBhQHRlbGVjb20tcGxhdGZvcm0uY29t" # base64 encoded
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gdpr-compliance-service
+  namespace: telecom-platform
+  labels:
+    app.kubernetes.io/name: gdpr-compliance-service
+    app.kubernetes.io/component: compliance
+    app.kubernetes.io/part-of: telecom-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gdpr-compliance-service
+      app.kubernetes.io/component: compliance
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: gdpr-compliance-service
+        app.kubernetes.io/component: compliance
+      annotations:
+        gdpr.telecom-platform/data-retention: "30d"
+        gdpr.telecom-platform/encryption: "true"
+        gdpr.telecom-platform/audit: "true"
+    spec:
+      containers:
+      - name: gdpr-compliance
+        image: telecom-platform/gdpr-compliance:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: gdpr-compliance-secrets
+              key: encryption-key
+        - name: DPA_CONTACT
+          valueFrom:
+            secretKeyRef:
+              name: gdpr-compliance-secrets
+              key: dpa-contact
+        - name: LOG_LEVEL
+          value: "info"
+        - name: DATA_RETENTION_DAYS
+          value: "30"
+        - name: AUDIT_ENABLED
+          value: "true"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: config
+          mountPath: /config
+      volumes:
+      - name: config
+        configMap:
+          name: gdpr-compliance-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gdpr-compliance-service
+  namespace: telecom-platform
+  labels:
+    app.kubernetes.io/name: gdpr-compliance-service
+    app.kubernetes.io/component: compliance
+    app.kubernetes.io/part-of: telecom-platform
+  annotations:
+    gdpr.telecom-platform/data-retention: "30d"
+    gdpr.telecom-platform/encryption: "true"
+spec:
+  ports:
+  - port: 8080
+    name: http
+    targetPort: 8080
+  selector:
+    app.kubernetes.io/name: gdpr-compliance-service
+    app.kubernetes.io/component: compliance
+  type: ClusterIP
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: gdpr-compliance-service
+  namespace: telecom-platform
+  labels:
+    app.kubernetes.io/name: gdpr-compliance-service
+    app.kubernetes.io/component: compliance
+    app.kubernetes.io/part-of: telecom-platform
+spec:
+  hosts:
+  - gdpr.telecom.local
+  gateways:
+  - telecom-platform-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: gdpr-compliance-service
+        port:
+          number: 8080
+    timeout: 30s
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: gdpr-data-cleanup
+  namespace: telecom-platform
+  labels:
+    app.kubernetes.io/name: gdpr-data-cleanup
+    app.kubernetes.io/component: compliance
+    app.kubernetes.io/part-of: telecom-platform
+spec:
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: gdpr-data-cleanup
+            app.kubernetes.io/component: compliance
+        spec:
+          containers:
+          - name: data-cleanup
+            image: telecom-platform/gdpr-cleanup:latest
+            env:
+            - name: RETENTION_DAYS
+              value: "30"
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gdpr-compliance-secrets
+                  key: encryption-key
+            - name: DRY_RUN
+              value: "false"
+            command:
+            - /app/cleanup
+            - --retention-days=30
+            - --encrypt-deleted=true
+            - --audit-log=/var/log/cleanup.log
+            resources:
+              requests:
+                cpu: 100m
+                memory: 128Mi
+              limits:
+                cpu: 500m
+                memory: 512Mi
+            volumeMounts:
+            - name: audit-log
+              mountPath: /var/log
+          volumes:
+          - name: audit-log
+            emptyDir: {}
+          restartPolicy: OnFailure
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: gdpr-compliance-service-pdb
+  namespace: telecom-platform
+  labels:
+    app.kubernetes.io/name: gdpr-compliance-service
+    app.kubernetes.io/component: compliance
+    app.kubernetes.io/part-of: telecom-platform
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gdpr-compliance-service
+      app.kubernetes.io/component: compliance
