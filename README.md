@@ -118,7 +118,6 @@ pnpm dev
 
 ## Documentation
 
-- **[Complete TODO List](./todos.md)**: Comprehensive development roadmap
 - **[API Documentation](./docs/api-spec.yaml)**: OpenAPI 3.0 specification
 - **[Architecture Guide](./docs/architecture.md)**: System design and data flows
 - **[Deployment Guide](./docs/deployment.md)**: Kubernetes and Docker setup
