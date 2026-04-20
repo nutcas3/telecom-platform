@@ -256,6 +256,80 @@ Configure webhooks to receive real-time events:
 }
 ```
 
+## Development Workflow
+
+### Running Tests
+
+```bash
+# Run all tests
+make test
+
+# Run API server tests
+cd apps/api-server && go test ./...
+
+# Run integration tests
+cd apps/api-server && go test ./internal/handlers -v
+
+# Run service layer tests
+cd apps/api-server && go test ./internal/services -v
+
+# Run with coverage
+cd apps/api-server && go test -cover ./...
+
+# Run specific test
+cd apps/api-server && go test ./internal/handlers -run TestAuthenticationEndpoints -v
+```
+
+### Code Quality
+
+```bash
+# Format code
+cd apps/api-server && go fmt ./...
+cd apps/web-dashboard && pnpm format
+
+# Lint code
+cd apps/api-server && golangci-lint run
+cd apps/web-dashboard && pnpm lint
+
+# Run static analysis
+cd apps/api-server && go vet ./...
+```
+
+### Database Operations
+
+```bash
+# Run database migrations
+make db-migrate
+
+# Reset database (development only)
+make db-reset
+
+# Create test data
+make db-seed
+
+# View database logs
+docker-compose logs mongodb
+docker-compose logs postgres
+```
+
+### Monitoring & Debugging
+
+```bash
+# View service logs
+make logs
+make logs-api-server
+make logs-charging-engine
+
+# Monitor metrics
+curl http://localhost:8000/metrics
+curl http://localhost:8080/metrics
+
+# Check health endpoints
+curl http://localhost:8000/health
+curl http://localhost:8000/ready
+curl http://localhost:8000/live
+```
+
 ## Common Commands
 
 ```bash
@@ -265,6 +339,10 @@ make verify            # Check services
 make free5gc-logs      # View free5GC logs
 make docker-build      # Build Docker images
 make clean             # Remove build artifacts
+make test              # Run all tests
+make logs              # View all service logs
+make dev-ui            # Start web dashboard in dev mode
+make dev-api           # Start API server in dev mode
 ```
 
 ## Troubleshooting
@@ -287,6 +365,59 @@ chmod +x scripts/*.sh
 - Verify MongoDB/PostgreSQL is running: `docker-compose ps`
 - Check connection strings in `.env`
 - For PostgreSQL: confirm `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` are set
+
+## Recent Improvements
+
+### Enhanced Error Handling
+The platform now includes comprehensive error handling with standardized error responses:
+
+- **Structured error codes** for different error types
+- **Field-specific validation errors** with detailed messages
+- **Consistent error response format** across all endpoints
+- **Request correlation IDs** for debugging
+
+Example error response:
+```json
+{
+  "error": "Validation failed",
+  "code": "VALIDATION_FAILED",
+  "details": "Invalid input data",
+  "errors": [
+    {
+      "field": "email",
+      "message": "must be a valid email address",
+      "value": "invalid-email"
+    }
+  ]
+}
+```
+
+### Comprehensive Testing
+The platform now has extensive test coverage:
+
+- **Integration tests** for all API endpoints
+- **Service layer tests** for business logic
+- **Authentication and RBAC testing** with mock users
+- **Error handling validation** across all scenarios
+
+Run tests with:
+```bash
+cd apps/api-server && go test ./internal/handlers -v
+cd apps/api-server && go test ./internal/services -v
+```
+
+### Role-Based Access Control (RBAC)
+Enhanced RBAC implementation using Casbin:
+
+- **Policy-based permissions** with fine-grained control
+- **Default roles**: admin, operator, viewer
+- **Dynamic policy management** via API
+- **Fallback role middleware** for compatibility
+
+Example policy check:
+```go
+allowed, err := casbinSvc.CheckPermission(userID, "/v1/services", "GET")
+```
 
 ## Next Steps
 

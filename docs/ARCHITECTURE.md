@@ -295,6 +295,90 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains
 
 Plus request size limit (10MB), request timeout (30s), and CORS configuration.
 
+### Enhanced Error Handling
+
+Comprehensive error handling system with standardized error responses:
+
+**Error Codes**:
+- `VALIDATION_FAILED` - Input validation errors with field-specific details
+- `UNAUTHORIZED` - Authentication failures
+- `FORBIDDEN` - Authorization/permission errors
+- `NOT_FOUND` - Resource not found
+- `ALREADY_EXISTS` - Duplicate resource attempts
+- `INTERNAL_ERROR` - Server-side errors
+- `RATE_LIMITED` - Rate limiting violations
+
+**Error Response Format**:
+```json
+{
+  "error": "Human-readable error message",
+  "code": "ERROR_CODE",
+  "details": "Detailed error context",
+  "timestamp": "2024-01-01T00:00:00Z"
+}
+```
+
+**Validation Errors**:
+```json
+{
+  "error": "Validation failed",
+  "code": "VALIDATION_FAILED",
+  "errors": [
+    {
+      "field": "email",
+      "message": "must be a valid email address",
+      "value": "invalid-email"
+    }
+  ]
+}
+```
+
+### Testing Strategy
+
+**Integration Tests**:
+- Full API endpoint testing with in-memory SQLite
+- Authentication and RBAC testing with mock users
+- Service layer testing for all major services
+- Error handling validation across all endpoints
+
+**Test Coverage**:
+- Authentication flows (login, token validation, refresh)
+- RBAC permissions (admin, operator, viewer roles)
+- Service operations (CRUD, validation, error handling)
+- Error scenarios (invalid input, missing resources, permissions)
+
+**Test Structure**:
+```go
+func TestAuthenticationEndpoints(t *testing.T) {
+    ts := setupTest(t)
+    defer ts.DB.Close()
+    
+    t.Run("Login with valid credentials", func(t *testing.T) {
+        // Test implementation
+    })
+}
+```
+
+### Monitoring & Observability
+
+**Metrics Collection**:
+- Request latency and throughput
+- Error rates by endpoint and error type
+- Authentication success/failure rates
+- Database query performance
+- JWT token validation metrics
+
+**Health Checks**:
+- `/health` - Basic health status
+- `/ready` - Readiness probe (dependencies check)
+- `/live` - Liveness probe (service health)
+
+**Logging**:
+- Structured JSON logging
+- Request correlation IDs
+- Error stack traces in debug mode
+- Security event logging
+
 ### Rate Limiting
 
 Tiered limits protect against abuse (see `@/Users/nutcase/Downloads/telecom-platform-starter/apps/api-server/internal/middleware/ratelimit.go`):
