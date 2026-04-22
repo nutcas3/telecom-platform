@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"fmt"
@@ -11,6 +12,23 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+// ResponseWriterWrapper wraps gin.ResponseWriter to capture response body
+type ResponseWriterWrapper struct {
+	gin.ResponseWriter
+	body *bytes.Buffer
+}
+
+// Write captures the response body while writing to the original writer
+func (w *ResponseWriterWrapper) Write(data []byte) (int, error) {
+	w.body.Write(data)
+	return w.ResponseWriter.Write(data)
+}
+
+// Body returns the captured response body
+func (w *ResponseWriterWrapper) Body() []byte {
+	return w.body.Bytes()
+}
 
 // PerformanceMetrics tracks performance statistics
 type PerformanceMetrics struct {
@@ -445,6 +463,13 @@ func ETagValidationMiddleware() gin.HandlerFunc {
 // ContentBasedETagMiddleware generates ETags based on response content
 func ContentBasedETagMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Wrap the response writer to capture the body
+		wrapper := &ResponseWriterWrapper{
+			ResponseWriter: c.Writer,
+			body:           bytes.NewBuffer(nil),
+		}
+		c.Writer = wrapper
+
 		c.Next()
 
 		// Only generate ETags for successful GET requests
@@ -452,10 +477,16 @@ func ContentBasedETagMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// For content-based ETags, we would need to capture the response body
-		// This is a simplified version that uses weak ETags for dynamic content
-		etag := generateWeakETag(c)
-		c.Header("ETag", etag)
+		// Generate ETag based on captured response content
+		responseBody := wrapper.Body()
+		if len(responseBody) > 0 {
+			etag := generateContentETag(c, responseBody)
+			c.Header("ETag", etag)
+		} else {
+			// Fallback to weak ETag for empty responses
+			etag := generateWeakETag(c)
+			c.Header("ETag", etag)
+		}
 	}
 }
 
