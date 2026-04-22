@@ -54,8 +54,8 @@ func strPtr(s string) *string { return new(s) }
 func buildConnectionPageInfo(offset, count int, total int64) *PageInfo {
 	var startCursor, endCursor *string
 	if count > 0 {
-		startCursor = strPtr(base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%d", offset+1))))
-		endCursor = strPtr(base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%d", offset+count))))
+		startCursor = strPtr(base64.StdEncoding.EncodeToString(fmt.Appendf(nil, "%d", offset+1)))
+		endCursor = strPtr(base64.StdEncoding.EncodeToString(fmt.Appendf(nil, "%d", offset+count)))
 	}
 	return &PageInfo{
 		HasNextPage:     int64(offset+count) < total,
@@ -104,7 +104,7 @@ func (r *Resolver) Subscribers(ctx context.Context, first *int, after *string, f
 		s := sub // avoid loop-variable capture
 		edges[i] = &SubscriberEdge{
 			Node:   &s,
-			Cursor: base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%d", offset+i+1))),
+			Cursor: base64.StdEncoding.EncodeToString(fmt.Appendf(nil, "%d", offset+i+1)),
 		}
 	}
 
@@ -143,7 +143,7 @@ func (r *Resolver) UsageEvents(ctx context.Context, first *int, after *string, i
 	for i, event := range events {
 		edges[i] = &UsageEventEdge{
 			Node:   event,
-			Cursor: base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%d", offset+i+1))),
+			Cursor: base64.StdEncoding.EncodeToString(fmt.Appendf(nil, "%d", offset+i+1)),
 		}
 	}
 
@@ -225,7 +225,7 @@ func (r *Resolver) Invoices(ctx context.Context, first *int, after *string, imsi
 	for i, inv := range invoices {
 		edges[i] = &InvoiceEdge{
 			Node:   inv,
-			Cursor: base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%d", offset+i+1))),
+			Cursor: base64.StdEncoding.EncodeToString(fmt.Appendf(nil, "%d", offset+i+1)),
 		}
 	}
 
@@ -271,7 +271,7 @@ func (r *Resolver) Alerts(ctx context.Context, first *int, after *string, subscr
 	for i, alert := range alerts {
 		edges[i] = &AlertEdge{
 			Node:   alert,
-			Cursor: base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%d", offset+i+1))),
+			Cursor: base64.StdEncoding.EncodeToString(fmt.Appendf(nil, "%d", offset+i+1)),
 		}
 	}
 

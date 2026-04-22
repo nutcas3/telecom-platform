@@ -370,6 +370,6 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	return nil
 }
 
-func (e *executableSchema) Extensions() map[string]interface{} {
-	return map[string]interface{}{}
+func (e *executableSchema) Extensions() map[string]any {
+	return map[string]any{}
 }

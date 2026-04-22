@@ -42,7 +42,7 @@ func NewStripeGateway(secretKey, webhookSecret string) *StripeGateway {
 func (g *StripeGateway) ProcessPayment(ctx context.Context, req *PaymentRequest) (*PaymentResponse, error) {
 	// Create payment intent
 	params := &stripe.PaymentIntentParams{
-		Amount:   stripe.Int64(int64(req.Amount * 100)), // Convert to cents
+		Amount:   new(int64(req.Amount * 100)), // Convert to cents
 		Currency: stripe.String(string(req.Currency)),
 		Metadata: map[string]string{
 			"subscriber_id": fmt.Sprintf("%d", req.SubscriberID),
@@ -132,7 +132,7 @@ func (g *StripeGateway) ProcessRefund(ctx context.Context, transactionID string,
 	}
 
 	if amount > 0 {
-		params.Amount = stripe.Int64(int64(amount * 100)) // Convert to cents
+		params.Amount = new(int64(amount * 100)) // Convert to cents
 	}
 
 	refund, err := refund.New(params)
@@ -185,10 +185,10 @@ func (g *StripeGateway) CreateInvoice(ctx context.Context, customerID string, it
 	for _, item := range items {
 		itemParams := &stripe.InvoiceItemParams{
 			Customer:    stripe.String(customerID),
-			Amount:      stripe.Int64(int64(item.Amount * 100)),
+			Amount:      new(int64(item.Amount * 100)),
 			Currency:    stripe.String(string(item.Currency)),
 			Description: stripe.String(item.Description),
-			Quantity:    stripe.Int64(int64(item.Quantity)),
+			Quantity:    new(int64(item.Quantity)),
 		}
 
 		_, err := invoiceitem.New(itemParams)
@@ -200,7 +200,7 @@ func (g *StripeGateway) CreateInvoice(ctx context.Context, customerID string, it
 	// Create the invoice
 	params := &stripe.InvoiceParams{
 		Customer:    stripe.String(customerID),
-		AutoAdvance: stripe.Bool(true),
+		AutoAdvance: new(true),
 	}
 
 	inv, err := invoice.New(params)

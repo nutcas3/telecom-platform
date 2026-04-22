@@ -264,7 +264,8 @@ func (h *SubscriberHandler) TerminateSubscriber(c *gin.Context) {
 }
 
 // ErrorResponse represents an API error response
-type ErrorResponse struct {
+type SubscriberErrorResponse struct {
 	Error   string `json:"error"`
+	Code    string `json:"code"`
 	Details string `json:"details,omitempty"`
 }

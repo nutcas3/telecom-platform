@@ -179,7 +179,7 @@ func (s *StripeGateway) ProcessPayment(ctx context.Context, req *PaymentRequest)
 		return nil, fmt.Errorf("failed to create payment intent: %w", err)
 	}
 
-	intent, ok := intentResp.(map[string]interface{})
+	intent, ok := intentResp.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("invalid payment intent response")
 	}
@@ -188,7 +188,7 @@ func (s *StripeGateway) ProcessPayment(ctx context.Context, req *PaymentRequest)
 
 	var failureReason *string
 	if status == PaymentStatusFailed {
-		if lastPaymentError, ok := intent["last_payment_error"].(map[string]interface{}); ok {
+		if lastPaymentError, ok := intent["last_payment_error"].(map[string]any); ok {
 			if message, ok := lastPaymentError["message"].(string); ok {
 				failureReason = &message
 			}
@@ -197,8 +197,8 @@ func (s *StripeGateway) ProcessPayment(ctx context.Context, req *PaymentRequest)
 
 	var redirectURL *string
 	if status == PaymentStatusPending {
-		if nextAction, ok := intent["next_action"].(map[string]interface{}); ok {
-			if url, ok := nextAction["redirect_to_url"].(map[string]interface{}); ok {
+		if nextAction, ok := intent["next_action"].(map[string]any); ok {
+			if url, ok := nextAction["redirect_to_url"].(map[string]any); ok {
 				if redirect, ok := url["url"].(string); ok {
 					redirectURL = &redirect
 				}
@@ -220,7 +220,7 @@ func (s *StripeGateway) ProcessPayment(ctx context.Context, req *PaymentRequest)
 
 // RefundPayment refunds a payment via Stripe
 func (s *StripeGateway) RefundPayment(ctx context.Context, transactionID string, amount float64) (*RefundResponse, error) {
-	refundData := map[string]interface{}{
+	refundData := map[string]any{
 		"payment_intent": transactionID,
 		"amount":         int64(amount * 100), // Stripe uses cents
 	}
@@ -230,7 +230,7 @@ func (s *StripeGateway) RefundPayment(ctx context.Context, transactionID string,
 		return nil, fmt.Errorf("failed to create refund: %w", err)
 	}
 
-	refund, ok := refundResp.(map[string]interface{})
+	refund, ok := refundResp.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("invalid refund response")
 	}
@@ -262,7 +262,7 @@ func (s *StripeGateway) GetPaymentStatus(ctx context.Context, transactionID stri
 		return nil, fmt.Errorf("failed to get payment intent: %w", err)
 	}
 
-	intent, ok := intentResp.(map[string]interface{})
+	intent, ok := intentResp.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("invalid payment intent response")
 	}
@@ -273,12 +273,12 @@ func (s *StripeGateway) GetPaymentStatus(ctx context.Context, transactionID stri
 		return nil, fmt.Errorf("failed to get refunds: %w", err)
 	}
 
-	refundsData, _ := refundsResp.(map[string]interface{})
-	refundsList, _ := refundsData["data"].([]interface{})
+	refundsData, _ := refundsResp.(map[string]any)
+	refundsList, _ := refundsData["data"].([]any)
 
 	refunds := make([]RefundInfo, len(refundsList))
 	for i, refundInterface := range refundsList {
-		refund, _ := refundInterface.(map[string]interface{})
+		refund, _ := refundInterface.(map[string]any)
 		createdAt, _ := time.Parse(time.RFC3339, refund["created"].(string))
 		refunds[i] = RefundInfo{
 			RefundID:  refund["id"].(string),
@@ -291,7 +291,7 @@ func (s *StripeGateway) GetPaymentStatus(ctx context.Context, transactionID stri
 	createdAt, _ := time.Parse(time.RFC3339, intent["created"].(string))
 
 	var failureReason *string
-	if lastPaymentError, ok := intent["last_payment_error"].(map[string]interface{}); ok {
+	if lastPaymentError, ok := intent["last_payment_error"].(map[string]any); ok {
 		if message, ok := lastPaymentError["message"].(string); ok {
 			failureReason = &message
 		}
@@ -311,7 +311,7 @@ func (s *StripeGateway) GetPaymentStatus(ctx context.Context, transactionID stri
 
 // CreatePaymentMethod creates a payment method in Stripe
 func (s *StripeGateway) CreatePaymentMethod(ctx context.Context, req *CreatePaymentMethodRequest) (*PaymentMethod, error) {
-	pmData := map[string]interface{}{
+	pmData := map[string]any{
 		"type": s.mapPaymentMethodType(req.Type),
 		"card": map[string]string{
 			"token": req.Token,
@@ -324,13 +324,13 @@ func (s *StripeGateway) CreatePaymentMethod(ctx context.Context, req *CreatePaym
 		return nil, fmt.Errorf("failed to create payment method: %w", err)
 	}
 
-	pm, ok := pmResp.(map[string]interface{})
+	pm, ok := pmResp.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("invalid payment method response")
 	}
 
 	// Attach payment method to customer
-	attachData := map[string]interface{}{
+	attachData := map[string]any{
 		"customer": req.CustomerID,
 	}
 	_, err = s.makeStripeRequest(ctx, "POST", "/v1/payment_methods/"+pm["id"].(string)+"/attach", attachData)
@@ -340,7 +340,7 @@ func (s *StripeGateway) CreatePaymentMethod(ctx context.Context, req *CreatePaym
 
 	// Set as default if requested
 	if req.IsDefault {
-		customerData := map[string]interface{}{
+		customerData := map[string]any{
 			"invoice_settings": map[string]string{
 				"default_payment_method": pm["id"].(string),
 			},
@@ -351,7 +351,7 @@ func (s *StripeGateway) CreatePaymentMethod(ctx context.Context, req *CreatePaym
 		}
 	}
 
-	card, _ := pm["card"].(map[string]interface{})
+	card, _ := pm["card"].(map[string]any)
 	createdAt, _ := time.Parse(time.RFC3339, pm["created"].(string))
 
 	return &PaymentMethod{
@@ -388,10 +388,10 @@ func (s *StripeGateway) ValidateWebhook(ctx context.Context, signature string, b
 	var timestamp, v1Signature string
 	for _, part := range parts {
 		part = strings.TrimSpace(part)
-		if strings.HasPrefix(part, "t=") {
-			timestamp = strings.TrimPrefix(part, "t=")
-		} else if strings.HasPrefix(part, "v1=") {
-			v1Signature = strings.TrimPrefix(part, "v1=")
+		if after, ok := strings.CutPrefix(part, "t="); ok {
+			timestamp = after
+		} else if after, ok := strings.CutPrefix(part, "v1="); ok {
+			v1Signature = after
 		}
 	}
 
@@ -406,7 +406,7 @@ func (s *StripeGateway) ValidateWebhook(ctx context.Context, signature string, b
 }
 
 // Helper methods
-func (s *StripeGateway) makeStripeRequest(ctx context.Context, method, path string, data interface{}) (interface{}, error) {
+func (s *StripeGateway) makeStripeRequest(ctx context.Context, method, path string, data any) (any, error) {
 	url := "https://api.stripe.com" + path
 
 	var body io.Reader
@@ -439,9 +439,9 @@ func (s *StripeGateway) makeStripeRequest(ctx context.Context, method, path stri
 	}
 
 	if resp.StatusCode >= 400 {
-		var errorResp map[string]interface{}
+		var errorResp map[string]any
 		if err := json.Unmarshal(respBody, &errorResp); err == nil {
-			if errorMsg, ok := errorResp["error"].(map[string]interface{}); ok {
+			if errorMsg, ok := errorResp["error"].(map[string]any); ok {
 				if message, ok := errorMsg["message"].(string); ok {
 					return nil, fmt.Errorf("stripe error: %s", message)
 				}
@@ -450,7 +450,7 @@ func (s *StripeGateway) makeStripeRequest(ctx context.Context, method, path stri
 		return nil, fmt.Errorf("stripe error: %s", string(respBody))
 	}
 
-	var result interface{}
+	var result any
 	if err := json.Unmarshal(respBody, &result); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
 	}

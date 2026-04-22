@@ -118,7 +118,7 @@ func TestResolverRoot_Methods(t *testing.T) {
 // Helper functions for testing (these should match the implementations in resolvers.go)
 
 func encodeCursor(offset int) string {
-	return base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("cursor:%d", offset)))
+	return base64.StdEncoding.EncodeToString(fmt.Appendf(nil, "cursor:%d", offset))
 }
 
 func decodeCursor(cursor string) (int, error) {

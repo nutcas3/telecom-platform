@@ -79,7 +79,7 @@ func (ts *TimeSeriesStorage) StoreUsageMetrics(ctx context.Context, metrics Usag
 			"subscriber_id": metrics.SubscriberID,
 			"imsi":          metrics.IMSI,
 		},
-		map[string]interface{}{
+		map[string]any{
 			"data_up":       metrics.DataUp,
 			"data_down":     metrics.DataDown,
 			"voice_seconds": metrics.VoiceSeconds,
@@ -96,7 +96,7 @@ func (ts *TimeSeriesStorage) StoreSystemMetrics(ctx context.Context, metrics Sys
 	point := influxdb2.NewPoint(
 		"system",
 		map[string]string{},
-		map[string]interface{}{
+		map[string]any{
 			"active_sessions": metrics.ActiveSessions,
 			"cpu_usage":       metrics.CPUUsage,
 			"memory_usage":    metrics.MemoryUsage,
@@ -119,7 +119,7 @@ func (ts *TimeSeriesStorage) StoreChargingMetrics(ctx context.Context, metrics C
 			"currency":       metrics.Currency,
 			"status":         metrics.Status,
 		},
-		map[string]interface{}{
+		map[string]any{
 			"balance": metrics.Balance,
 			"amount":  metrics.Amount,
 		},
@@ -136,7 +136,7 @@ func (ts *TimeSeriesStorage) StorePacketMetrics(ctx context.Context, subscriberI
 		map[string]string{
 			"subscriber_id": subscriberID,
 		},
-		map[string]interface{}{
+		map[string]any{
 			"packets_processed": packetsProcessed,
 			"packets_dropped":   packetsDropped,
 			"bytes_processed":   bytesProcessed,
@@ -295,7 +295,7 @@ func (ts *TimeSeriesStorage) GetChargingHistory(ctx context.Context, subscriberI
 }
 
 // GetTopDataUsers retrieves top data users for a time period
-func (ts *TimeSeriesStorage) GetTopDataUsers(ctx context.Context, start, end time.Time, limit int) ([]map[string]interface{}, error) {
+func (ts *TimeSeriesStorage) GetTopDataUsers(ctx context.Context, start, end time.Time, limit int) ([]map[string]any, error) {
 	query := fmt.Sprintf(`
 		from(bucket: "%s")
 		|> range(start: %s, stop: %s)
@@ -312,10 +312,10 @@ func (ts *TimeSeriesStorage) GetTopDataUsers(ctx context.Context, start, end tim
 		return nil, fmt.Errorf("failed to query top data users: %w", err)
 	}
 
-	var users []map[string]interface{}
+	var users []map[string]any
 	for result.Next() {
 		record := result.Record()
-		user := map[string]interface{}{
+		user := map[string]any{
 			"subscriber_id": record.ValueByKey("subscriber_id"),
 			"total_data":    record.ValueByKey("total_data"),
 			"data_up":       record.ValueByKey("data_up"),

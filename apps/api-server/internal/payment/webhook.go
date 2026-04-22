@@ -15,12 +15,12 @@ import (
 
 // WebhookEvent represents a payment webhook event
 type WebhookEvent struct {
-	ID       string                 `json:"id"`
-	Type     string                 `json:"type"`
-	Object   string                 `json:"object"`
-	Created  int64                  `json:"created"`
-	Livemode bool                   `json:"livemode"`
-	Data     map[string]interface{} `json:"data"`
+	ID       string         `json:"id"`
+	Type     string         `json:"type"`
+	Object   string         `json:"object"`
+	Created  int64          `json:"created"`
+	Livemode bool           `json:"livemode"`
+	Data     map[string]any `json:"data"`
 }
 
 // WebhookHandler handles payment webhooks
@@ -97,7 +97,7 @@ func (wh *WebhookHandler) HandleStripeWebhook(c *gin.Context) {
 
 // handlePaymentSucceeded handles successful payment events
 func (wh *WebhookHandler) handlePaymentSucceeded(ctx context.Context, event WebhookEvent) error {
-	paymentIntent, ok := event.Data["object"].(map[string]interface{})
+	paymentIntent, ok := event.Data["object"].(map[string]any)
 	if !ok {
 		return fmt.Errorf("invalid payment intent object")
 	}
@@ -145,7 +145,7 @@ func (wh *WebhookHandler) handlePaymentSucceeded(ctx context.Context, event Webh
 
 // handlePaymentFailed handles failed payment events
 func (wh *WebhookHandler) handlePaymentFailed(ctx context.Context, event WebhookEvent) error {
-	paymentIntent, ok := event.Data["object"].(map[string]interface{})
+	paymentIntent, ok := event.Data["object"].(map[string]any)
 	if !ok {
 		return fmt.Errorf("invalid payment intent object")
 	}
@@ -166,7 +166,7 @@ func (wh *WebhookHandler) handlePaymentFailed(ctx context.Context, event Webhook
 	transaction.UpdatedAt = time.Now()
 
 	// Add failure reason if available
-	if lastPaymentError, ok := paymentIntent["last_payment_error"].(map[string]interface{}); ok {
+	if lastPaymentError, ok := paymentIntent["last_payment_error"].(map[string]any); ok {
 		if message, ok := lastPaymentError["message"].(string); ok {
 			transaction.Description += " - Failed: " + message
 		}
@@ -199,7 +199,7 @@ func (wh *WebhookHandler) handlePaymentFailed(ctx context.Context, event Webhook
 
 // handlePaymentCanceled handles canceled payment events
 func (wh *WebhookHandler) handlePaymentCanceled(ctx context.Context, event WebhookEvent) error {
-	paymentIntent, ok := event.Data["object"].(map[string]interface{})
+	paymentIntent, ok := event.Data["object"].(map[string]any)
 	if !ok {
 		return fmt.Errorf("invalid payment intent object")
 	}
@@ -230,7 +230,7 @@ func (wh *WebhookHandler) handlePaymentCanceled(ctx context.Context, event Webho
 
 // handleDisputeCreated handles dispute events
 func (wh *WebhookHandler) handleDisputeCreated(ctx context.Context, event WebhookEvent) error {
-	dispute, ok := event.Data["object"].(map[string]interface{})
+	dispute, ok := event.Data["object"].(map[string]any)
 	if !ok {
 		return fmt.Errorf("invalid dispute object")
 	}
