@@ -437,3 +437,47 @@ pub async fn engine_uptime(
         "uptime_seconds": uptime.as_secs(),
     })))
 }
+
+/// GET /v1/errors
+/// Get error statistics
+pub async fn get_error_stats(
+    State(state): State<AppState>,
+) -> ChargingResult<Json<serde_json::Value>> {
+    let errors = state.charging_engine.get_error_statistics().await
+        .with_context("Failed to get error statistics")?;
+    
+    Ok(Json(serde_json::json!({
+        "total_errors": errors.total_errors,
+        "error_types": errors.error_types,
+        "last_error": errors.last_error,
+    })))
+}
+
+/// POST /v1/sync/start
+/// Start background sync
+pub async fn start_sync(
+    State(state): State<AppState>,
+) -> ChargingResult<Json<serde_json::Value>> {
+    state.charging_engine.start_background_sync().await
+        .with_context("Failed to start background sync")?;
+    
+    Ok(Json(serde_json::json!({
+        "status": "sync_started",
+    })))
+}
+
+/// GET /v1/health/detailed
+/// Get detailed health check
+pub async fn detailed_health_check(
+    State(state): State<AppState>,
+) -> ChargingResult<Json<serde_json::Value>> {
+    let health = state.charging_engine.health_check().await
+        .with_context("Failed to get health check")?;
+    
+    Ok(Json(serde_json::json!({
+        "redis_connected": health.redis_connected,
+        "active_sync": health.active_sync,
+        "last_sync": health.last_sync,
+        "memory_usage": health.memory_usage,
+    })))
+}
