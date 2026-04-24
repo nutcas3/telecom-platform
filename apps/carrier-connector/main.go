@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net/http"
@@ -11,31 +12,32 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
 	"github.com/joho/godotenv"
+	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/config"
+	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/es2"
 	"github.com/rs/zerolog"
 )
 
 var logger zerolog.Logger
 
-type ES2Client struct {
-	baseURL    string
-	apiKey     string
-	httpClient *resty.Client
-}
-
+// GSMA ES2+ Profile Order Request
 type ProfileOrder struct {
-	ICCID       string `json:"iccid"`
-	IMSI        string `json:"imsi"`
-	K           string `json:"k"`
-	OPc         string `json:"opc"`
-	MCC         string `json:"mcc"`
-	MNC         string `json:"mnc"`
-	ProfileType string `json:"profileType"`
+	EID              string `json:"eid"`
+	ICCID            string `json:"iccid"`
+	IMSI             string `json:"imsi"`
+	K                string `json:"k"`
+	OPc              string `json:"opc"`
+	MCC              string `json:"mcc"`
+	MNC              string `json:"mnc"`
+	ProfileType      string `json:"profileType"`
+	ConfirmationCode string `json:"confirmationCode,omitempty"`
 }
 
+// GSMA ES2+ Profile Order Response
 type ProfileResponse struct {
-	ActivationCode string `json:"activationCode"`
-	ProfileID      string `json:"profileId"`
-	Status         string `json:"status"`
+	ExecutionStatus string `json:"executionStatus"`
+	StatusMessage   string `json:"statusMessage"`
+	ProfileID       string `json:"profileId"`
+	ActivationCode  string `json:"activationCode,omitempty"`
 }
 
 func main() {
@@ -50,12 +52,21 @@ func main() {
 		logger.Info().Msg("No .env file found, using system environment")
 	}
 
-	// Initialize ES2+ client
+	// Initialize ES2+ client with GSMA protocol
 	smdpURL := getEnv("SMDP_URL", "https://smdp.example.com")
 	apiKey := getEnv("SMDP_API_KEY", "test-api-key")
+	requesterID := getEnv("FUNCTIONALITY_REQUESTER_ID", "carrier-connector")
+	insecure := getEnv("INSECURE_SKIP_VERIFY", "false") == "true"
 	port := getEnv("PORT", "8080")
 
-	client := NewES2Client(smdpURL, apiKey)
+	es2Config := &config.ES2Config{
+		BaseURL:                  smdpURL,
+		APIKey:                   apiKey,
+		FunctionalityRequesterID: requesterID,
+		InsecureSkipVerify:       insecure,
+	}
+
+	client := es2.NewES2Client(es2Config)
 
 	// Initialize Gin router
 	router := gin.Default()
@@ -170,7 +181,7 @@ func (c *ES2Client) OrderProfile(order *ProfileOrder) (*ProfileResponse, error) 
 
 // API Handlers
 
-func orderProfileHandler(client *ES2Client) gin.HandlerFunc {
+func orderProfileHandler(client *es2.ES2Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var order ProfileOrder
 
@@ -197,7 +208,15 @@ func orderProfileHandler(client *ES2Client) gin.HandlerFunc {
 			Str("iccid", order.ICCID).
 			Msg("API request: Ordering eSIM profile from SM-DP+")
 
-		response, err := client.OrderProfile(&order)
+		// Convert ProfileOrder to DownloadProfileRequest for GSMA ES2+ protocol
+		downloadReq := &es2.DownloadProfileRequest{
+			EID:              order.EID,
+			ICCID:            order.ICCID,
+			ProfileType:      order.ProfileType,
+			ConfirmationCode: order.ConfirmationCode,
+		}
+
+		downloadResp, err := client.DownloadProfile(context.Background(), downloadReq)
 		if err != nil {
 			logger.Error().Err(err).Str("imsi", order.IMSI).Msg("Failed to order profile")
 			c.JSON(http.StatusInternalServerError, gin.H{
