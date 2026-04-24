@@ -9,7 +9,7 @@ use std::sync::Arc;
 use tracing::info;
 
 use api::create_router;
-use charging::ChargingEngine;
+use charging::{ChargingEngine, RatingPlansRepo};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -24,13 +24,20 @@ async fn main() -> Result<()> {
 
     // Initialize charging engine
     let redis_url = std::env::var("REDIS_URI").unwrap_or_else(|_| "redis://127.0.0.1/".to_string());
+    let database_url = std::env::var("DATABASE_URL")
+        .expect("DATABASE_URL is required (for rating plans)");
     let sync_interval = std::env::var("SYNC_INTERVAL")
         .unwrap_or_else(|_| "1".to_string())
         .parse::<u64>()
         .unwrap_or(1);
 
-    let charging_engine = Arc::new(ChargingEngine::new(&redis_url, sync_interval)?);
-    
+    // Connect to Postgres and seed defaults if the table is empty.
+    let plans_repo = RatingPlansRepo::connect(&database_url).await?;
+    plans_repo.seed_defaults().await?;
+    info!("Connected to Postgres and ensured default rating plans");
+
+    let charging_engine = Arc::new(ChargingEngine::new(&redis_url, plans_repo, sync_interval)?);
+
     // Test Redis connection
     charging_engine.test_connection().await?;
     info!("Connected to Redis successfully");
