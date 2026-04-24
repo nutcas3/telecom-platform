@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use redis::{FromRedisValue, ToRedisArgs, ToSingleRedisArg};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SubscriberAccount {
@@ -95,3 +96,48 @@ pub struct Action {
     pub action_type: String,
     pub parameters: std::collections::HashMap<String, String>,
 }
+
+// Redis trait implementations for serialization
+impl FromRedisValue for SubscriberAccount {
+    fn from_redis_value(v: redis::Value) -> Result<Self, redis::ParsingError> {
+        let json: String = redis::from_redis_value(v)?;
+        let account: SubscriberAccount = serde_json::from_str(&json)
+            .map_err(|e| redis::ParsingError::from(e.to_string()))?;
+        Ok(account)
+    }
+}
+
+impl ToRedisArgs for SubscriberAccount {
+    fn write_redis_args<W>(&self, out: &mut W)
+    where
+        W: redis::RedisWrite + ?Sized,
+    {
+        let json = serde_json::to_string(self)
+            .expect("Failed to serialize SubscriberAccount");
+        json.write_redis_args(out)
+    }
+}
+
+impl ToSingleRedisArg for SubscriberAccount {}
+
+impl FromRedisValue for UsageEvent {
+    fn from_redis_value(v: redis::Value) -> Result<Self, redis::ParsingError> {
+        let json: String = redis::from_redis_value(v)?;
+        let event: UsageEvent = serde_json::from_str(&json)
+            .map_err(|e| redis::ParsingError::from(e.to_string()))?;
+        Ok(event)
+    }
+}
+
+impl ToRedisArgs for UsageEvent {
+    fn write_redis_args<W>(&self, out: &mut W)
+    where
+        W: redis::RedisWrite + ?Sized,
+    {
+        let json = serde_json::to_string(self)
+            .expect("Failed to serialize UsageEvent");
+        json.write_redis_args(out)
+    }
+}
+
+impl ToSingleRedisArg for UsageEvent {}
