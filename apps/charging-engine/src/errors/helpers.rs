@@ -1,9 +1,18 @@
 use anyhow::Context;
 
+use super::types::ChargingError;
+
 pub type ChargingResult<T> = Result<T, ChargingError>;
 
 pub trait ErrorContext<T> {
     fn with_context(self, msg: &str) -> ChargingResult<T>;
+}
+
+impl<T> ErrorContext<T> for anyhow::Result<T> {
+    fn with_context(self, msg: &str) -> ChargingResult<T> {
+        self.map_err(|e| ChargingError::InternalError(format!("{}: {}", msg, e)))
+            .map_err(|e| e.into())
+    }
 }
 
 impl<T, E> ErrorContext<T> for Result<T, E>
