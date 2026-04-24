@@ -24,7 +24,7 @@ impl RatingPlansRepo {
             .max_connections(10)
             .connect(database_url)
             .await
-            .context("Failed to connect to Postgres")?;
+            .map_err(|e| crate::errors::ChargingError::InternalError(e.to_string()))?;
 
         // Idempotent schema for rating plans. api-server's GORM migration also
         // creates a compatible `rating_plans` table; the column set here is
@@ -49,7 +49,7 @@ impl RatingPlansRepo {
         )
         .execute(&pool)
         .await
-        .context("Failed to migrate rating_plans table")?;
+        .map_err(|e| crate::errors::ChargingError::RedisOperation(e.to_string()))?;
 
         Ok(Self { pool })
     }
@@ -112,7 +112,7 @@ impl RatingPlansRepo {
         .bind(plan_id)
         .fetch_optional(&self.pool)
         .await
-        .context("Failed to fetch rating plan")?;
+        .map_err(|e| crate::errors::ChargingError::RedisOperation(e.to_string()))?;
 
         Ok(row.map(row_to_plan))
     }
@@ -129,7 +129,7 @@ impl RatingPlansRepo {
         )
         .fetch_all(&self.pool)
         .await
-        .context("Failed to list rating plans")?;
+        .map_err(|e| crate::errors::ChargingError::RedisOperation(e.to_string()))?;
 
         let mut out = HashMap::with_capacity(rows.len());
         for row in rows {
@@ -171,7 +171,7 @@ impl RatingPlansRepo {
         .bind(plan.sms_limit as i64)
         .execute(&self.pool)
         .await
-        .context("Failed to upsert rating plan")?;
+        .map_err(|e| crate::errors::ChargingError::RedisOperation(e.to_string()))?;
         Ok(())
     }
 
@@ -183,7 +183,7 @@ impl RatingPlansRepo {
         .bind(plan_id)
         .execute(&self.pool)
         .await
-        .context("Failed to deactivate rating plan")?;
+        .map_err(|e| crate::errors::ChargingError::RedisOperation(e.to_string()))?;
         Ok(result.rows_affected() > 0)
     }
 }
