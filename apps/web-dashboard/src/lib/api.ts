@@ -351,8 +351,8 @@ export const api = {
   },
   subscribers: {
     list: (page = 1, pageSize = 20) =>
-      apiFetch<PaginatedResponse<Subscriber>>(`/api/subscribers?page=${page}&pageSize=${pageSize}`),
-    get: (id: number) => apiFetch<Subscriber>(`/api/subscribers/${id}`),
+      apiFetch<PaginatedResponse<Subscriber>>(`/api/subscribers?page=${page}&pageSize=${pageSize}`, undefined, true),
+    get: (id: number) => apiFetch<Subscriber>(`/api/subscribers/${id}`, undefined, true),
     create: (data: Partial<Subscriber>) =>
       apiFetch<Subscriber>("/api/subscribers", { method: "POST", body: JSON.stringify(data) }),
     update: (id: number, data: Partial<Subscriber>) =>
@@ -361,13 +361,13 @@ export const api = {
       apiFetch<void>(`/api/subscribers/${id}`, { method: "DELETE" }),
   },
   system: {
-    stats: () => apiFetch<SystemStats>("/api/system/stats"),
-    health: () => apiFetch<HealthStatus>("/api/system/health"),
+    stats: () => apiFetch<SystemStats>("/api/system/stats", undefined, true),
+    health: () => apiFetch<HealthStatus>("/api/system/health", undefined, true),
   },
   // Services Management
   services: {
-    list: () => apiFetch<{ services: Service[]; total: number; namespace: string }>("/v1/services"),
-    get: (id: string) => apiFetch<Service>(`/v1/services/${id}`),
+    list: () => apiFetch<{ services: Service[]; total: number; namespace: string }>("/v1/services", undefined, true),
+    get: (id: string) => apiFetch<Service>(`/v1/services/${id}`, undefined, true),
     restart: (id: string) => apiFetch<{ message: string; service: string }>(`/v1/services/${id}/restart`, { method: "POST" }),
     logs: (id: string, tailLines = 100) => 
       apiFetch<string>(`/v1/services/${id}/logs?tailLines=${tailLines}`),
@@ -378,51 +378,51 @@ export const api = {
         method: "POST", 
         body: JSON.stringify({ replicas }) 
       }),
-    health: (id: string) => apiFetch<ServiceHealth>(`/v1/services/${id}/health`),
-    podStatus: (id: string) => apiFetch<PodStatus>(`/v1/services/${id}/pods`),
+    health: (id: string) => apiFetch<ServiceHealth>(`/v1/services/${id}/health`, undefined, true),
+    podStatus: (id: string) => apiFetch<PodStatus>(`/v1/services/${id}/pods`, undefined, true),
     events: (id: string, limit = 50) => 
-      apiFetch<{ events: ServiceEvent[]; total: number }>(`/v1/services/${id}/events?limit=${limit}`),
+      apiFetch<{ events: ServiceEvent[]; total: number }>(`/v1/services/${id}/events?limit=${limit}`, undefined, true),
   },
   // Monitoring & Metrics
   monitoring: {
-    metrics: (query = "up") => apiFetch<{ data: MetricSample[] }>(`/v1/monitoring/metrics?query=${query}`),
-    alerts: () => apiFetch<Alert[]>("/v1/monitoring/alerts"),
-    health: () => apiFetch<{ status: string; services: Record<string, string> }>("/v1/monitoring/health"),
+    metrics: (query = "up") => apiFetch<{ data: MetricSample[] }>(`/v1/monitoring/metrics?query=${query}`, undefined, true),
+    alerts: () => apiFetch<Alert[]>("/v1/monitoring/alerts", undefined, true),
+    health: () => apiFetch<{ status: string; services: Record<string, string> }>("/v1/monitoring/health", undefined, true),
     logs: (service?: string, level?: string, limit = 100) => 
       apiFetch<{ logs: string[]; total: number }>(`/v1/monitoring/logs?service=${service || ""}&level=${level || ""}&limit=${limit}`),
   },
   // Deployment Management
   deployments: {
-    status: () => apiFetch<{ deployments: Deployment[]; total: number }>("/v1/deploy/status"),
+    status: () => apiFetch<{ deployments: Deployment[]; total: number }>("/v1/deploy/status", undefined, true),
     start: (data: DeploymentStartRequest) => 
       apiFetch<Deployment>("/v1/deploy/start", { method: "POST", body: JSON.stringify(data) }),
     rollback: (deploymentId: number) => 
       apiFetch<Deployment>("/v1/deploy/rollback", { method: "POST", body: JSON.stringify({ deployment_id: deploymentId }) }),
     history: (page = 1, pageSize = 20) => 
-      apiFetch<PaginatedResponse<Deployment>>(`/v1/deploy/history?page=${page}&pageSize=${pageSize}`),
+      apiFetch<PaginatedResponse<Deployment>>(`/v1/deploy/history?page=${page}&pageSize=${pageSize}`, undefined, true),
   },
   // Plugin Management
   plugins: {
     list: (enabled?: boolean) => 
-      apiFetch<{ plugins: Plugin[]; total: number }>(`/v1/plugins${enabled !== undefined ? `?enabled=${enabled}` : ""}`),
+      apiFetch<{ plugins: Plugin[]; total: number }>(`/v1/plugins${enabled !== undefined ? `?enabled=${enabled}` : ""}`, undefined, true),
     install: (data: PluginInstallRequest) => 
       apiFetch<Plugin>("/v1/plugins/install", { method: "POST", body: JSON.stringify(data) }),
     uninstall: (id: number) => apiFetch<void>(`/v1/plugins/${id}`, { method: "DELETE" }),
     enable: (id: number) => apiFetch<Plugin>(`/v1/plugins/${id}/enable`, { method: "POST" }),
     disable: (id: number) => apiFetch<Plugin>(`/v1/plugins/${id}/disable`, { method: "POST" }),
-    get: (id: number) => apiFetch<Plugin>(`/v1/plugins/${id}`),
+    get: (id: number) => apiFetch<Plugin>(`/v1/plugins/${id}`, undefined, true),
   },
   // Automation Management
   automation: {
     list: (enabled?: boolean) => 
-      apiFetch<{ automations: Automation[]; total: number }>(`/v1/automation${enabled !== undefined ? `?enabled=${enabled}` : ""}`),
+      apiFetch<{ automations: Automation[]; total: number }>(`/v1/automation${enabled !== undefined ? `?enabled=${enabled}` : ""}`, undefined, true),
     run: (automationId: number, parameters?: Record<string, any>) => 
       apiFetch<AutomationRun>("/v1/automation/run", { method: "POST", body: JSON.stringify({ automation_id: automationId, parameters }) }),
     schedule: (automationId: number, schedule: string) => 
       apiFetch<Automation>(`/v1/automation/${automationId}/schedule`, { method: "POST", body: JSON.stringify({ schedule }) }),
     logs: (automationId?: number, page = 1, pageSize = 20) => 
-      apiFetch<PaginatedResponse<AutomationRun>>(`/v1/automation/logs${automationId ? `?automation_id=${automationId}&` : "?"}page=${page}&pageSize=${pageSize}`),
-    get: (id: number) => apiFetch<Automation>(`/v1/automation/${id}`),
+      apiFetch<PaginatedResponse<AutomationRun>>(`/v1/automation/logs${automationId ? `?automation_id=${automationId}&` : "?"}page=${page}&pageSize=${pageSize}`, undefined, true),
+    get: (id: number) => apiFetch<Automation>(`/v1/automation/${id}`, undefined, true),
     create: (data: Partial<Automation>) => 
       apiFetch<Automation>("/v1/automation", { method: "POST", body: JSON.stringify(data) }),
     update: (id: number, data: Partial<Automation>) => 
@@ -432,16 +432,16 @@ export const api = {
   // Billing & Invoicing
   billing: {
     invoices: (subscriberId?: number, status?: string, page = 1, pageSize = 20) => 
-      apiFetch<PaginatedResponse<Invoice>>(`/v1/billing/invoices${subscriberId ? `?subscriber_id=${subscriberId}&` : "?"}${status ? `status=${status}&` : ""}page=${page}&pageSize=${pageSize}`),
+      apiFetch<PaginatedResponse<Invoice>>(`/v1/billing/invoices${subscriberId ? `?subscriber_id=${subscriberId}&` : "?"}${status ? `status=${status}&` : ""}page=${page}&pageSize=${pageSize}`, undefined, true),
     payments: (invoiceId?: number, status?: string, page = 1, pageSize = 20) => 
-      apiFetch<PaginatedResponse<Payment>>(`/v1/billing/payments${invoiceId ? `?invoice_id=${invoiceId}&` : "?"}${status ? `status=${status}&` : ""}page=${page}&pageSize=${pageSize}`),
+      apiFetch<PaginatedResponse<Payment>>(`/v1/billing/payments${invoiceId ? `?invoice_id=${invoiceId}&` : "?"}${status ? `status=${status}&` : ""}page=${page}&pageSize=${pageSize}`, undefined, true),
     generateInvoice: (subscriberId: number, month: string, year: number) => 
       apiFetch<Invoice>("/v1/billing/invoices", { method: "POST", body: JSON.stringify({ subscriber_id: subscriberId, month, year }) }),
-    getInvoice: (id: number) => apiFetch<Invoice>(`/v1/billing/invoices/${id}`),
+    getInvoice: (id: number) => apiFetch<Invoice>(`/v1/billing/invoices/${id}`, undefined, true),
   },
   // Configuration Management
   config: {
-    get: (key?: string) => apiFetch<ConfigEntry[] | ConfigEntry>(key ? `/v1/config?key=${key}` : "/v1/config"),
+    get: (key?: string) => apiFetch<ConfigEntry[] | ConfigEntry>(key ? `/v1/config?key=${key}` : "/v1/config", undefined, true),
     update: (key: string, value: string, type = "string") => 
       apiFetch<ConfigEntry>("/v1/config", { method: "POST", body: JSON.stringify({ key, value, type }) }),
     validate: (config: Record<string, any>) => 
@@ -451,10 +451,10 @@ export const api = {
   // Chaos Engineering
   chaos: {
     experiments: (status?: string, page = 1, pageSize = 20) => 
-      apiFetch<PaginatedResponse<ChaosExperiment>>(`/v1/chaos/experiments${status ? `?status=${status}&` : "?"}page=${page}&pageSize=${pageSize}`),
+      apiFetch<PaginatedResponse<ChaosExperiment>>(`/v1/chaos/experiments${status ? `?status=${status}&` : "?"}page=${page}&pageSize=${pageSize}`, undefined, true),
     run: (data: ChaosExperimentRequest) => 
       apiFetch<ChaosExperiment>("/v1/chaos/experiments", { method: "POST", body: JSON.stringify(data) }),
-    status: (experimentId: number) => apiFetch<ChaosExperiment>(`/v1/chaos/status?experiment_id=${experimentId}`),
+    status: (experimentId: number) => apiFetch<ChaosExperiment>(`/v1/chaos/status?experiment_id=${experimentId}`, undefined, true),
     cancel: (experimentId: number) => 
       apiFetch<ChaosExperiment>(`/v1/chaos/experiments/${experimentId}`, { method: "DELETE" }),
   },
