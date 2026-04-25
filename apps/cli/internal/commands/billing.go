@@ -58,8 +58,8 @@ func handleInvoices(u *uiContext) error {
 
 	if err != nil {
 		u.warn("Using placeholder data: " + err.Error())
-		t.AddStyledRow(statusStyle("PAID").Style, "INV-000001", "2024-01-15", "Paid", "$45.67", "John Doe")
-		t.AddStyledRow(statusStyle("PENDING").Style, "INV-000002", "2024-01-15", "Pending", "$123.45", "Jane Smith")
+		t.AddStyledRow(statusStyle("PAID").Style, "INV-000001", "2026-05-30", "Paid", "$45.67", "John Doe")
+		t.AddStyledRow(statusStyle("PENDING").Style, "INV-000002", "2026-05-30", "Pending", "$123.45", "Jane Smith")
 		t.AddStyledRow(statusStyle("OVERDUE").Style, "INV-000003", "2024-01-14", "Overdue", "$67.89", "Bob Johnson")
 		fmt.Println(t.Render())
 		return nil
@@ -91,7 +91,7 @@ func handlePayments(u *uiContext) error {
 
 	if err != nil {
 		u.warn("Using placeholder data: " + err.Error())
-		t.AddStyledRow(statusStyle("SUCCESS").Style, "pay_123456789", "2024-01-15", "$45.67", "Stripe", "Success")
+		t.AddStyledRow(statusStyle("SUCCESS").Style, "pay_123456789", "2026-05-30", "$45.67", "Stripe", "Success")
 		t.AddStyledRow(statusStyle("SUCCESS").Style, "pay_123456790", "2024-01-14", "$123.45", "Stripe", "Success")
 		t.AddStyledRow(statusStyle("FAILED").Style, "pay_123456791", "2024-01-13", "$67.89", "Credit", "Failed")
 		fmt.Println(t.Render())
