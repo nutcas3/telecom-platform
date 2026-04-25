@@ -78,7 +78,7 @@ impl ChargingEngineClient {
             }
             Err(e) => {
                 error!("Failed to send usage to charging engine: {}", e);
-                Err(e.context("Failed to send usage to charging engine"))
+                Err(anyhow::anyhow!("Failed to send usage to charging engine: {}", e))
             }
         }
     }

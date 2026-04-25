@@ -6,6 +6,8 @@ use redis::AsyncCommands;
 use serde::Serialize;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
+
+#[cfg(feature = "ebpf")]
 use crate::ebpf::EbpfManager;
 
 #[derive(Serialize)]
@@ -57,7 +59,7 @@ pub async fn readiness_handler(
     
     let redis_ok = match redis_client.get_multiplexed_async_connection().await {
         Ok(mut conn) => {
-            match redis::cmd("PING").query_async::<_, String>(&mut conn).await {
+            match redis::AsyncCommands::ping::<String>(&mut conn).await {
                 Ok(_) => {
                     checks.insert("redis".to_string(), serde_json::Value::String("ok".to_string()));
                     true
@@ -77,7 +79,12 @@ pub async fn readiness_handler(
     let ebpf_ok = ebpf_attached.load(std::sync::atomic::Ordering::Relaxed);
     checks.insert("ebpf".to_string(), serde_json::Value::String(if ebpf_ok { "ok".to_string() } else { "not attached".to_string() }));
     
-    if redis_ok && ebpf_ok {
+    #[cfg(feature = "ebpf")]
+    let ready = redis_ok && ebpf_ok;
+    #[cfg(not(feature = "ebpf"))]
+    let ready = redis_ok;
+    
+    if ready {
         Ok(Json(ReadinessResponse {
             status: "ready".to_string(),
             service: "packet-gateway".to_string(),
@@ -89,6 +96,7 @@ pub async fn readiness_handler(
     }
 }
 
+#[cfg(feature = "ebpf")]
 pub async fn metrics_handler(
     State(ebpf_manager): State<Arc<EbpfManager>>,
 ) -> Json<MetricsResponse> {
@@ -111,5 +119,17 @@ pub async fn metrics_handler(
         tracked_ips,
         total_bytes_processed,
         low_credit_users,
+    })
+}
+
+#[cfg(not(feature = "ebpf"))]
+pub async fn metrics_handler() -> Json<MetricsResponse> {
+    Json(MetricsResponse {
+        status: "ok".to_string(),
+        service: "packet-gateway".to_string(),
+        timestamp: chrono::Utc::now().to_rfc3339(),
+        tracked_ips: 0,
+        total_bytes_processed: 0,
+        low_credit_users: 0,
     })
 }

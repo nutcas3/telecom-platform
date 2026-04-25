@@ -6,9 +6,13 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 
+[features]
+default = []
+ebpf = []
+
 [dependencies]
-aya = { workspace = true }
-aya-log = { workspace = true }
+aya = { version = "0.13.1", features = ["async_tokio"], optional = true }
+aya-log = { version = "0.2.1", optional = true }
 tokio = { workspace = true }
 redis = { workspace = true }
 anyhow = { workspace = true }
