@@ -5,18 +5,102 @@
 
 ## Overview
 
-This is a production-ready Telecom-as-a-Service platform that enables developers to programmatically provision and manage cellular connectivity through a clean API. The platform implements 3GPP standards using modern open-source technologies.
+The Telecom-as-a-Service (TaaS) Platform is a comprehensive, sovereign cellular connectivity solution that enables organizations to deploy and manage their own private 5G/LTE networks. This full-stack platform provides end-to-end capabilities from core network integration to subscriber management, charging, and developer APIs.
+
+### What It Does
+
+The TaaS Platform allows enterprises, telecom operators, and system integrators to:
+
+- **Deploy Private Cellular Networks**: Set up and manage private 5G/LTE networks with full control over data sovereignty and security
+- **Manage Subscribers**: Provision, authenticate, and manage cellular subscribers with role-based access control
+- **Real-time Charging**: Implement flexible credit control and billing with real-time usage monitoring
+- **Developer APIs**: Expose cellular network capabilities through REST and GraphQL APIs for custom application development
+- **Network Orchestration**: Automate network operations, scaling, and health monitoring across distributed infrastructure
+- **Service Discovery**: Enable dynamic service registration and discovery for microservices architecture
+
+### Architecture
+
+The platform is built as a microservices architecture with the following core components:
+
+**Core Network Services:**
+- **API Server**: Central BSS (Business Support System) API providing authentication, subscriber management, automation, and plugin system
+- **Carrier Connector**: ES2+ interface for eSIM profile management and carrier integration
+- **Charging Engine**: Real-time credit control, usage tracking, and billing with Redis-backed rate limiting
+- **Packet Gateway**: High-performance eBPF-based packet processing for network traffic routing and QoS enforcement
+
+**Supporting Services:**
+- **Service Discovery (Consul)**: Dynamic service registration and health checking
+- **Message Queue (RabbitMQ)**: Asynchronous event-driven communication between services
+- **Redis**: Distributed caching, rate limiting, and session management
+- **PostgreSQL**: Persistent data storage for subscribers, automations, and configuration
+- **Vault**: Secure secret management for sensitive credentials and keys
+
+**Developer Tools:**
+- **CLI**: Command-line interface for service orchestration, configuration, and health checks
+- **Web Dashboard**: Next.js-based management interface for network operations
+- **TypeScript SDK**: Client library for integrating with TaaS APIs
+- **Kubernetes Operators**: Custom resources for deploying and managing TaaS services
+
+### Key Features
+
+**Sovereignty & Security:**
+- Full data sovereignty with on-premise deployment
+- End-to-end encryption for subscriber data
+- Role-based access control (RBAC) with fine-grained permissions
+- Vault-based secret management for credential security
+
+**Performance & Scalability:**
+- eBPF-accelerated packet processing for line-rate throughput
+- Redis-backed distributed rate limiting and caching
+- Horizontal scaling with Kubernetes orchestration
+- Circuit breakers and retry logic for external service resilience
+
+**Developer Experience:**
+- REST and GraphQL APIs with comprehensive documentation
+- TypeScript SDK for type-safe client integration
+- Plugin system for extending platform capabilities
+- Automation framework for network operations
+
+**Operations:**
+- Real-time health monitoring with Prometheus integration
+- Automated scaling and service discovery
+- Centralized logging with structured logs
+- Chaos engineering capabilities for testing resilience
+
 
 **Technology Stack:**
+
+**Core Languages & Runtimes:**
 - **Go 1.26**: Core network integration, BSS API, carrier connector
 - **Rust 1.94**: eBPF packet gateway, real-time charging engine
 - **TypeScript/Next.js**: Developer dashboard and SDK
-- **free5GC**: Open-source 5G core network
-- **MongoDB**: Subscriber data and authentication
-- **Redis**: Real-time credit control
-- **eBPF/Aya**: High-performance packet processing
 
-## Quick Start
+**Databases:**
+- **PostgreSQL**: Primary database for subscribers, automations, plugins, and configuration
+- **Redis**: Real-time credit control, caching, and rate limiting
+- **MongoDB**: Used exclusively by free5GC 5G core network for UDR/UDM subscription data and authentication
+
+**5G Core Network:**
+- **free5GC**: Open-source 5G core network (AMF, SMF, UDM, UDR, etc.)
+
+**Infrastructure & Orchestration:**
+- **Kubernetes**: Container orchestration and deployment
+- **Helm**: Package management for Kubernetes deployments
+- **Istio**: Service mesh for traffic management and security
+- **eBPF/Aya**: High-performance packet processing in kernel space
+
+**Message Queuing & Service Discovery:**
+- **RabbitMQ**: Asynchronous message queue for event-driven communication
+- **Consul**: Service discovery, health checking, and configuration
+
+**Security & Secrets:**
+- **Vault**: Secure secret management for credentials and keys
+- **cert-manager**: Automated TLS certificate management
+
+**Monitoring & Observability:**
+- **Prometheus**: Metrics collection and alerting
+- **Grafana**: Visualization dashboards for metrics
+- **ELK Stack**: Elasticsearch, Logstash, Kibana for centralized logging
 
 ### Prerequisites
 
@@ -25,8 +109,11 @@ This is a production-ready Telecom-as-a-Service platform that enables developers
 - **Node.js 22+**: [Download](https://nodejs.org/)
 - **pnpm**: `npm install -g pnpm`
 - **Docker**: [Install](https://docs.docker.com/get-docker/)
-- **MongoDB 7.0+**: [Install](https://www.mongodb.com/docs/manual/installation/)
-- **Redis**: `sudo apt-get install redis-server`
+- **PostgreSQL 15+**: [Install](https://www.postgresql.org/download/)
+- **Redis**: [Install](https://redis.io/download)
+- **Kubernetes**: [Install](https://kubernetes.io/docs/tasks/tools/) (for production deployment)
+- **Helm 3+**: [Install](https://helm.sh/docs/intro/install/) (for production deployment)
+- **MongoDB 7.0+**: [Install](https://www.mongodb.com/docs/manual/installation/) (required for free5GC only)
 
 ### Installation
 
