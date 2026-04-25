@@ -26,6 +26,7 @@ type serverDeps struct {
 	configH      *handlers.ConfigHandler
 	chaosH       *handlers.ChaosHandler
 	billingH     *handlers.BillingHandler
+	chargingH    *handlers.ChargingHandler
 }
 
 // buildDeps constructs all downstream services and handlers.
@@ -46,6 +47,9 @@ func buildDeps(db *database.Database, cfg *config.Config) *serverDeps {
 	deploymentSvc := services.NewDeploymentService(db)
 	promSvc := monitoring.NewPrometheusService()
 
+	// Initialize charging engine client
+	chargingEngineClient := services.NewChargingEngineClient(&cfg.ChargingEngine)
+
 	k8sSvc, k8sErr := services.NewKubernetesService()
 	if k8sErr != nil {
 		log.Printf("Kubernetes integration disabled: %v", k8sErr)
@@ -63,6 +67,7 @@ func buildDeps(db *database.Database, cfg *config.Config) *serverDeps {
 		configH:      handlers.NewConfigHandler(configStoreSvc),
 		chaosH:       handlers.NewChaosHandler(chaosSvc),
 		billingH:     handlers.NewBillingHandler(invoiceSvc, db.DB),
+		chargingH:    handlers.NewChargingHandler(chargingEngineClient),
 	}
 }
 

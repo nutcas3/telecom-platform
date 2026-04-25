@@ -51,6 +51,7 @@ func registerV1Routes(router *gin.Engine, d *serverDeps) {
 		registerBillingRoutes(apiProtected, d)
 		registerConfigRoutes(apiProtected, d)
 		registerChaosRoutes(apiProtected, d)
+		registerChargingRoutes(apiProtected, d)
 	}
 }
 
@@ -158,4 +159,12 @@ func registerChaosRoutes(api *gin.RouterGroup, d *serverDeps) {
 	w := chaosGroup.Group("/")
 	applyRBAC(w, d.casbinSvc, "/v1/chaos", "POST", "admin")
 	w.POST("/experiments", d.chaosH.Run)
+}
+
+func registerChargingRoutes(api *gin.RouterGroup, d *serverDeps) {
+	charging := api.Group("/charging")
+	charging.POST("/credit/:ip/check", d.chargingH.CheckCredit)
+	charging.GET("/credit/:ip/balance", d.chargingH.GetBalance)
+	charging.POST("/credit/:ip/add", d.chargingH.AddCredit)
+	charging.POST("/credit/:ip/deduct", d.chargingH.DeductCredit)
 }
