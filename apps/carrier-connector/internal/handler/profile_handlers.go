@@ -11,10 +11,11 @@ import (
 
 	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/es2"
 	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/repository"
+	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/webhook"
 )
 
 // OrderProfileHandlerWithRepo orders a profile via ES2+ and persists it in the repo.
-func OrderProfileHandlerWithRepo(client *es2.ES2Client, repo repository.ProfileRepository) gin.HandlerFunc {
+func OrderProfileHandlerWithRepo(client *es2.ES2Client, repo repository.ProfileRepository, webhookClient *webhook.WebhookClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var order ProfileOrder
 		if err := c.ShouldBindJSON(&order); err != nil {
@@ -44,6 +45,12 @@ func OrderProfileHandlerWithRepo(client *es2.ES2Client, repo repository.ProfileR
 		})
 		if err != nil {
 			Logger.Error().Err(err).Str("imsi", order.IMSI).Msg("Failed to order profile")
+
+			// Send webhook notification for failed download
+			if webhookClient != nil {
+				go webhookClient.SendDownloadFailed(context.Background(), order.ICCID, err.Error())
+			}
+
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to order profile", "message": err.Error()})
 			return
 		}
@@ -60,6 +67,15 @@ func OrderProfileHandlerWithRepo(client *es2.ES2Client, repo repository.ProfileR
 		}
 		if err := repo.Create(c.Request.Context(), profile); err != nil {
 			Logger.Warn().Err(err).Str("iccid", order.ICCID).Msg("Profile repo write failed")
+		}
+
+		// Send webhook notification for successful download
+		if webhookClient != nil {
+			go webhookClient.SendProfileDownloaded(context.Background(), order.ICCID, map[string]interface{}{
+				"imsi":        order.IMSI,
+				"profileType": order.ProfileType,
+				"status":      downloadResp.ExecutionStatus,
+			})
 		}
 
 		c.JSON(http.StatusOK, gin.H{
@@ -157,7 +173,7 @@ func ListProfilesHandlerWithRepo(repo repository.ProfileRepository) gin.HandlerF
 }
 
 // DeleteProfileHandlerWithRepo deletes a profile from the SM-DP+ and marks it deleted in the repo.
-func DeleteProfileHandlerWithRepo(client *es2.ES2Client, repo repository.ProfileRepository) gin.HandlerFunc {
+func DeleteProfileHandlerWithRepo(client *es2.ES2Client, repo repository.ProfileRepository, webhookClient *webhook.WebhookClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		profileID := c.Param("profileId")
 		if profileID == "" {
@@ -174,6 +190,14 @@ func DeleteProfileHandlerWithRepo(client *es2.ES2Client, repo repository.Profile
 
 		if _, err := repo.UpdateState(c.Request.Context(), profileID, "deleted"); err != nil && !errors.Is(err, repository.ErrNotFound) {
 			Logger.Warn().Err(err).Str("profile_id", profileID).Msg("Profile repo update failed")
+		}
+
+		// Send webhook notification for profile deletion
+		if webhookClient != nil {
+			go webhookClient.SendProfileDeleted(context.Background(), profileID, map[string]interface{}{
+				"executionStatus": deleteResp.ExecutionStatus,
+				"statusMessage":   deleteResp.StatusMessage,
+			})
 		}
 
 		c.JSON(http.StatusOK, gin.H{
