@@ -38,7 +38,8 @@ impl crate::charging::ChargingEngine {
         let key = format!("credit:{}", ip);
         
         // Check current balance first
-        let current_balance: u64 = redis::AsyncCommands::get(&mut conn, &key).await.unwrap_or(0);
+        let current_balance: u64 = redis::AsyncCommands::get(&mut conn, &key).await
+            .map_err(|e| crate::errors::ChargingError::RedisOperation(e.to_string()))?;
         
         if current_balance < bytes_used {
             return Err(ChargingError::InsufficientCredit {
@@ -55,7 +56,7 @@ impl crate::charging::ChargingEngine {
     }
 
     pub async fn check_credit(&self, ip: &str, bytes_requested: u64) -> ChargingResult<bool> {
-        let current_balance = self.get_balance(ip).await.unwrap_or(0);
+        let current_balance = self.get_balance(ip).await?;
         Ok(current_balance >= bytes_requested)
     }
 
