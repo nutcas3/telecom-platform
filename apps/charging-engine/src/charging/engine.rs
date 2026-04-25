@@ -6,8 +6,6 @@ use super::rating_plans_repo::RatingPlansRepo;
 use super::types::RatingPlan;
 use crate::circuit_breaker::{CircuitBreaker, CircuitBreakerError};
 use crate::errors::{ChargingError, ChargingResult};
-use crate::charging::credit_management::CreditManager;
-use crate::charging::rating_plans_repo::RatingPlansRepo;
 
 /// ChargingEngine coordinates Redis-backed hot-path state (balances, sessions)
 /// and Postgres-backed configuration (rating plans) via `RatingPlansRepo`.

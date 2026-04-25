@@ -1,5 +1,6 @@
 mod auth;
 mod charging;
+mod circuit_breaker;
 mod monitoring;
 mod errors;
 mod models;
