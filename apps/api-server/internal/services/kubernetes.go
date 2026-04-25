@@ -14,12 +14,15 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
+
+	"github.com/nutcas3/telecom-platform/apps/api-server/internal/circuitbreaker"
 )
 
 // KubernetesService provides real Kubernetes cluster operations using client-go
 type KubernetesService struct {
-	clientset *kubernetes.Clientset
-	namespace string
+	clientset      *kubernetes.Clientset
+	namespace      string
+	circuitBreaker *circuitbreaker.CircuitBreaker
 }
 
 // NewKubernetesService creates a Kubernetes client using in-cluster config or kubeconfig
@@ -51,10 +54,32 @@ func NewKubernetesService() (*KubernetesService, error) {
 		}
 	}
 
+	// Initialize circuit breaker for Kubernetes API calls
+	cbConfig := circuitbreaker.Config{
+		FailureThreshold: getEnvUint("K8S_CB_FAILURE_THRESHOLD", 5),
+		SuccessThreshold: getEnvUint("K8S_CB_SUCCESS_THRESHOLD", 2),
+		Timeout:          time.Duration(getEnvUint("K8S_CB_TIMEOUT_SECONDS", 60)) * time.Second,
+	}
+	circuitBreaker := circuitbreaker.NewCircuitBreaker(cbConfig)
+
 	return &KubernetesService{
-		clientset: clientset,
-		namespace: namespace,
+		clientset:      clientset,
+		namespace:      namespace,
+		circuitBreaker: circuitBreaker,
 	}, nil
+}
+
+func getEnvUint(key string, defaultVal uint) uint {
+	val := os.Getenv(key)
+	if val == "" {
+		return defaultVal
+	}
+	var result uint
+	_, err := fmt.Sscanf(val, "%d", &result)
+	if err != nil {
+		return defaultVal
+	}
+	return result
 }
 
 // getInClusterNamespace reads the namespace from the in-cluster service account
