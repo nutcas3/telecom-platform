@@ -35,6 +35,7 @@ func registerV1Routes(router *gin.Engine, d *serverDeps) {
 	}
 
 	protected := v1.Group("/")
+	protected.Use(middleware.RateLimitByUser(100)) // 100 requests per minute per user
 	protected.Use(middleware.AuthMiddleware(d.authSvc))
 	{
 		authProtected := protected.Group("/auth")
@@ -55,6 +56,7 @@ func registerV1Routes(router *gin.Engine, d *serverDeps) {
 	}
 
 	apiProtected := v1.Group("/")
+	apiProtected.Use(middleware.RateLimitByUser(100)) // 100 requests per minute per user
 	apiProtected.Use(middleware.AuthMiddleware(d.authSvc))
 	{
 		registerSubscriberRoutes(apiProtected, d)
