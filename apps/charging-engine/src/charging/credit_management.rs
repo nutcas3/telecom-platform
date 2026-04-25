@@ -1,12 +1,12 @@
 use tracing::{info, warn, debug};
 
 use super::types::{SubscriberAccount, UsageEvent};
-// use crate::circuit_breaker::CircuitBreakerError;
+use crate::circuit_breaker::{CircuitBreaker, CircuitBreakerError};
 use crate::errors::{ChargingError, ChargingResult};
 
 impl crate::charging::ChargingEngine {
     pub async fn get_balance(&self, ip: &str) -> ChargingResult<u64> {
-        // // // self.redis_circuit_breaker.execute(|| async {
+        self.redis_circuit_breaker.execute(|| async {
             let mut conn = self.redis_client.get_multiplexed_async_connection().await
                 .map_err(|e| crate::errors::ChargingError::RedisConnection(e.to_string()))?;
 
@@ -14,16 +14,16 @@ impl crate::charging::ChargingEngine {
             let balance: u64 = redis::AsyncCommands::get(&mut conn, &key).await
                 .map_err(|e| crate::errors::ChargingError::RedisOperation(e.to_string()))?;
 
-            debug!("Retrieved balance {} for IP: {}", balance, ip);
+            info!("Retrieved balance for IP: {}, balance: {} bytes", ip, balance);
             Ok(balance)
-        // }).await.map_err(|e| match e {$
-        //     CircuitBreakerError::Open => ChargingError::RedisConnection("Circuit breaker is open".to_string()),
-        //     CircuitBreakerError::Inner(e) => e,
-        // })
+        }).await.map_err(|e| match e {
+            CircuitBreakerError::Open => ChargingError::RedisConnection("Circuit breaker is open".to_string()),
+            CircuitBreakerError::Inner(e) => e,
+        })
     }
 
     pub async fn add_credit(&self, ip: &str, bytes_to_add: u64) -> ChargingResult<u64> {
-        // // self.redis_circuit_breaker.execute(|| async {
+        self.redis_circuit_breaker.execute(|| async {
             let mut conn = self.redis_client.get_multiplexed_async_connection().await
                 .map_err(|e| crate::errors::ChargingError::RedisConnection(e.to_string()))?;
 
@@ -51,14 +51,14 @@ impl crate::charging::ChargingEngine {
 
             info!("Added {} bytes credit to IP: {}, new balance: {}", bytes_to_add, ip, new_balance);
             Ok(new_balance)
-        // }).await.map_err(|e| match e {$
-        //     CircuitBreakerError::Open => ChargingError::RedisConnection("Circuit breaker is open".to_string()),
-        //     CircuitBreakerError::Inner(e) => e,
-        // })
+        }).await.map_err(|e| match e {
+            CircuitBreakerError::Open => ChargingError::RedisConnection("Circuit breaker is open".to_string()),
+            CircuitBreakerError::Inner(e) => e,
+        })
     }
 
     pub async fn deduct_credit(&self, ip: &str, bytes_used: u64) -> ChargingResult<u64> {
-        // // self.redis_circuit_breaker.execute(|| async {
+        self.redis_circuit_breaker.execute(|| async {
             let mut conn = self.redis_client.get_multiplexed_async_connection().await
                 .map_err(|e| crate::errors::ChargingError::RedisConnection(e.to_string()))?;
 
@@ -80,10 +80,10 @@ impl crate::charging::ChargingEngine {
 
             info!("Deducted {} bytes credit from IP: {}, new balance: {}", bytes_used, ip, new_balance);
             Ok(new_balance)
-        // }).await.map_err(|e| match e {$
-        //     CircuitBreakerError::Open => ChargingError::RedisConnection("Circuit breaker is open".to_string()),
-        //     CircuitBreakerError::Inner(e) => e,
-        // })
+        }).await.map_err(|e| match e {
+            CircuitBreakerError::Open => ChargingError::RedisConnection("Circuit breaker is open".to_string()),
+            CircuitBreakerError::Inner(e) => e,
+        })
     }
 
     pub async fn check_credit(&self, ip: &str, bytes_requested: u64) -> ChargingResult<bool> {
@@ -92,7 +92,7 @@ impl crate::charging::ChargingEngine {
     }
 
     pub async fn block_user(&self, ip: &str) -> ChargingResult<()> {
-        // // self.redis_circuit_breaker.execute(|| async {
+        self.redis_circuit_breaker.execute(|| async {
             let mut conn = self.redis_client.get_multiplexed_async_connection().await
                 .map_err(|e| crate::errors::ChargingError::RedisConnection(e.to_string()))?;
 
@@ -116,14 +116,14 @@ impl crate::charging::ChargingEngine {
 
             warn!("User IP: {} has been blocked for {} seconds", ip, block_expiration);
             Ok(())
-        // }).await.map_err(|e| match e {
-        //     CircuitBreakerError::Open => ChargingError::RedisConnection("Circuit breaker is open".to_string()),
-        //     CircuitBreakerError::Inner(e) => e,
-        // })
+        }).await.map_err(|e| match e {
+            CircuitBreakerError::Open => ChargingError::RedisConnection("Circuit breaker is open".to_string()),
+            CircuitBreakerError::Inner(e) => e,
+        })
     }
 
     pub async fn unblock_user(&self, ip: &str) -> ChargingResult<()> {
-        // self.redis_circuit_breaker.execute(|| async {
+        self.redis_circuit_breaker.execute(|| async {
             let mut conn = self.redis_client.get_multiplexed_async_connection().await
                 .map_err(|e| crate::errors::ChargingError::RedisConnection(e.to_string()))?;
 
@@ -133,14 +133,14 @@ impl crate::charging::ChargingEngine {
 
             info!("User IP: {} has been unblocked", ip);
             Ok(())
-        // }).await.map_err(|e| match e {
-        //     CircuitBreakerError::Open => ChargingError::RedisConnection("Circuit breaker is open".to_string()),
-        //     CircuitBreakerError::Inner(e) => e,
-        // })
+        }).await.map_err(|e| match e {
+            CircuitBreakerError::Open => ChargingError::RedisConnection("Circuit breaker is open".to_string()),
+            CircuitBreakerError::Inner(e) => e,
+        })
     }
 
     pub async fn is_user_blocked(&self, ip: &str) -> ChargingResult<bool> {
-        // self.redis_circuit_breaker.execute(|| async {
+        self.redis_circuit_breaker.execute(|| async {
             let mut conn = self.redis_client.get_multiplexed_async_connection().await
                 .map_err(|e| crate::errors::ChargingError::RedisConnection(e.to_string()))?;
 
@@ -149,14 +149,14 @@ impl crate::charging::ChargingEngine {
                 .map_err(|e| crate::errors::ChargingError::RedisOperation(e.to_string()))?;
 
             Ok(blocked.is_some())
-        // }).await.map_err(|e| match e {
-        //     CircuitBreakerError::Open => ChargingError::RedisConnection("Circuit breaker is open".to_string()),
-        //     CircuitBreakerError::Inner(e) => e,
-        // })
+        }).await.map_err(|e| match e {
+            CircuitBreakerError::Open => ChargingError::RedisConnection("Circuit breaker is open".to_string()),
+            CircuitBreakerError::Inner(e) => e,
+        })
     }
 
     pub async fn get_subscriber_account(&self, imsi: &str) -> ChargingResult<Option<SubscriberAccount>> {
-        // self.redis_circuit_breaker.execute(|| async {
+        self.redis_circuit_breaker.execute(|| async {
             let mut conn = self.redis_client.get_multiplexed_async_connection().await
                 .map_err(|e| crate::errors::ChargingError::RedisConnection(e.to_string()))?;
 
@@ -166,14 +166,14 @@ impl crate::charging::ChargingEngine {
 
             info!("Retrieved subscriber account for IMSI: {}", imsi);
             Ok(account)
-        // }).await.map_err(|e| match e {
-        //     CircuitBreakerError::Open => ChargingError::RedisConnection("Circuit breaker is open".to_string()),
-        //     CircuitBreakerError::Inner(e) => e,
-        // })
+        }).await.map_err(|e| match e {
+            CircuitBreakerError::Open => ChargingError::RedisConnection("Circuit breaker is open".to_string()),
+            CircuitBreakerError::Inner(e) => e,
+        })
     }
 
     pub async fn update_subscriber_account(&self, account: &SubscriberAccount) -> ChargingResult<()> {
-        // self.redis_circuit_breaker.execute(|| async {
+        self.redis_circuit_breaker.execute(|| async {
             let mut conn = self.redis_client.get_multiplexed_async_connection().await
                 .map_err(|e| crate::errors::ChargingError::RedisConnection(e.to_string()))?;
 
@@ -183,14 +183,14 @@ impl crate::charging::ChargingEngine {
 
             debug!("Updated subscriber account for IMSI: {}", account.imsi);
             Ok(())
-        // }).await.map_err(|e| match e {
-        //     CircuitBreakerError::Open => ChargingError::RedisConnection("Circuit breaker is open".to_string()),
-        //     CircuitBreakerError::Inner(e) => e,
-        // })
+        }).await.map_err(|e| match e {
+            CircuitBreakerError::Open => ChargingError::RedisConnection("Circuit breaker is open".to_string()),
+            CircuitBreakerError::Inner(e) => e,
+        })
     }
 
     pub async fn record_usage_event(&self, event: &UsageEvent) -> ChargingResult<()> {
-        // self.redis_circuit_breaker.execute(|| async {
+        self.redis_circuit_breaker.execute(|| async {
             let mut conn = self.redis_client.get_multiplexed_async_connection().await
                 .map_err(|e| crate::errors::ChargingError::RedisConnection(e.to_string()))?;
 
@@ -200,9 +200,9 @@ impl crate::charging::ChargingEngine {
 
             info!("Recorded usage event for IMSI: {}, session: {}", event.imsi, event.session_id);
             Ok(())
-        // }).await.map_err(|e| match e {
-        //     CircuitBreakerError::Open => ChargingError::RedisConnection("Circuit breaker is open".to_string()),
-        //     CircuitBreakerError::Inner(e) => e,
-        // })
+        }).await.map_err(|e| match e {
+            CircuitBreakerError::Open => ChargingError::RedisConnection("Circuit breaker is open".to_string()),
+            CircuitBreakerError::Inner(e) => e,
+        })
     }
 }

@@ -9,14 +9,14 @@ use sqlx::postgres::{PgPool, PgPoolOptions};
 use sqlx::Row;
 
 use super::types::RatingPlan;
-// use crate::circuit_breaker::{CircuitBreaker, CircuitBreakerError};
+use crate::circuit_breaker::{CircuitBreaker, CircuitBreakerError};
 use crate::errors::{ChargingError, ChargingResult};
 
 /// Repository for rating plans backed by Postgres.
 #[derive(Clone)]
 pub struct RatingPlansRepo {
     pool: PgPool,
-    // circuit_breaker: CircuitBreaker,
+    circuit_breaker: CircuitBreaker,
 }
 
 impl RatingPlansRepo {
@@ -28,7 +28,7 @@ impl RatingPlansRepo {
             .await
             .map_err(|e| crate::errors::ChargingError::InternalError(e.to_string()))?;
 
-        // let circuit_breaker = CircuitBreaker::new(5, std::time::Duration::from_secs(60));
+        let circuit_breaker = CircuitBreaker::new(5, std::time::Duration::from_secs(60));
 
         // Idempotent schema for rating plans. api-server's GORM migration also
         // creates a compatible `rating_plans` table; the column set here is
@@ -55,7 +55,7 @@ impl RatingPlansRepo {
         .await
         .map_err(|e| crate::errors::ChargingError::DatabaseError(e.to_string()))?;
 
-        Ok(Self { pool })
+        Ok(Self { pool, circuit_breaker })
     }
 
     /// Seed the canonical basic/premium/enterprise plans if the table is empty.
@@ -106,7 +106,7 @@ impl RatingPlansRepo {
     /// Fetch a single plan by id.
     pub async fn get(&self, plan_id: &str) -> ChargingResult<Option<RatingPlan>> {
         let plan_id = plan_id.to_string();
-        // self.circuit_breaker.execute(|| async move {
+        self.circuit_breaker.execute(|| async move {
             let row = sqlx::query(
                 r#"
                 SELECT plan_id, name, data_rate, voice_rate, sms_rate,
@@ -121,15 +121,15 @@ impl RatingPlansRepo {
             .map_err(|e| crate::errors::ChargingError::DatabaseError(e.to_string()))?;
 
             Ok(row.map(row_to_plan))
-        // }).await.map_err(|e| match e {
-        //     CircuitBreakerError::Open => ChargingError::DatabaseError("Circuit breaker is open".to_string()),
-        //     CircuitBreakerError::Inner(e) => e,
-        // })
+        }).await.map_err(|e| match e {
+            CircuitBreakerError::Open => ChargingError::DatabaseError("Circuit breaker is open".to_string()),
+            CircuitBreakerError::Inner(e) => e,
+        })
     }
 
     /// Fetch all active plans as a HashMap for fast lookup.
     pub async fn list_map(&self) -> ChargingResult<HashMap<String, RatingPlan>> {
-        // self.circuit_breaker.execute(|| async {
+        self.circuit_breaker.execute(|| async {
             let rows = sqlx::query(
                 r#"
                 SELECT plan_id, name, data_rate, voice_rate, sms_rate,
@@ -148,10 +148,10 @@ impl RatingPlansRepo {
                 out.insert(plan.plan_id.clone(), plan);
             }
             Ok(out)
-        // }).await.map_err(|e| match e {
-        //     CircuitBreakerError::Open => ChargingError::DatabaseError("Circuit breaker is open".to_string()),
-        //     CircuitBreakerError::Inner(e) => e,
-        // })
+        }).await.map_err(|e| match e {
+            CircuitBreakerError::Open => ChargingError::DatabaseError("Circuit breaker is open".to_string()),
+            CircuitBreakerError::Inner(e) => e,
+        })
     }
 
     /// List all active plans.
@@ -178,7 +178,7 @@ impl RatingPlansRepo {
     /// Insert or update a plan.
     pub async fn upsert(&self, plan: &RatingPlan) -> ChargingResult<()> {
         let plan = plan.clone();
-        // self.circuit_breaker.execute(|| async move {
+        self.circuit_breaker.execute(|| async move {
             sqlx::query(
                 r#"
                 INSERT INTO rating_plans
@@ -211,16 +211,16 @@ impl RatingPlansRepo {
             .await
             .map_err(|e| crate::errors::ChargingError::DatabaseError(e.to_string()))?;
             Ok(())
-        // }).await.map_err(|e| match e {
-        //     CircuitBreakerError::Open => ChargingError::DatabaseError("Circuit breaker is open".to_string()),
-        //     CircuitBreakerError::Inner(e) => e,
-        // })
+        }).await.map_err(|e| match e {
+            CircuitBreakerError::Open => ChargingError::DatabaseError("Circuit breaker is open".to_string()),
+            CircuitBreakerError::Inner(e) => e,
+        })
     }
 
     /// Soft-delete a plan by marking it inactive.
     pub async fn deactivate(&self, plan_id: &str) -> ChargingResult<bool> {
         let plan_id = plan_id.to_string();
-        // self.circuit_breaker.execute(|| async move {
+        self.circuit_breaker.execute(|| async move {
             let result = sqlx::query(
                 r#"UPDATE rating_plans SET is_active = FALSE, updated_at = NOW() WHERE plan_id = $1"#,
             )
@@ -229,10 +229,10 @@ impl RatingPlansRepo {
             .await
             .map_err(|e| crate::errors::ChargingError::DatabaseError(e.to_string()))?;
             Ok(result.rows_affected() > 0)
-        // }).await.map_err(|e| match e {
-        //     CircuitBreakerError::Open => ChargingError::DatabaseError("Circuit breaker is open".to_string()),
-        //     CircuitBreakerError::Inner(e) => e,
-        // })
+        }).await.map_err(|e| match e {
+            CircuitBreakerError::Open => ChargingError::DatabaseError("Circuit breaker is open".to_string()),
+            CircuitBreakerError::Inner(e) => e,
+        })
     }
 }
 
