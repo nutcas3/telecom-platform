@@ -66,6 +66,41 @@ async fn liveness_handler() -> Json<HealthResponse> {
     })
 }
 
+#[derive(Serialize)]
+struct MetricsResponse {
+    status: String,
+    service: String,
+    timestamp: String,
+    tracked_ips: usize,
+    total_bytes_processed: u64,
+    low_credit_users: usize,
+}
+
+async fn metrics_handler(
+    State(ebpf_manager): State<Arc<EbpfManager>>,
+) -> Json<MetricsResponse> {
+    let tracked_ips = ebpf_manager.get_packet_stats()
+        .map(|stats| stats.len())
+        .unwrap_or(0);
+    
+    let total_bytes_processed = ebpf_manager.get_packet_stats()
+        .map(|stats| stats.iter().map(|s| s.bytes).sum())
+        .unwrap_or(0);
+    
+    let low_credit_users = ebpf_manager.get_credit_info()
+        .map(|credits| credits.iter().filter(|c| c.credit < 1000).count())
+        .unwrap_or(0);
+    
+    Json(MetricsResponse {
+        status: "ok".to_string(),
+        service: "packet-gateway".to_string(),
+        timestamp: chrono::Utc::now().to_rfc3339(),
+        tracked_ips,
+        total_bytes_processed,
+        low_credit_users,
+    })
+}
+
 async fn readiness_handler(
     State(redis_client): State<Arc<redis::Client>>,
     State(ebpf_attached): State<Arc<AtomicBool>>,
@@ -157,6 +192,7 @@ async fn main() -> Result<()> {
     // Start HTTP health check server
     let redis_client_arc = Arc::new(redis_client.clone());
     let ebpf_attached_clone = Arc::clone(&ebpf_attached);
+    let ebpf_manager_clone = Arc::clone(&ebpf_manager);
     let health_port = args.health_port;
     
     tokio::spawn(async move {
@@ -164,8 +200,10 @@ async fn main() -> Result<()> {
             .route("/health", get(health_handler))
             .route("/health/ready", get(readiness_handler))
             .route("/health/live", get(liveness_handler))
+            .route("/metrics", get(metrics_handler))
             .with_state(redis_client_arc)
-            .with_state(ebpf_attached_clone);
+            .with_state(ebpf_attached_clone)
+            .with_state(ebpf_manager_clone);
         
         let addr = format!("0.0.0.0:{}", health_port);
         info!("Health check server listening on {}", addr);
