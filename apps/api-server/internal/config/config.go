@@ -19,6 +19,7 @@ type Config struct {
 type ChargingEngineConfig struct {
 	BaseURL string        `json:"base_url"`
 	Timeout time.Duration `json:"timeout"`
+	APIKey  string        `json:"api_key"`
 }
 
 type PaymentConfig struct {

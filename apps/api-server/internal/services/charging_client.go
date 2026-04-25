@@ -14,15 +14,24 @@ import (
 type ChargingEngineClient struct {
 	baseURL    string
 	httpClient *http.Client
+	apiKey     string
 }
 
 // NewChargingEngineClient creates a new client for the Rust charging engine
 func NewChargingEngineClient(cfg *config.ChargingEngineConfig) *ChargingEngineClient {
 	return &ChargingEngineClient{
 		baseURL: cfg.BaseURL,
+		apiKey:  cfg.APIKey,
 		httpClient: &http.Client{
 			Timeout: cfg.Timeout,
 		},
+	}
+}
+
+// setAPIKeyHeader adds the X-API-Key header to a request if an API key is configured
+func (c *ChargingEngineClient) setAPIKeyHeader(req *http.Request) {
+	if c.apiKey != "" {
+		req.Header.Set("X-API-Key", c.apiKey)
 	}
 }
 
@@ -66,6 +75,7 @@ func (c *ChargingEngineClient) CheckCredit(ctx context.Context, ip string, bytes
 		return nil, fmt.Errorf("create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+	c.setAPIKeyHeader(req)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -97,6 +107,7 @@ func (c *ChargingEngineClient) DeductCredit(ctx context.Context, ip string, byte
 		return fmt.Errorf("create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+	c.setAPIKeyHeader(req)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -123,6 +134,7 @@ func (c *ChargingEngineClient) AddCredit(ctx context.Context, ip string, bytesTo
 		return fmt.Errorf("create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+	c.setAPIKeyHeader(req)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -143,6 +155,7 @@ func (c *ChargingEngineClient) GetBalance(ctx context.Context, ip string) (*Bala
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
 	}
+	c.setAPIKeyHeader(req)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -168,6 +181,7 @@ func (c *ChargingEngineClient) HealthCheck(ctx context.Context) (*EngineHealthRe
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
 	}
+	c.setAPIKeyHeader(req)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
