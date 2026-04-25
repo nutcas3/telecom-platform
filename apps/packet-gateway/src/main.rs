@@ -6,14 +6,14 @@ use tracing::{info, warn, error, debug};
 use axum::{
     routing::get,
     Router,
-    Json,
 };
-use serde::Serialize;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 mod ebpf;
+mod health;
 use ebpf::EbpfManager;
+use health::{health_handler, liveness_handler, readiness_handler, metrics_handler};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -33,114 +33,6 @@ struct Args {
     /// Health check HTTP port
     #[arg(long, default_value = "8081")]
     health_port: u16,
-}
-
-#[derive(Serialize)]
-struct HealthResponse {
-    status: String,
-    service: String,
-    timestamp: String,
-}
-
-#[derive(Serialize)]
-struct ReadinessResponse {
-    status: String,
-    service: String,
-    timestamp: String,
-    checks: serde_json::Value,
-}
-
-async fn health_handler() -> Json<HealthResponse> {
-    Json(HealthResponse {
-        status: "healthy".to_string(),
-        service: "packet-gateway".to_string(),
-        timestamp: chrono::Utc::now().to_rfc3339(),
-    })
-}
-
-async fn liveness_handler() -> Json<HealthResponse> {
-    Json(HealthResponse {
-        status: "alive".to_string(),
-        service: "packet-gateway".to_string(),
-        timestamp: chrono::Utc::now().to_rfc3339(),
-    })
-}
-
-#[derive(Serialize)]
-struct MetricsResponse {
-    status: String,
-    service: String,
-    timestamp: String,
-    tracked_ips: usize,
-    total_bytes_processed: u64,
-    low_credit_users: usize,
-}
-
-async fn metrics_handler(
-    State(ebpf_manager): State<Arc<EbpfManager>>,
-) -> Json<MetricsResponse> {
-    let tracked_ips = ebpf_manager.get_packet_stats()
-        .map(|stats| stats.len())
-        .unwrap_or(0);
-    
-    let total_bytes_processed = ebpf_manager.get_packet_stats()
-        .map(|stats| stats.iter().map(|s| s.bytes).sum())
-        .unwrap_or(0);
-    
-    let low_credit_users = ebpf_manager.get_credit_info()
-        .map(|credits| credits.iter().filter(|c| c.credit < 1000).count())
-        .unwrap_or(0);
-    
-    Json(MetricsResponse {
-        status: "ok".to_string(),
-        service: "packet-gateway".to_string(),
-        timestamp: chrono::Utc::now().to_rfc3339(),
-        tracked_ips,
-        total_bytes_processed,
-        low_credit_users,
-    })
-}
-
-async fn readiness_handler(
-    State(redis_client): State<Arc<redis::Client>>,
-    State(ebpf_attached): State<Arc<AtomicBool>>,
-) -> Result<Json<ReadinessResponse>, axum::http::StatusCode> {
-    let mut checks = serde_json::Map::new();
-    
-    // Check Redis connectivity
-    let redis_ok = match redis_client.get_multiplexed_async_connection().await {
-        Ok(mut conn) => {
-            match redis::cmd("PING").query_async::<_, String>(&mut conn).await {
-                Ok(_) => {
-                    checks.insert("redis".to_string(), serde_json::Value::String("ok".to_string()));
-                    true
-                }
-                Err(e) => {
-                    checks.insert("redis".to_string(), serde_json::Value::String(format!("error: {}", e)));
-                    false
-                }
-            }
-        }
-        Err(e) => {
-            checks.insert("redis".to_string(), serde_json::Value::String(format!("connection error: {}", e)));
-            false
-        }
-    };
-    
-    // Check eBPF attachment
-    let ebpf_ok = ebpf_attached.load(Ordering::Relaxed);
-    checks.insert("ebpf".to_string(), serde_json::Value::String(if ebpf_ok { "ok".to_string() } else { "not attached".to_string() }));
-    
-    if redis_ok && ebpf_ok {
-        Ok(Json(ReadinessResponse {
-            status: "ready".to_string(),
-            service: "packet-gateway".to_string(),
-            timestamp: chrono::Utc::now().to_rfc3339(),
-            checks: serde_json::Value::Object(checks),
-        }))
-    } else {
-        Err(axum::http::StatusCode::SERVICE_UNAVAILABLE)
-    }
 }
 
 #[tokio::main]
