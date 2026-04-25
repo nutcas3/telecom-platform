@@ -24,8 +24,12 @@ impl crate::charging::ChargingEngine {
         let new_balance: u64 = redis::AsyncCommands::incr(&mut conn, &key, bytes_to_add).await
             .map_err(|e| crate::errors::ChargingError::RedisOperation(e.to_string()))?;
 
-        // Set expiration if this is a new key
-        let _: () = redis::AsyncCommands::expire(&mut conn, &key, 86400).await.unwrap_or(());
+        // Set expiration if this is a new key (configurable via CREDIT_EXPIRATION_SECONDS, defaults to 24 hours)
+        let credit_expiration: u64 = std::env::var("CREDIT_EXPIRATION_SECONDS")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(86400);
+        let _: () = redis::AsyncCommands::expire(&mut conn, &key, credit_expiration as i64).await.unwrap_or(());
 
         info!("Added {} bytes credit to IP: {}, new balance: {}", bytes_to_add, ip, new_balance);
         Ok(new_balance)
@@ -75,10 +79,14 @@ impl crate::charging::ChargingEngine {
         let _: () = redis::AsyncCommands::set(&mut conn, &key, "blocked").await
             .map_err(|e| crate::errors::ChargingError::RedisOperation(e.to_string()))?;
 
-        // Set expiration for block (24 hours)
-        let _: () = redis::AsyncCommands::expire(&mut conn, &key, 86400).await.unwrap_or(());
+        // Set expiration for block (configurable via BLOCK_EXPIRATION_SECONDS, defaults to 24 hours)
+        let block_expiration: u64 = std::env::var("BLOCK_EXPIRATION_SECONDS")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(86400);
+        let _: () = redis::AsyncCommands::expire(&mut conn, &key, block_expiration as i64).await.unwrap_or(());
 
-        warn!("User IP: {} has been blocked", ip);
+        warn!("User IP: {} has been blocked for {} seconds", ip, block_expiration);
         Ok(())
     }
 
