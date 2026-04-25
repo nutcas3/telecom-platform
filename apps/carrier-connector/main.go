@@ -46,10 +46,14 @@ func main() {
 	if dsn == "" {
 		handler.Logger.Fatal().Msg("DATABASE_DSN is required (no in-memory fallback)")
 	}
-	profileRepo, err := repository.NewPostgresProfileStore(dsn)
+	postgresRepo, err := repository.NewPostgresProfileStore(dsn)
 	if err != nil {
 		handler.Logger.Fatal().Err(err).Msg("Failed to connect to Postgres")
 	}
+	defer postgresRepo.Close()
+
+	// Wrap with cache (5 minute TTL)
+	profileRepo := repository.NewCachedProfileStore(postgresRepo, 5*time.Minute)
 	defer profileRepo.Close()
 
 	setupRoutes(router, client, profileRepo)
