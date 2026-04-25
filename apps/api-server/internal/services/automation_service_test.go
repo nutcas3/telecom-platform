@@ -147,8 +147,8 @@ func TestAutomationService_Create(t *testing.T) {
 	_, service := setupAutomationTest(t)
 
 	t.Run("Create automation successfully", func(t *testing.T) {
-		definition := map[string]interface{}{
-			"actions": []map[string]interface{}{
+		definition := map[string]any{
+			"actions": []map[string]any{
 				{
 					"type":   "restart",
 					"target": "service",
@@ -313,7 +313,7 @@ func BenchmarkAutomationService_List(b *testing.B) {
 	db, service := setupAutomationTest(&testing.T{})
 
 	// Create test automations
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		automation := models.Automation{
 			Name:        fmt.Sprintf("automation-%d", i),
 			Description: "Test automation",

@@ -1,9 +1,9 @@
 package types
 
 import (
-	"slices"
 	"fmt"
 	"net/url"
+	"slices"
 	"strings"
 )
 
@@ -51,13 +51,7 @@ func (c *CLIConfig) Validate() []error {
 	// Validate theme
 	validThemes := []string{"default", "light", "dark", "high-contrast"}
 	if c.Theme != "" {
-		valid := false
-		for _, t := range validThemes {
-			if c.Theme == t {
-				valid = true
-				break
-			}
-		}
+		valid := slices.Contains(validThemes, c.Theme)
 		if !valid {
 			errors = append(errors, fmt.Errorf("invalid theme '%s', must be one of: %v", c.Theme, validThemes))
 		}

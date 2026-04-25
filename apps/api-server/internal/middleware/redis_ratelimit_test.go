@@ -18,8 +18,8 @@ type MockRedisClient struct {
 	mock.Mock
 }
 
-func (m *MockRedisClient) Eval(ctx context.Context, script string, keys []string, args ...interface{}) *redis.Cmd {
-	argsList := make([]interface{}, 0, len(keys)+len(args)+1)
+func (m *MockRedisClient) Eval(ctx context.Context, script string, keys []string, args ...any) *redis.Cmd {
+	argsList := make([]any, 0, len(keys)+len(args)+1)
 	argsList = append(argsList, script)
 	for _, key := range keys {
 		argsList = append(argsList, key)
@@ -55,11 +55,11 @@ func TestRedisRateLimiter_Allow(t *testing.T) {
 			mockClient := new(MockRedisClient)
 
 			// Mock Redis response based on test case
-			var mockResult []interface{}
+			var mockResult []any
 			if tt.expected {
-				mockResult = []interface{}{int64(1), int64(tt.limit - 1), int64(time.Now().Unix() + 60)}
+				mockResult = []any{int64(1), int64(tt.limit - 1), int64(time.Now().Unix() + 60)}
 			} else {
-				mockResult = []interface{}{int64(0), int64(0), int64(time.Now().Unix() + 60), int64(30)}
+				mockResult = []any{int64(0), int64(0), int64(time.Now().Unix() + 60), int64(30)}
 			}
 
 			cmd := redis.NewCmd(context.Background())
@@ -115,7 +115,7 @@ func TestRedisRateLimitMiddleware(t *testing.T) {
 
 			// Mock successful rate limit check
 			cmd := redis.NewCmd(context.Background())
-			cmd.SetVal([]interface{}{int64(1), int64(4), int64(time.Now().Unix() + 60)})
+			cmd.SetVal([]any{int64(1), int64(4), int64(time.Now().Unix() + 60)})
 			mockClient.On("Eval", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("int64"), mock.AnythingOfType("int64"), mock.AnythingOfType("int64")).Return(cmd)
 
 			// Create rate limiter with mock client
@@ -267,10 +267,10 @@ func TestMultiTierRateLimiter(t *testing.T) {
 
 	// Mock different tier responses
 	freeCmd := redis.NewCmd(context.Background())
-	freeCmd.SetVal([]interface{}{int64(1), int64(9), int64(time.Now().Unix() + 60)})
+	freeCmd.SetVal([]any{int64(1), int64(9), int64(time.Now().Unix() + 60)})
 
 	premiumCmd := redis.NewCmd(context.Background())
-	premiumCmd.SetVal([]interface{}{int64(1), int64(99), int64(time.Now().Unix() + 60)})
+	premiumCmd.SetVal([]any{int64(1), int64(99), int64(time.Now().Unix() + 60)})
 
 	mockClient.On("Eval", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("int64"), mock.AnythingOfType("int64"), mock.AnythingOfType("int64")).Return(freeCmd).Once()
 	mockClient.On("Eval", mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("int64"), mock.AnythingOfType("int64"), mock.AnythingOfType("int64")).Return(premiumCmd).Once()

@@ -29,18 +29,18 @@ func NewWebhookClient(webhookURL, apiKey string) *WebhookClient {
 
 // WebhookEvent represents a webhook notification event
 type WebhookEvent struct {
-	EventType   string                 `json:"event_type"`
-	Timestamp   time.Time              `json:"timestamp"`
-	ProfileICCID string                 `json:"profile_iccid"`
-	Data        map[string]interface{} `json:"data"`
+	EventType    string         `json:"event_type"`
+	Timestamp    time.Time      `json:"timestamp"`
+	ProfileICCID string         `json:"profile_iccid"`
+	Data         map[string]any `json:"data"`
 }
 
 // Event types
 const (
 	EventProfileDownloaded   = "profile.downloaded"
-	EventProfileActivated     = "profile.activated"
-	EventProfileDeactivated   = "profile.deactivated"
-	EventProfileDeleted       = "profile.deleted"
+	EventProfileActivated    = "profile.activated"
+	EventProfileDeactivated  = "profile.deactivated"
+	EventProfileDeleted      = "profile.deleted"
 	EventProfileStatusChange = "profile.status_changed"
 	EventDownloadFailed      = "download.failed"
 )
@@ -80,34 +80,34 @@ func (w *WebhookClient) SendNotification(ctx context.Context, event *WebhookEven
 }
 
 // SendProfileDownloaded sends a notification when a profile is downloaded
-func (w *WebhookClient) SendProfileDownloaded(ctx context.Context, iccid string, data map[string]interface{}) error {
+func (w *WebhookClient) SendProfileDownloaded(ctx context.Context, iccid string, data map[string]any) error {
 	event := &WebhookEvent{
-		EventType:   EventProfileDownloaded,
-		Timestamp:   time.Now(),
+		EventType:    EventProfileDownloaded,
+		Timestamp:    time.Now(),
 		ProfileICCID: iccid,
-		Data:        data,
+		Data:         data,
 	}
 	return w.SendNotification(ctx, event)
 }
 
 // SendProfileActivated sends a notification when a profile is activated
-func (w *WebhookClient) SendProfileActivated(ctx context.Context, iccid string, data map[string]interface{}) error {
+func (w *WebhookClient) SendProfileActivated(ctx context.Context, iccid string, data map[string]any) error {
 	event := &WebhookEvent{
-		EventType:   EventProfileActivated,
-		Timestamp:   time.Now(),
+		EventType:    EventProfileActivated,
+		Timestamp:    time.Now(),
 		ProfileICCID: iccid,
-		Data:        data,
+		Data:         data,
 	}
 	return w.SendNotification(ctx, event)
 }
 
 // SendProfileDeleted sends a notification when a profile is deleted
-func (w *WebhookClient) SendProfileDeleted(ctx context.Context, iccid string, data map[string]interface{}) error {
+func (w *WebhookClient) SendProfileDeleted(ctx context.Context, iccid string, data map[string]any) error {
 	event := &WebhookEvent{
-		EventType:   EventProfileDeleted,
-		Timestamp:   time.Now(),
+		EventType:    EventProfileDeleted,
+		Timestamp:    time.Now(),
 		ProfileICCID: iccid,
-		Data:        data,
+		Data:         data,
 	}
 	return w.SendNotification(ctx, event)
 }
@@ -115,10 +115,10 @@ func (w *WebhookClient) SendProfileDeleted(ctx context.Context, iccid string, da
 // SendDownloadFailed sends a notification when a profile download fails
 func (w *WebhookClient) SendDownloadFailed(ctx context.Context, iccid string, errorMessage string) error {
 	event := &WebhookEvent{
-		EventType:   EventDownloadFailed,
-		Timestamp:   time.Now(),
+		EventType:    EventDownloadFailed,
+		Timestamp:    time.Now(),
 		ProfileICCID: iccid,
-		Data: map[string]interface{}{
+		Data: map[string]any{
 			"error": errorMessage,
 		},
 	}

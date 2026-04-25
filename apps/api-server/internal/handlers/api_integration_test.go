@@ -207,7 +207,7 @@ func setupTest(t *testing.T) *TestSetup {
 }
 
 // Helper function to make authenticated requests
-func (ts *TestSetup) makeRequest(method, path string, body interface{}, token string) *httptest.ResponseRecorder {
+func (ts *TestSetup) makeRequest(method, path string, body any, token string) *httptest.ResponseRecorder {
 	var reqBody *bytes.Buffer
 	if body != nil {
 		jsonBody, _ := json.Marshal(body)
@@ -243,7 +243,7 @@ func TestAuthenticationEndpoints(t *testing.T) {
 		w := ts.makeRequest("POST", "/v1/auth/login", loginData, "")
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		var response map[string]interface{}
+		var response map[string]any
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		require.NoError(t, err)
 		assert.Contains(t, response, "access_token")
@@ -293,7 +293,7 @@ func TestRBACPermissions(t *testing.T) {
 	})
 
 	t.Run("Viewer cannot write to plugins", func(t *testing.T) {
-		pluginData := map[string]interface{}{
+		pluginData := map[string]any{
 			"name":    "test-plugin",
 			"version": "1.0.0",
 		}
@@ -302,7 +302,7 @@ func TestRBACPermissions(t *testing.T) {
 	})
 
 	t.Run("Admin can write to plugins", func(t *testing.T) {
-		pluginData := map[string]interface{}{
+		pluginData := map[string]any{
 			"name":    "test-plugin",
 			"version": "1.0.0",
 		}
@@ -342,14 +342,14 @@ func TestPluginEndpoints(t *testing.T) {
 		w := ts.makeRequest("GET", "/v1/plugins", nil, ts.AdminToken)
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		var response map[string]interface{}
+		var response map[string]any
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		require.NoError(t, err)
 		assert.Contains(t, response, "plugins")
 	})
 
 	t.Run("Install plugin without permissions", func(t *testing.T) {
-		pluginData := map[string]interface{}{
+		pluginData := map[string]any{
 			"name":    "test-plugin",
 			"version": "1.0.0",
 		}
@@ -372,14 +372,14 @@ func TestAutomationEndpoints(t *testing.T) {
 		w := ts.makeRequest("GET", "/v1/automation", nil, ts.AdminToken)
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		var response map[string]interface{}
+		var response map[string]any
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		require.NoError(t, err)
 		assert.Contains(t, response, "automations")
 	})
 
 	t.Run("Create automation without permissions", func(t *testing.T) {
-		automationData := map[string]interface{}{
+		automationData := map[string]any{
 			"name":        "test-automation",
 			"description": "Test automation",
 			"type":        "scheduled",
@@ -389,7 +389,7 @@ func TestAutomationEndpoints(t *testing.T) {
 	})
 
 	t.Run("Create automation with operator permissions", func(t *testing.T) {
-		automationData := map[string]interface{}{
+		automationData := map[string]any{
 			"name":        "test-automation",
 			"description": "Test automation",
 			"type":        "scheduled",
@@ -410,7 +410,7 @@ func TestConfigurationEndpoints(t *testing.T) {
 	})
 
 	t.Run("Update configuration without permissions", func(t *testing.T) {
-		configData := map[string]interface{}{
+		configData := map[string]any{
 			"section": "test",
 			"key":     "test.config",
 			"value":   "test-value",
@@ -421,7 +421,7 @@ func TestConfigurationEndpoints(t *testing.T) {
 	})
 
 	t.Run("Update configuration with admin permissions", func(t *testing.T) {
-		configData := map[string]interface{}{
+		configData := map[string]any{
 			"section": "test",
 			"key":     "test.config",
 			"value":   "test-value",
@@ -441,7 +441,7 @@ func TestChaosEndpoints(t *testing.T) {
 		w := ts.makeRequest("GET", "/v1/chaos", nil, ts.AdminToken)
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		var response map[string]interface{}
+		var response map[string]any
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		require.NoError(t, err)
 		assert.Contains(t, response, "active")
@@ -449,7 +449,7 @@ func TestChaosEndpoints(t *testing.T) {
 	})
 
 	t.Run("Run chaos experiment without permissions", func(t *testing.T) {
-		chaosData := map[string]interface{}{
+		chaosData := map[string]any{
 			"name":     "test-chaos",
 			"type":     "pod-delete",
 			"target":   "test-pod",
@@ -460,7 +460,7 @@ func TestChaosEndpoints(t *testing.T) {
 	})
 
 	t.Run("Run chaos experiment with admin permissions", func(t *testing.T) {
-		chaosData := map[string]interface{}{
+		chaosData := map[string]any{
 			"name":     "test-chaos",
 			"type":     "pod-delete",
 			"target":   "test-pod",
@@ -486,7 +486,7 @@ func TestErrorHandling(t *testing.T) {
 	})
 
 	t.Run("Missing required fields", func(t *testing.T) {
-		pluginData := map[string]interface{}{
+		pluginData := map[string]any{
 			"version": "1.0.0",
 			// Missing name field
 		}

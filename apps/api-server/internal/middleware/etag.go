@@ -56,33 +56,33 @@ func NewETagGenerator(secretKey string) *ETagGenerator {
 func (g *ETagGenerator) GenerateETag(data ETagData) string {
 	// Create a composite hash from multiple factors
 	h := sha256.New()
-	
+
 	// Include path and method
 	h.Write([]byte(data.Path))
 	h.Write([]byte(data.Method))
-	
+
 	// Include content if available
 	if len(data.Content) > 0 {
 		h.Write(data.Content)
 	}
-	
+
 	// Include timestamp (rounded to second for consistency)
-	timestampBytes := []byte(fmt.Sprintf("%d", data.Timestamp.Unix()))
+	timestampBytes := fmt.Appendf(nil, "%d", data.Timestamp.Unix())
 	h.Write(timestampBytes)
-	
+
 	// Include user context for personalized responses
 	if data.UserID != "" {
 		h.Write([]byte(data.UserID))
 	}
-	
+
 	// Include query parameters for cache differentiation
 	if data.Params != "" {
 		h.Write([]byte(data.Params))
 	}
-	
+
 	// Add secret key for security
 	h.Write(g.secretKey)
-	
+
 	// Generate final ETag
 	hash := h.Sum(nil)
 	return fmt.Sprintf("\"%x\"", hash)
@@ -111,7 +111,7 @@ func (g *ETagGenerator) CacheETag(key, etag string) {
 
 // InvalidateCache removes ETag entries matching a pattern
 func (g *ETagGenerator) InvalidateCache(pattern string) {
-	g.cacheStorage.Range(func(key, value interface{}) bool {
+	g.cacheStorage.Range(func(key, value any) bool {
 		if keyStr, ok := key.(string); ok {
 			if strings.Contains(keyStr, pattern) {
 				g.cacheStorage.Delete(key)
@@ -133,26 +133,26 @@ func generateETag(c *gin.Context) string {
 		Timestamp: time.Now(),
 		Params:    c.Request.URL.RawQuery,
 	}
-	
+
 	// Add user context if available
 	if userID, exists := c.Get("user_id"); exists {
 		if idStr, ok := userID.(string); ok {
 			data.UserID = idStr
 		}
 	}
-	
+
 	// Try to get cached ETag first
 	cacheKey := fmt.Sprintf("%s:%s:%s", data.Method, data.Path, data.Params)
 	if cached, exists := etagGenerator.GetCachedETag(cacheKey); exists {
 		return cached
 	}
-	
+
 	// Generate new ETag
 	etag := etagGenerator.GenerateETag(data)
-	
+
 	// Cache the ETag for future use
 	etagGenerator.CacheETag(cacheKey, etag)
-	
+
 	return etag
 }
 
@@ -165,14 +165,14 @@ func generateContentETag(c *gin.Context, content []byte) string {
 		Timestamp: time.Now(),
 		Params:    c.Request.URL.RawQuery,
 	}
-	
+
 	// Add user context if available
 	if userID, exists := c.Get("user_id"); exists {
 		if idStr, ok := userID.(string); ok {
 			data.UserID = idStr
 		}
 	}
-	
+
 	return etagGenerator.GenerateETag(data)
 }
 
@@ -184,14 +184,14 @@ func generateWeakETag(c *gin.Context) string {
 		Timestamp: time.Now(),
 		Params:    c.Request.URL.RawQuery,
 	}
-	
+
 	// Add user context if available
 	if userID, exists := c.Get("user_id"); exists {
 		if idStr, ok := userID.(string); ok {
 			data.UserID = idStr
 		}
 	}
-	
+
 	return etagGenerator.GenerateWeakETag(data)
 }
 
@@ -203,12 +203,12 @@ func ETagValidationMiddleware() gin.HandlerFunc {
 			c.Next()
 			return
 		}
-		
+
 		// Check If-None-Match header (for GET requests)
 		if noneMatch := c.GetHeader("If-None-Match"); noneMatch != "" {
 			// Generate current ETag
 			currentETag := generateETag(c)
-			
+
 			// Check if any of the ETags match
 			if etagMatches(noneMatch, currentETag) {
 				c.Header("ETag", currentETag)
@@ -217,18 +217,18 @@ func ETagValidationMiddleware() gin.HandlerFunc {
 				return
 			}
 		}
-		
+
 		// Check If-Match header (for PUT/PATCH/DELETE requests)
 		if match := c.GetHeader("If-Match"); match != "" {
 			currentETag := generateETag(c)
-			
+
 			if !etagMatches(match, currentETag) {
 				c.Status(http.StatusPreconditionFailed)
 				c.Abort()
 				return
 			}
 		}
-		
+
 		c.Next()
 	}
 }
@@ -242,14 +242,14 @@ func ContentBasedETagMiddleware() gin.HandlerFunc {
 			body:           bytes.NewBuffer(nil),
 		}
 		c.Writer = wrapper
-		
+
 		c.Next()
-		
+
 		// Only generate ETags for successful GET requests
 		if c.Request.Method != "GET" || c.Writer.Status() != http.StatusOK {
 			return
 		}
-		
+
 		// Generate ETag based on captured response content
 		responseBody := wrapper.Body()
 		if len(responseBody) > 0 {
@@ -268,15 +268,15 @@ func CacheInvalidationMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Store original request for post-processing
 		c.Next()
-		
+
 		// Invalidate cache for POST, PUT, PATCH, DELETE requests
-		if c.Request.Method == "POST" || c.Request.Method == "PUT" || 
-		   c.Request.Method == "PATCH" || c.Request.Method == "DELETE" {
-			
+		if c.Request.Method == "POST" || c.Request.Method == "PUT" ||
+			c.Request.Method == "PATCH" || c.Request.Method == "DELETE" {
+
 			// Invalidate ETags for this resource pattern
 			pattern := c.Request.URL.Path
 			etagGenerator.InvalidateCache(pattern)
-			
+
 			// Also invalidate related collection resources
 			if strings.Contains(pattern, "/") {
 				parts := strings.Split(strings.Trim(pattern, "/"), "/")
@@ -295,19 +295,19 @@ func etagMatches(headerValue, currentETag string) bool {
 	if headerValue == "*" {
 		return true
 	}
-	
+
 	// Parse the header value (can contain multiple ETags)
-	etags := strings.Split(headerValue, ",")
-	for _, etag := range etags {
+	etags := strings.SplitSeq(headerValue, ",")
+	for etag := range etags {
 		etag = strings.TrimSpace(etag)
 		// Remove quotes for comparison
 		etag = strings.Trim(etag, "\"")
 		current := strings.Trim(currentETag, "\"W/")
-		
+
 		if etag == current || etag == "W/"+current {
 			return true
 		}
 	}
-	
+
 	return false
 }

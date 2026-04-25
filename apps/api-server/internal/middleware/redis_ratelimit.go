@@ -13,7 +13,7 @@ import (
 
 // RedisClientInterface defines the interface for Redis operations
 type RedisClientInterface interface {
-	Eval(ctx context.Context, script string, keys []string, args ...interface{}) *redis.Cmd
+	Eval(ctx context.Context, script string, keys []string, args ...any) *redis.Cmd
 	Del(ctx context.Context, keys ...string) *redis.IntCmd
 	ZCount(ctx context.Context, key, min, max string) *redis.IntCmd
 }
@@ -90,7 +90,7 @@ func (r *RedisRateLimiter) Allow(ctx context.Context, key string) (*RateLimitRes
 	}
 
 	// Parse Lua script result
-	resultSlice, ok := result.([]interface{})
+	resultSlice, ok := result.([]any)
 	if !ok || len(resultSlice) < 3 {
 		return nil, fmt.Errorf("invalid redis result format")
 	}
@@ -163,7 +163,7 @@ func (r *RedisRateLimiter) AllowTokenBucket(ctx context.Context, key string) (*R
 		return nil, fmt.Errorf("redis token bucket check failed: %w", err)
 	}
 
-	resultSlice, ok := result.([]interface{})
+	resultSlice, ok := result.([]any)
 	if !ok || len(resultSlice) < 3 {
 		return nil, fmt.Errorf("invalid redis result format")
 	}
@@ -207,10 +207,7 @@ func (r *RedisRateLimiter) GetStats(ctx context.Context, key string) (*RateLimit
 		return nil, fmt.Errorf("failed to get rate limit stats: %w", err)
 	}
 
-	remaining := r.limit - int64(count)
-	if remaining < 0 {
-		remaining = 0
-	}
+	remaining := max(r.limit-int64(count), 0)
 
 	return &RateLimitResult{
 		Allowed:    remaining > 0,

@@ -110,7 +110,7 @@ func TestPluginService_Install(t *testing.T) {
 	_, service := setupPluginTest(t)
 
 	t.Run("Install new plugin successfully", func(t *testing.T) {
-		configJSON, _ := json.Marshal(map[string]interface{}{"key": "value"})
+		configJSON, _ := json.Marshal(map[string]any{"key": "value"})
 		input := InstallPluginInput{
 			Name:        "new-plugin",
 			Version:     "1.0.0",
@@ -235,7 +235,7 @@ func BenchmarkPluginService_List(b *testing.B) {
 	db, service := setupPluginTest(&testing.T{})
 
 	// Create test plugins
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		plugin := models.Plugin{
 			Name:        fmt.Sprintf("plugin-%d", i),
 			Version:     "1.0.0",

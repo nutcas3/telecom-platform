@@ -43,7 +43,7 @@ func CheckConnectivityHandler(client *es2.ES2Client) gin.HandlerFunc {
 		_, err := client.GetProfileStatus(context.Background(), req)
 
 		connected := err == nil
-		var errMsg interface{}
+		var errMsg any
 		if err != nil {
 			errMsg = err.Error()
 		}

@@ -20,9 +20,9 @@ type MessageQueue struct {
 
 // Message represents a message to be sent/received
 type Message struct {
-	Type      string                 `json:"type"`
-	Payload   map[string]interface{} `json:"payload"`
-	Timestamp time.Time              `json:"timestamp"`
+	Type      string         `json:"type"`
+	Payload   map[string]any `json:"payload"`
+	Timestamp time.Time      `json:"timestamp"`
 }
 
 // NewMessageQueue creates a new message queue connection
@@ -162,10 +162,10 @@ func (mq *MessageQueue) PublishToExchange(exchange, routingKey string, msg Messa
 
 	err = mq.channel.PublishWithContext(
 		ctx,
-		exchange,    // exchange
-		routingKey,  // routing key
-		false,       // mandatory
-		false,       // immediate
+		exchange,   // exchange
+		routingKey, // routing key
+		false,      // mandatory
+		false,      // immediate
 		amqp.Publishing{
 			ContentType:  "application/json",
 			DeliveryMode: amqp.Persistent,

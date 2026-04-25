@@ -71,7 +71,7 @@ func OrderProfileHandlerWithRepo(client *es2.ES2Client, repo repository.ProfileR
 
 		// Send webhook notification for successful download
 		if webhookClient != nil {
-			go webhookClient.SendProfileDownloaded(context.Background(), order.ICCID, map[string]interface{}{
+			go webhookClient.SendProfileDownloaded(context.Background(), order.ICCID, map[string]any{
 				"imsi":        order.IMSI,
 				"profileType": order.ProfileType,
 				"status":      downloadResp.ExecutionStatus,
@@ -141,10 +141,7 @@ func GetProfileHandlerWithRepo(client *es2.ES2Client, repo repository.ProfileRep
 func ListProfilesHandlerWithRepo(repo repository.ProfileRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		page := parsePositiveInt(c.Query("page"), 1)
-		limit := parsePositiveInt(c.Query("limit"), 20)
-		if limit > 100 {
-			limit = 100
-		}
+		limit := min(parsePositiveInt(c.Query("limit"), 20), 100)
 
 		Logger.Info().Int("page", page).Int("limit", limit).Msg("Listing eSIM profiles")
 
@@ -194,7 +191,7 @@ func DeleteProfileHandlerWithRepo(client *es2.ES2Client, repo repository.Profile
 
 		// Send webhook notification for profile deletion
 		if webhookClient != nil {
-			go webhookClient.SendProfileDeleted(context.Background(), profileID, map[string]interface{}{
+			go webhookClient.SendProfileDeleted(context.Background(), profileID, map[string]any{
 				"executionStatus": deleteResp.ExecutionStatus,
 				"statusMessage":   deleteResp.StatusMessage,
 			})
