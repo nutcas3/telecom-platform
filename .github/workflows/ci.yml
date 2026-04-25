@@ -97,7 +97,7 @@ jobs:
 
       - name: Build carrier connector
         working-directory: apps/carrier-connector
-        run: go build -o bin/carrier-connector ./cmd/
+        run: go build -o bin/carrier-connector .
 
   charging-engine-test:
     name: Charging Engine Tests
@@ -199,7 +199,7 @@ jobs:
 
       - name: Build CLI
         working-directory: apps/cli
-        run: go build -o bin/telecom-cli ./cmd/
+        run: go build -o bin/telecom-cli .
 
   web-dashboard-test:
     name: Web Dashboard Tests
