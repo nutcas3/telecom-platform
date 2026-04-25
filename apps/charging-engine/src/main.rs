@@ -1,3 +1,4 @@
+mod auth;
 mod charging;
 mod monitoring;
 mod errors;
@@ -11,6 +12,7 @@ use tracing::info;
 
 use routes::create_router;
 use charging::{ChargingEngine, RatingPlansRepo};
+use auth::AuthConfig;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -44,8 +46,10 @@ async fn main() -> Result<()> {
     info!("Connected to Redis successfully");
 
     // Create application state
+    let auth_config = AuthConfig::from_env();
     let state = crate::models::AppState {
         charging_engine,
+        auth_config,
     };
 
     // Create router

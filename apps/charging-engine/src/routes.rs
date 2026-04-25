@@ -4,6 +4,7 @@ use axum::{
 };
 use tower_http::cors::{Any, CorsLayer};
 
+use crate::auth::auth_middleware;
 use crate::handlers::{
     add_credit, add_rating_plan, block_user, check_credit, deduct_credit, detailed_health_check,
     engine_start, engine_stop, engine_uptime, get_balance, get_error_stats, get_performance_metrics,
@@ -20,13 +21,16 @@ pub fn create_router(state: AppState) -> Router {
         .allow_headers(Any);
 
     Router::new()
+        // Public routes (no auth required - for packet-gateway integration)
+        .route("/health", get(health_check))
         .route("/v1/credit/:ip/check", post(check_credit))
         .route("/v1/credit/:ip/deduct", post(deduct_credit))
-        .route("/v1/credit/:ip/add", post(add_credit))
         .route("/v1/credit/:ip/balance", get(get_balance))
+        .route("/v1/usage", post(record_usage))
+        // Protected routes (require auth)
+        .route("/v1/credit/:ip/add", post(add_credit))
         .route("/v1/subscriber/:imsi", get(get_subscriber))
         .route("/v1/subscriber/:imsi", put(update_subscriber))
-        .route("/v1/usage", post(record_usage))
         .route("/v1/rating-plans", get(list_rating_plans))
         .route("/v1/rating-plans/:id", get(get_rating_plan))
         .route("/v1/rating-plans", post(add_rating_plan))
@@ -42,11 +46,11 @@ pub fn create_router(state: AppState) -> Router {
         .route("/v1/engine/start", post(engine_start))
         .route("/v1/engine/stop", post(engine_stop))
         .route("/v1/engine/uptime", get(engine_uptime))
-        .route("/health", get(health_check))
         .route("/v1/usage/calculate-cost", post(calculate_usage_cost))
         .route("/v1/usage/rate", post(rate_usage))
         .route("/v1/usage/process", post(process_usage))
         .route("/v1/invoice/:imsi/:period", get(generate_invoice))
         .layer(cors)
+        .route_layer(axum::middleware::from_fn_with_state(state.auth_config.clone(), auth_middleware))
         .with_state(state)
 }
