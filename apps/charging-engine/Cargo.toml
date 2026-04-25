@@ -6,6 +6,10 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 
+[lib]
+name = "charging_engine"
+path = "src/lib.rs"
+
 [dependencies]
 tokio = { workspace = true }
 redis = { workspace = true }
@@ -21,6 +25,11 @@ tracing-subscriber = { workspace = true }
 anyhow = { workspace = true }
 dotenv = { workspace = true }
 uuid = { workspace = true }
+
+[dev-dependencies]
+tokio-test = "0.4"
+mockall = "0.13"
+serial_test = "3.2"
 
 [[bin]]
 name = "charging-engine"
