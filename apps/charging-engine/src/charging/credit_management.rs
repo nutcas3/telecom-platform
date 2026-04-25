@@ -21,6 +21,17 @@ impl crate::charging::ChargingEngine {
             .map_err(|e| crate::errors::ChargingError::RedisConnection(e.to_string()))?;
 
         let key = format!("credit:{}", ip);
+        
+        // Check for potential overflow before incrementing
+        let current_balance: Option<u64> = redis::AsyncCommands::get(&mut conn, &key).await
+            .map_err(|e| crate::errors::ChargingError::RedisOperation(e.to_string()))?;
+        
+        if let Some(existing_balance) = current_balance {
+            if existing_balance.checked_add(bytes_to_add).is_none() {
+                return Err(ChargingError::InvalidInput("Credit addition would overflow".to_string()));
+            }
+        }
+        
         let new_balance: u64 = redis::AsyncCommands::incr(&mut conn, &key, bytes_to_add).await
             .map_err(|e| crate::errors::ChargingError::RedisOperation(e.to_string()))?;
 
