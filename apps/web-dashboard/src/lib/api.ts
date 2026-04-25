@@ -1,11 +1,47 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+let authToken: string | null = null;
+
+export function setAuthToken(token: string) {
+  authToken = token;
+  if (typeof window !== "undefined") {
+    localStorage.setItem("auth_token", token);
+  }
+}
+
+export function getAuthToken(): string | null {
+  if (authToken) return authToken;
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("auth_token");
+  }
+  return null;
+}
+
+export function clearAuthToken() {
+  authToken = null;
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("auth_token");
+  }
+}
+
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = getAuthToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...init?.headers },
+    headers: { ...headers, ...init?.headers },
     ...init,
   });
   if (!res.ok) {
+    if (res.status === 401) {
+      clearAuthToken();
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
+      }
+    }
     const body = await res.json().catch(() => ({}));
     throw new Error(body.message || res.statusText);
   }
@@ -240,7 +276,63 @@ export interface ChaosExperimentRequest {
   parameters: Record<string, any>;
 }
 
+// Authentication Types
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface RegisterRequest {
+  username: string;
+  email: string;
+  password: string;
+  first_name: string;
+  last_name: string;
+}
+
+export interface AuthResponse {
+  access_token: string;
+  refresh_token: string;
+  user: User;
+}
+
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  role: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChangePasswordRequest {
+  old_password: string;
+  new_password: string;
+}
+
 export const api = {
+  // Authentication
+  auth: {
+    login: (data: LoginRequest) => 
+      apiFetch<AuthResponse>("/v1/auth/login", { method: "POST", body: JSON.stringify(data) }),
+    register: (data: RegisterRequest) => 
+      apiFetch<AuthResponse>("/v1/auth/register", { method: "POST", body: JSON.stringify(data) }),
+    refresh: (refreshToken: string) => 
+      apiFetch<AuthResponse>("/v1/auth/refresh", { 
+        method: "POST", 
+        body: JSON.stringify({ refresh_token: refreshToken }),
+        headers: { "Content-Type": "application/json" }
+      }),
+    logout: () => 
+      apiFetch<void>("/v1/auth/logout", { method: "POST" }),
+    profile: () => 
+      apiFetch<User>("/v1/auth/profile"),
+    changePassword: (data: ChangePasswordRequest) => 
+      apiFetch<void>("/v1/auth/change-password", { method: "POST", body: JSON.stringify(data) }),
+  },
   subscribers: {
     list: (page = 1, pageSize = 20) =>
       apiFetch<PaginatedResponse<Subscriber>>(`/api/subscribers?page=${page}&pageSize=${pageSize}`),
