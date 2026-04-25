@@ -246,7 +246,9 @@ impl super::ChargingEngine {
             if let Ok(Some(mut account)) = redis::AsyncCommands::get::<_, Option<crate::charging::types::SubscriberAccount>>(&mut conn, &key).await {
                 // Get rating plan from Postgres and apply monthly fee.
                 if let Ok(Some(plan)) = self.get_rating_plan("basic").await {
-                    account.balance -= (plan.monthly_fee * 100.0) as i64; // Convert to cents
+                    // Use rounding to avoid precision loss when converting to cents
+                    let fee_cents = (plan.monthly_fee * 100.0).round() as i64;
+                    account.balance = account.balance.saturating_sub(fee_cents);
                     account.last_updated = Utc::now();
 
                     let _: () = redis::AsyncCommands::set(&mut conn, &key, &account).await.unwrap_or(());
