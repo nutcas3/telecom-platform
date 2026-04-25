@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Sidebar } from "@/components/sidebar";
 import { Providers } from "./providers";
+import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -34,6 +35,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex">
         <Providers>
+          <ServiceWorkerRegistration />
           <Sidebar />
           <main className="flex-1 overflow-auto">{children}</main>
         </Providers>
