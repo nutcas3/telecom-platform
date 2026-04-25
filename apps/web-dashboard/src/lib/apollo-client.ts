@@ -1,19 +1,20 @@
-import { ApolloClient, InMemoryCache, createHttpLink, from } from '@apollo/client';
-import { setContext } from '@apollo/client/link/context';
+import { ApolloClient, InMemoryCache, HttpLink, ApolloLink } from '@apollo/client';
+import { SetContextLink } from '@apollo/client/link/context';
 
 // GraphQL API endpoint
-const httpLink = createHttpLink({
+const httpLink = new HttpLink({
   uri: process.env.NEXT_PUBLIC_API_SERVER_URL || 'http://localhost:8080/v1/graphql',
 });
 
 // Auth link to add authentication token to requests
-const authLink = setContext((_, { headers }) => {
+const authLink = new SetContextLink((prevContext, operation) => {
   // Get the authentication token from local storage if it exists
   const token = localStorage.getItem('auth_token');
   
   return {
+    ...prevContext,
     headers: {
-      ...headers,
+      ...prevContext.headers,
       authorization: token ? `Bearer ${token}` : '',
     },
   };
@@ -21,7 +22,7 @@ const authLink = setContext((_, { headers }) => {
 
 // Create Apollo Client instance
 export const apolloClient = new ApolloClient({
-  link: from([authLink, httpLink]),
+  link: ApolloLink.from([authLink, httpLink]),
   cache: new InMemoryCache(),
   defaultOptions: {
     watchQuery: {
