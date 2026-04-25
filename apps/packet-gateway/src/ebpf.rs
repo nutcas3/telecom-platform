@@ -8,6 +8,7 @@ mod ip_utils;
 mod redis_sync;
 use ip_utils::{u32_to_ipv4_string, ipv4_string_to_u32};
 use redis_sync::RedisSyncer;
+use crate::ebpf_error::EbpfError;
 
 pub struct EbpfManager {
     bpf: Bpf,
@@ -50,14 +51,22 @@ impl EbpfManager {
     
     pub fn attach(&mut self) -> Result<()> {
         let program: &mut Xdp = self.bpf.program_mut("packet_filter")
-            .ok_or_else(|| anyhow::anyhow!("Program 'packet_filter' not found"))?
+            .ok_or_else(|| anyhow::anyhow!(EbpfError::LoadError("Program 'packet_filter' not found".to_string())))?
             .try_into()?;
         
-        program.load()?;
+        if let Err(e) = program.load() {
+            error!("Failed to load XDP program into kernel: {}", e);
+            return Err(anyhow::anyhow!(EbpfError::LoadError(e.to_string())));
+        }
         info!("Loaded XDP program into kernel");
         
-        program.attach(&self.interface, aya::programs::XdpFlags::default())
-            .context("Failed to attach XDP program")?;
+        if let Err(e) = program.attach(&self.interface, aya::programs::XdpFlags::default()) {
+            error!("Failed to attach XDP program to interface {}: {}", self.interface, e);
+            return Err(anyhow::anyhow!(EbpfError::AttachError {
+                interface: self.interface.clone(),
+                message: e.to_string(),
+            }));
+        }
         
         info!("Attached XDP program to interface: {}", self.interface);
         Ok(())
@@ -65,13 +74,30 @@ impl EbpfManager {
     
     pub fn get_packet_stats(&self) -> Result<Vec<PacketStats>> {
         let packet_stats_map: &HashMap<_, u32, u64> = self.bpf.map("packet_stats")
-            .ok_or_else(|| anyhow::anyhow!("packet_stats map not found"))?
-            .try_into()?;
+            .ok_or_else(|| anyhow::anyhow!(EbpfError::MapNotFound {
+                map_name: "packet_stats".to_string(),
+            }))?
+            .try_into()
+            .map_err(|e| anyhow::anyhow!(EbpfError::MapAccessError {
+                map_name: "packet_stats".to_string(),
+                message: e.to_string(),
+            }))?;
         
         let mut stats = Vec::new();
         
-        for (ip, bytes) in packet_stats_map.iter()? {
-            stats.push(PacketStats { ip: *ip, bytes: *bytes });
+        match packet_stats_map.iter() {
+            Ok(iter) => {
+                for (ip, bytes) in iter {
+                    stats.push(PacketStats { ip: *ip, bytes: *bytes });
+                }
+            }
+            Err(e) => {
+                error!("Failed to iterate packet_stats map: {}", e);
+                return Err(anyhow::anyhow!(EbpfError::MapAccessError {
+                    map_name: "packet_stats".to_string(),
+                    message: e.to_string(),
+                }));
+            }
         }
         
         Ok(stats)
@@ -79,13 +105,30 @@ impl EbpfManager {
     
     pub fn get_credit_info(&self) -> Result<Vec<CreditInfo>> {
         let user_credits_map: &HashMap<_, u32, i64> = self.bpf.map("user_credits")
-            .ok_or_else(|| anyhow::anyhow!("user_credits map not found"))?
-            .try_into()?;
+            .ok_or_else(|| anyhow::anyhow!(EbpfError::MapNotFound {
+                map_name: "user_credits".to_string(),
+            }))?
+            .try_into()
+            .map_err(|e| anyhow::anyhow!(EbpfError::MapAccessError {
+                map_name: "user_credits".to_string(),
+                message: e.to_string(),
+            }))?;
         
         let mut credits = Vec::new();
         
-        for (ip, credit) in user_credits_map.iter()? {
-            credits.push(CreditInfo { ip: *ip, credit: *credit });
+        match user_credits_map.iter() {
+            Ok(iter) => {
+                for (ip, credit) in iter {
+                    credits.push(CreditInfo { ip: *ip, credit: *credit });
+                }
+            }
+            Err(e) => {
+                error!("Failed to iterate user_credits map: {}", e);
+                return Err(anyhow::anyhow!(EbpfError::MapAccessError {
+                    map_name: "user_credits".to_string(),
+                    message: e.to_string(),
+                }));
+            }
         }
         
         Ok(credits)
@@ -93,36 +136,82 @@ impl EbpfManager {
     
     pub fn update_user_credit(&self, ip: u32, credit: i64) -> Result<()> {
         let user_credits_map: &HashMap<_, u32, i64> = self.bpf.map("user_credits")
-            .ok_or_else(|| anyhow::anyhow!("user_credits map not found"))?
-            .try_into()?;
+            .ok_or_else(|| anyhow::anyhow!(EbpfError::MapNotFound {
+                map_name: "user_credits".to_string(),
+            }))?
+            .try_into()
+            .map_err(|e| anyhow::anyhow!(EbpfError::MapAccessError {
+                map_name: "user_credits".to_string(),
+                message: e.to_string(),
+            }))?;
         
-        user_credits_map.insert(&ip, &credit, 0)?;
-        debug!("Updated credit for IP {} to {}", ip, credit);
+        match user_credits_map.insert(&ip, &credit, 0) {
+            Ok(_) => {
+                debug!("Updated credit for IP {} to {}", ip, credit);
+            }
+            Err(e) => {
+                error!("Failed to update credit for IP {}: {}", ip, e);
+                return Err(anyhow::anyhow!(EbpfError::MapAccessError {
+                    map_name: "user_credits".to_string(),
+                    message: e.to_string(),
+                }));
+            }
+        }
         
         Ok(())
     }
     
     pub fn block_user(&self, ip: u32, blocked: bool) -> Result<()> {
         let block_list_map: &HashMap<_, u32, u8> = self.bpf.map("block_list")
-            .ok_or_else(|| anyhow::anyhow!("block_list map not found"))?
-            .try_into()?;
+            .ok_or_else(|| anyhow::anyhow!(EbpfError::MapNotFound {
+                map_name: "block_list".to_string(),
+            }))?
+            .try_into()
+            .map_err(|e| anyhow::anyhow!(EbpfError::MapAccessError {
+                map_name: "block_list".to_string(),
+                message: e.to_string(),
+            }))?;
         
         let block_flag: u8 = if blocked { 1 } else { 0 };
-        block_list_map.insert(&ip, &block_flag, 0)?;
+        match block_list_map.insert(&ip, &block_flag, 0) {
+            Ok(_) => {
+                info!("{} IP {} in eBPF block list", if blocked { "Blocked" } else { "Unblocked" }, ip);
+            }
+            Err(e) => {
+                error!("Failed to block IP {}: {}", ip, e);
+                return Err(anyhow::anyhow!(EbpfError::MapAccessError {
+                    map_name: "block_list".to_string(),
+                    message: e.to_string(),
+                }));
+            }
+        }
         
-        info!("{} IP {} in eBPF block list", if blocked { "Blocked" } else { "Unblocked" }, ip);
         Ok(())
     }
     
     pub async fn sync_to_redis(&self, redis_conn: &mut redis::aio::MultiplexedConnection) -> Result<()> {
-        let stats = self.get_packet_stats()?;
+        let stats = self.get_packet_stats()
+            .map_err(|e| {
+                error!("Failed to get packet stats for sync: {}", e);
+                anyhow::anyhow!(EbpfError::MapAccessError {
+                    map_name: "packet_stats".to_string(),
+                    message: e.to_string(),
+                })
+            })?;
         let stats_vec: Vec<(u32, u64)> = stats.iter().map(|s| (s.ip, s.bytes)).collect();
-        RedisSyncer::sync_packet_stats(&stats_vec, redis_conn).await?;
+        
+        if let Err(e) = RedisSyncer::sync_packet_stats(&stats_vec, redis_conn).await {
+            error!("Failed to sync packet stats to Redis: {}", e);
+            return Err(anyhow::anyhow!(EbpfError::RedisSyncError(e.to_string())));
+        }
         
         let credits = self.get_credit_info();
         if let Ok(credits) = credits {
             let credits_vec: Vec<(u32, i64)> = credits.iter().map(|c| (c.ip, c.credit)).collect();
-            RedisSyncer::sync_credit_info(&credits_vec, redis_conn).await?;
+            if let Err(e) = RedisSyncer::sync_credit_info(&credits_vec, redis_conn).await {
+                error!("Failed to sync credit info to Redis: {}", e);
+                return Err(anyhow::anyhow!(EbpfError::RedisSyncError(e.to_string())));
+            }
         }
         
         debug!("Synced eBPF maps to Redis");

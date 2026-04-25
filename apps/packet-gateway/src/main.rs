@@ -13,9 +13,11 @@ use std::sync::atomic::{AtomicBool, Ordering};
 mod ebpf;
 mod health;
 mod charging_client;
+mod config;
 use ebpf::EbpfManager;
 use health::{health_handler, liveness_handler, readiness_handler, metrics_handler};
 use charging_client::ChargingEngineClient;
+use config::{ConfigState, PacketGatewayConfig, create_config_router};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -98,20 +100,34 @@ async fn main() -> Result<()> {
     let ebpf_attached_clone = Arc::clone(&ebpf_attached);
     let ebpf_manager_clone = Arc::clone(&ebpf_manager);
     let health_port = args.health_port;
-    
+
+    // Create config state
+    let config = PacketGatewayConfig {
+        interface: args.interface.clone(),
+        redis_url: args.redis_url.clone(),
+        charging_engine_url: args.charging_engine_url.clone(),
+        sync_interval: args.sync_interval,
+        health_port: args.health_port,
+    };
+    let config_state = ConfigState {
+        config: Arc::new(RwLock::new(config)),
+    };
+
     tokio::spawn(async move {
+        let config_router = create_config_router(config_state);
         let app = Router::new()
             .route("/health", get(health_handler))
             .route("/health/ready", get(readiness_handler))
             .route("/health/live", get(liveness_handler))
             .route("/metrics", get(metrics_handler))
+            .nest("/api/v1", config_router)
             .with_state(redis_client_arc)
             .with_state(ebpf_attached_clone)
             .with_state(ebpf_manager_clone);
-        
+
         let addr = format!("0.0.0.0:{}", health_port);
         info!("Health check server listening on {}", addr);
-        
+
         let listener = tokio::net::TcpListener::bind(&addr).await
             .expect("Failed to bind health check server");
         axum::serve(listener, app).await
