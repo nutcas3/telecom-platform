@@ -3,6 +3,14 @@ use clap::Parser;
 use redis::AsyncCommands;
 use tokio::time::{interval, Duration};
 use tracing::{info, warn, error, debug};
+use axum::{
+    routing::get,
+    Router,
+    Json,
+};
+use serde::Serialize;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 mod ebpf;
 use ebpf::EbpfManager;
@@ -21,6 +29,83 @@ struct Args {
     /// Stats sync interval in seconds
     #[arg(short, long, default_value = "1")]
     sync_interval: u64,
+
+    /// Health check HTTP port
+    #[arg(long, default_value = "8081")]
+    health_port: u16,
+}
+
+#[derive(Serialize)]
+struct HealthResponse {
+    status: String,
+    service: String,
+    timestamp: String,
+}
+
+#[derive(Serialize)]
+struct ReadinessResponse {
+    status: String,
+    service: String,
+    timestamp: String,
+    checks: serde_json::Value,
+}
+
+async fn health_handler() -> Json<HealthResponse> {
+    Json(HealthResponse {
+        status: "healthy".to_string(),
+        service: "packet-gateway".to_string(),
+        timestamp: chrono::Utc::now().to_rfc3339(),
+    })
+}
+
+async fn liveness_handler() -> Json<HealthResponse> {
+    Json(HealthResponse {
+        status: "alive".to_string(),
+        service: "packet-gateway".to_string(),
+        timestamp: chrono::Utc::now().to_rfc3339(),
+    })
+}
+
+async fn readiness_handler(
+    State(redis_client): State<Arc<redis::Client>>,
+    State(ebpf_attached): State<Arc<AtomicBool>>,
+) -> Result<Json<ReadinessResponse>, axum::http::StatusCode> {
+    let mut checks = serde_json::Map::new();
+    
+    // Check Redis connectivity
+    let redis_ok = match redis_client.get_multiplexed_async_connection().await {
+        Ok(mut conn) => {
+            match redis::cmd("PING").query_async::<_, String>(&mut conn).await {
+                Ok(_) => {
+                    checks.insert("redis".to_string(), serde_json::Value::String("ok".to_string()));
+                    true
+                }
+                Err(e) => {
+                    checks.insert("redis".to_string(), serde_json::Value::String(format!("error: {}", e)));
+                    false
+                }
+            }
+        }
+        Err(e) => {
+            checks.insert("redis".to_string(), serde_json::Value::String(format!("connection error: {}", e)));
+            false
+        }
+    };
+    
+    // Check eBPF attachment
+    let ebpf_ok = ebpf_attached.load(Ordering::Relaxed);
+    checks.insert("ebpf".to_string(), serde_json::Value::String(if ebpf_ok { "ok".to_string() } else { "not attached".to_string() }));
+    
+    if redis_ok && ebpf_ok {
+        Ok(Json(ReadinessResponse {
+            status: "ready".to_string(),
+            service: "packet-gateway".to_string(),
+            timestamp: chrono::Utc::now().to_rfc3339(),
+            checks: serde_json::Value::Object(checks),
+        }))
+    } else {
+        Err(axum::http::StatusCode::SERVICE_UNAVAILABLE)
+    }
 }
 
 #[tokio::main]
@@ -37,7 +122,16 @@ async fn main() -> Result<()> {
     info!("Starting Packet Gateway");
     info!("Interface: {}", args.interface);
     info!("Redis URL: {}", args.redis_url);
+    info!("Health Port: {}", args.health_port);
 
+    // Connect to Redis
+    let redis_client = redis::Client::open(args.redis_url.as_str())?;
+    let mut redis_conn = redis_client.get_multiplexed_async_connection().await?;
+    
+    // Test connection
+    let _: () = redis::cmd("PING").query_async(&mut redis_conn).await?;
+    info!("Connected to Redis successfully");
+    
     // Initialize eBPF manager
     let mut ebpf_manager = EbpfManager::new(args.interface.clone()).await
         .context("Failed to initialize eBPF manager")?;
@@ -46,13 +140,8 @@ async fn main() -> Result<()> {
     ebpf_manager.attach()
         .context("Failed to attach eBPF program")?;
     
-    // Connect to Redis
-    let redis_client = redis::Client::open(args.redis_url.as_str())?;
-    let mut redis_conn = redis_client.get_multiplexed_async_connection().await?;
-    
-    // Test connection
-    let _: () = redis::cmd("PING").query_async(&mut redis_conn).await?;
-    info!("Connected to Redis successfully");
+    // Track eBPF attachment status
+    let ebpf_attached = Arc::new(AtomicBool::new(true));
     
     // Initial sync from Redis to eBPF maps
     info!("Performing initial sync from Redis to eBPF maps...");
@@ -64,6 +153,28 @@ async fn main() -> Result<()> {
     let mut ticker = interval(Duration::from_secs(args.sync_interval));
     
     info!("Packet gateway running. Press Ctrl+C to exit.");
+    
+    // Start HTTP health check server
+    let redis_client_arc = Arc::new(redis_client.clone());
+    let ebpf_attached_clone = Arc::clone(&ebpf_attached);
+    let health_port = args.health_port;
+    
+    tokio::spawn(async move {
+        let app = Router::new()
+            .route("/health", get(health_handler))
+            .route("/health/ready", get(readiness_handler))
+            .route("/health/live", get(liveness_handler))
+            .with_state(redis_client_arc)
+            .with_state(ebpf_attached_clone);
+        
+        let addr = format!("0.0.0.0:{}", health_port);
+        info!("Health check server listening on {}", addr);
+        
+        let listener = tokio::net::TcpListener::bind(&addr).await
+            .expect("Failed to bind health check server");
+        axum::serve(listener, app).await
+            .expect("Failed to start health check server");
+    });
     
     // Main synchronization loop with graceful shutdown
     let mut counter = 0u64;
@@ -101,6 +212,9 @@ async fn main() -> Result<()> {
             _ = tokio::signal::ctrl_c() => {
                 info!("Received shutdown signal, cleaning up...");
                 
+                // Mark eBPF as detached
+                ebpf_attached.store(false, Ordering::Relaxed);
+                
                 // Final sync before shutdown
                 if let Err(e) = ebpf_manager.sync_batch_to_redis(&mut redis_conn).await {
                     error!("Failed to sync final stats to Redis: {}", e);
@@ -115,4 +229,5 @@ async fn main() -> Result<()> {
                 return Ok(());
             }
         }
+    }
 }
