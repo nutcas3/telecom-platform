@@ -8,6 +8,7 @@ data:
   DATABASE_HOST: "postgres-service"
   DATABASE_PORT: "5432"
   DATABASE_NAME: "telecom_platform"
+  DATABASE_DSN: "host=postgres-service user=postgres password=telecom123 dbname=carrier port=5432 sslmode=disable"
   REDIS_HOST: "redis-service"
   REDIS_PORT: "6379"
   CHARGING_ENGINE_URL: "http://charging-engine-service:3001"
@@ -92,6 +93,12 @@ data:
         metrics_path: '/metrics'
         scrape_interval: 5s
       
+      - job_name: 'telecom-carrier-connector'
+        static_configs:
+          - targets: ['carrier-connector-service:8080']
+        metrics_path: '/metrics'
+        scrape_interval: 5s
+      
       - job_name: 'postgres'
         static_configs:
           - targets: ['postgres-exporter:9187']
@@ -111,6 +118,29 @@ data:
             action: replace
             target_label: __metrics_path__
             regex: (.+)
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+  namespace: telecom-monitoring
+data:
+  alertmanager.yml: |
+    global:
+      resolve_timeout: 5m
+    route:
+      group_by: ['alertname', 'severity', 'service']
+      group_wait: 10s
+      group_interval: 10s
+      repeat_interval: 12h
+      receiver: 'default'
+    receivers:
+      - name: 'default'
+        slack_configs:
+          - channel: '#telecom-platform-alerts'
+            send_resolved: true
+            title: '{{ .GroupLabels.alertname }}'
+            text: '{{ range .Alerts }}Alert: {{ .Labels.alertname }}\nSeverity: {{ .Labels.severity }}\n{{ end }}'
 ---
 apiVersion: v1
 kind: ConfigMap

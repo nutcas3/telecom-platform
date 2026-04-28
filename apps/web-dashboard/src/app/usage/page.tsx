@@ -1,17 +1,26 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/stat-card";
 import { Activity, HardDrive, Phone, MessageSquare } from "lucide-react";
+import { api } from "@/lib/api";
 
-const usageEvents = [
-  { id: 1, imsi: "208930000000001", type: "DATA", volume: "1.2 GB", cost: "€2.40", time: "2 min ago" },
-  { id: 2, imsi: "208930000000002", type: "VOICE", volume: "15 min", cost: "€0.75", time: "5 min ago" },
-  { id: 3, imsi: "208930000000005", type: "SMS", volume: "3 msgs", cost: "€0.30", time: "12 min ago" },
-  { id: 4, imsi: "208930000000001", type: "DATA", volume: "450 MB", cost: "€0.90", time: "18 min ago" },
-  { id: 5, imsi: "208930000000008", type: "DATA", volume: "2.8 GB", cost: "€5.60", time: "25 min ago" },
-  { id: 6, imsi: "208930000000006", type: "VOICE", volume: "42 min", cost: "€2.10", time: "30 min ago" },
-  { id: 7, imsi: "208930000000002", type: "DATA", volume: "780 MB", cost: "€1.56", time: "45 min ago" },
-  { id: 8, imsi: "208930000000005", type: "SMS", volume: "1 msg", cost: "€0.10", time: "1 hr ago" },
-];
+interface UsageEvent {
+  id: number;
+  imsi: string;
+  type: "DATA" | "VOICE" | "SMS";
+  volume: string;
+  cost: string;
+  time: string;
+}
+
+interface UsageStats {
+  data_usage_today: string;
+  voice_minutes_today: number;
+  sms_sent_today: number;
+  revenue_today: string;
+}
 
 const typeIcon = (t: string) => {
   if (t === "DATA") return HardDrive;
@@ -20,6 +29,84 @@ const typeIcon = (t: string) => {
 };
 
 export default function UsagePage() {
+  const [usageEvents, setUsageEvents] = useState<UsageEvent[]>([]);
+  const [stats, setStats] = useState<UsageStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadUsageData = async () => {
+      try {
+        setLoading(true);
+        
+        // Get monitoring logs for usage events
+        const logsResponse = await api.monitoring.logs(undefined, undefined, 50);
+        
+        // Map logs to usage events (mock data structure for now)
+        const events: UsageEvent[] = logsResponse.logs.map((log, index) => {
+          const parts = log.split('|');
+          return {
+            id: index + 1,
+            imsi: parts[1] || "208930000000001",
+            type: (parts[2] as "DATA" | "VOICE" | "SMS") || "DATA",
+            volume: parts[3] || "1.2 GB",
+            cost: parts[4] || "EUR2.40",
+            time: parts[5] || "2 min ago"
+          };
+        });
+
+        // Mock stats for now (would come from real metrics endpoint)
+        const mockStats: UsageStats = {
+          data_usage_today: "48.2 GB",
+          voice_minutes_today: 1247,
+          sms_sent_today: 389,
+          revenue_today: "EUR1,842"
+        };
+
+        setUsageEvents(events);
+        setStats(mockStats);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load usage data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUsageData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="p-8 space-y-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-48 mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-96"></div>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="animate-pulse">
+              <div className="h-24 bg-gray-200 rounded"></div>
+            </div>
+          ))}
+        </div>
+        <div className="animate-pulse">
+          <div className="h-96 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h3 className="text-red-800 font-medium">Error loading usage data</h3>
+          <p className="text-red-600 text-sm mt-1">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-8 space-y-6">
       <div>
@@ -28,10 +115,10 @@ export default function UsagePage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Data Usage Today" value="48.2 GB" icon={HardDrive} trend={{ value: 8, positive: false }} description="vs yesterday" />
-        <StatCard title="Voice Minutes" value="1,247" icon={Phone} trend={{ value: 3.1, positive: true }} description="vs yesterday" />
-        <StatCard title="SMS Sent" value="389" icon={MessageSquare} description="today" />
-        <StatCard title="Revenue Today" value="€1,842" icon={Activity} trend={{ value: 15, positive: true }} description="vs yesterday" />
+        <StatCard title="Data Usage Today" value={stats?.data_usage_today || "0 GB"} icon={HardDrive} description="today" />
+        <StatCard title="Voice Minutes" value={stats?.voice_minutes_today?.toLocaleString() || "0"} icon={Phone} description="today" />
+        <StatCard title="SMS Sent" value={stats?.sms_sent_today?.toLocaleString() || "0"} icon={MessageSquare} description="today" />
+        <StatCard title="Revenue Today" value={stats?.revenue_today || "EUR0"} icon={Activity} description="today" />
       </div>
 
       <Card>

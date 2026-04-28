@@ -57,9 +57,9 @@ func showDeployStatus(u *uiContext) error {
 	t.AddColumn("Status", 12, "left")
 	t.AddColumn("Version", 10, "left")
 	t.AddColumn("Last Deploy", 18, "left")
-	t.AddStyledRow(statusStyle("HEALTHY").Style, "production", "Healthy", "v1.0.0", "2024-01-15 14:30")
-	t.AddStyledRow(statusStyle("HEALTHY").Style, "staging", "Healthy", "v1.0.1", "2024-01-15 13:45")
-	t.AddStyledRow(statusStyle("BUILDING").Style, "development", "Building", "v1.1.0", "2024-01-15 12:00")
+	t.AddStyledRow(statusStyle("HEALTHY").Style, "production", "Healthy", "v1.0.0", "2026-05-30 14:30")
+	t.AddStyledRow(statusStyle("HEALTHY").Style, "staging", "Healthy", "v1.0.1", "2026-05-30 13:45")
+	t.AddStyledRow(statusStyle("BUILDING").Style, "development", "Building", "v1.1.0", "2026-05-30 12:00")
 	fmt.Println(t.Render())
 	return nil
 }
@@ -117,9 +117,9 @@ func showDeployHistory(u *uiContext) error {
 	t.AddColumn("Time", 8, "left")
 
 	rows := [][]string{
-		{"v1.0.0", "production", "Success", "2024-01-15", "14:30"},
-		{"v1.0.1", "staging", "Success", "2024-01-15", "13:45"},
-		{"v1.0.0", "staging", "Success", "2024-01-15", "12:30"},
+		{"v1.0.0", "production", "Success", "2026-05-30", "14:30"},
+		{"v1.0.1", "staging", "Success", "2026-05-30", "13:45"},
+		{"v1.0.0", "staging", "Success", "2026-05-30", "12:30"},
 		{"v0.9.9", "production", "Failed", "2024-01-14", "16:20"},
 		{"v0.9.8", "production", "Success", "2024-01-14", "15:45"},
 		{"v0.9.7", "production", "Success", "2024-01-14", "14:15"},

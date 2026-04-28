@@ -17,10 +17,10 @@ Gem::Specification.new do |spec|
   spec.executables   = spec.name.gsub(/^.*:/, "")
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "httparty", "~> 0.21"
-  spec.add_dependency "websocket-client-simple", "~> 0.3"
-  spec.add_dependency "json", "~> 2.6"
+  spec.add_dependency "httparty", "~> 0.23"
+  spec.add_dependency "websocket-client-simple", "~> 0.4"
+  spec.add_dependency "json", "~> 2.7"
   
-  spec.add_development_dependency "minitest", "~> 5.0"
-  spec.add_development_dependency "rubocop", "~> 1.21"
+  spec.add_development_dependency "minitest", "~> 5.25"
+  spec.add_development_dependency "rubocop", "~> 1.72"
 end

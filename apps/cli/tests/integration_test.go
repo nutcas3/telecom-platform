@@ -72,8 +72,8 @@ func (suite *IntegrationTestSuite) handleMockAPI(w http.ResponseWriter, r *http.
 	switch r.URL.Path {
 	case "/api/v1/subscribers":
 		switch r.Method {
-	case "GET":
-			subscribers := []map[string]interface{}{
+		case "GET":
+			subscribers := []map[string]any{
 				{
 					"id":      1,
 					"name":    "John Doe",
@@ -91,19 +91,19 @@ func (suite *IntegrationTestSuite) handleMockAPI(w http.ResponseWriter, r *http.
 					"balance": 0.0,
 				},
 			}
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			json.NewEncoder(w).Encode(map[string]any{
 				"subscribers": subscribers,
 				"total":       len(subscribers),
 			})
 		case "POST":
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			json.NewEncoder(w).Encode(map[string]any{
 				"id":     3,
 				"status": "created",
 			})
 		}
 	case "/api/v1/services":
-		services := []map[string]interface{}{
+		services := []map[string]any{
 			{
 				"name":    "api-server",
 				"status":  "running",
@@ -121,12 +121,12 @@ func (suite *IntegrationTestSuite) handleMockAPI(w http.ResponseWriter, r *http.
 				"uptime":  "2h15m",
 			},
 		}
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		json.NewEncoder(w).Encode(map[string]any{
 			"services": services,
 			"total":    len(services),
 		})
 	case "/api/v1/billing/invoices":
-		invoices := []map[string]interface{}{
+		invoices := []map[string]any{
 			{
 				"id":         "INV-001",
 				"customer":   "John Doe",
@@ -136,12 +136,12 @@ func (suite *IntegrationTestSuite) handleMockAPI(w http.ResponseWriter, r *http.
 				"created_at": "2023-12-01",
 			},
 		}
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		json.NewEncoder(w).Encode(map[string]any{
 			"invoices": invoices,
 			"total":    len(invoices),
 		})
 	case "/api/v1/health":
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		json.NewEncoder(w).Encode(map[string]any{
 			"status": "healthy",
 			"services": map[string]string{
 				"api-server":      "healthy",
@@ -402,7 +402,7 @@ func (suite *IntegrationTestSuite) TestConcurrency() {
 	}
 
 	// Collect results
-	for i := 0; i < len(commandList); i++ {
+	for range commandList {
 		select {
 		case err := <-results:
 			assert.NoError(suite.T(), err)
@@ -477,8 +477,8 @@ func BenchmarkCommands(b *testing.B) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"subscribers": []map[string]interface{}{},
+		json.NewEncoder(w).Encode(map[string]any{
+			"subscribers": []map[string]any{},
 			"total":       0,
 		})
 	}))

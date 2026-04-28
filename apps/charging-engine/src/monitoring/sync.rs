@@ -1,10 +1,11 @@
-use tokio::time::{interval, sleep};
+use tokio::time::interval;
 use tracing::{info, warn, error, debug};
-use std::time::Duration;
+use chrono::Datelike;
 
-use crate::errors::{ChargingError, ChargingResult, ErrorContext};
+use crate::errors::{ChargingResult, log_error};
+use crate::monitoring::types::{SystemStats, HealthStatus};
 
-impl super::ChargingEngine {
+impl crate::charging::ChargingEngine {
     pub async fn start_background_sync(&self) -> ChargingResult<()> {
         let mut interval_timer = interval(self.sync_interval);
         
@@ -20,39 +21,47 @@ impl super::ChargingEngine {
     }
 
     async fn perform_sync(&self) -> ChargingResult<()> {
-        debug!("Performing background sync");
-        
-        // Sync 1: Clean up expired blocks
-        self.cleanup_expired_blocks().await?;
-        
-        // Sync 2: Update usage statistics
-        self.update_usage_statistics().await?;
-        
-        // Sync 3: Check for low balance alerts
-        self.check_low_balance_alerts().await?;
-        
-        // Sync 4: Apply monthly fees (once per day)
-        self.apply_monthly_fees_if_needed().await?;
-        
-        debug!("Background sync completed successfully");
+        info!("Starting sync cycle");
+
+        if let Err(e) = self.cleanup_expired_blocks().await {
+            warn!("Failed to cleanup expired blocks: {}", e);
+            log_error(&e);
+        }
+
+        if let Err(e) = self.update_usage_statistics().await {
+            warn!("Failed to update usage statistics: {}", e);
+            log_error(&e);
+        }
+
+        if let Err(e) = self.check_low_balance_alerts().await {
+            warn!("Failed to check low balance alerts: {}", e);
+            log_error(&e);
+        }
+
+        if let Err(e) = self.apply_monthly_fees_if_needed().await {
+            warn!("Failed to apply monthly fees: {}", e);
+            log_error(&e);
+        }
+
+        info!("Sync cycle completed");
         Ok(())
     }
 
     async fn cleanup_expired_blocks(&self) -> ChargingResult<()> {
-        let mut conn = self.redis_client.get_async_connection().await
-            .context("Failed to get Redis connection")?;
+        let mut conn = self.redis_client.get_multiplexed_async_connection().await
+            .map_err(|e| crate::errors::ChargingError::RedisConnection(e.to_string()))?;
 
         let pattern = "block:*".to_string();
-        let keys: Vec<String> = conn.keys(&pattern).await
-            .context("Failed to get block keys")?;
+        let keys: Vec<String> = redis::AsyncCommands::keys(&mut conn, &pattern).await
+            .map_err(|e| crate::errors::ChargingError::RedisOperation(e.to_string()))?;
 
         let mut cleaned_count = 0;
 
         for key in keys {
-            let ttl: i64 = conn.ttl(&key).await.unwrap_or(-1);
+            let ttl: i64 = redis::AsyncCommands::ttl(&mut conn, &key).await.unwrap_or(-1);
             if ttl == -1 || ttl == -2 {
                 // Key has no expiration or doesn't exist
-                let _: () = conn.del(&key).await.unwrap_or(());
+                let _: () = redis::AsyncCommands::del(&mut conn, &key).await.unwrap_or(());
                 cleaned_count += 1;
             }
         }
@@ -65,44 +74,45 @@ impl super::ChargingEngine {
     }
 
     async fn update_usage_statistics(&self) -> ChargingResult<()> {
-        let mut conn = self.redis_client.get_async_connection().await
-            .context("Failed to get Redis connection")?;
+        let mut conn = self.redis_client.get_multiplexed_async_connection().await
+            .map_err(|e| crate::errors::ChargingError::RedisConnection(e.to_string()))?;
 
         // Get total active sessions
         let pattern = "session:*".to_string();
-        let keys: Vec<String> = conn.keys(&pattern).await
-            .context("Failed to get session keys")?;
+        let keys: Vec<String> = redis::AsyncCommands::keys(&mut conn, &pattern).await
+            .map_err(|e| crate::errors::ChargingError::RedisOperation(e.to_string()))?;
 
         let active_sessions = keys.len();
         
         // Store statistics
         let stats_key = "stats:active_sessions";
-        let _: () = conn.set(stats_key, active_sessions).await.unwrap_or(());
+        let _: () = redis::AsyncCommands::set(&mut conn, stats_key, active_sessions).await.unwrap_or(());
 
         debug!("Updated usage statistics: {} active sessions", active_sessions);
         Ok(())
     }
 
     async fn check_low_balance_alerts(&self) -> ChargingResult<()> {
-        let mut conn = self.redis_client.get_async_connection().await
-            .context("Failed to get Redis connection")?;
+        let mut conn = self.redis_client.get_multiplexed_async_connection().await
+            .map_err(|e| crate::errors::ChargingError::RedisConnection(e.to_string()))?;
 
         let pattern = "credit:*".to_string();
-        let keys: Vec<String> = conn.keys(&pattern).await
-            .context("Failed to get credit keys")?;
+        let keys: Vec<String> = redis::AsyncCommands::keys(&mut conn, &pattern).await
+            .map_err(|e| crate::errors::ChargingError::RedisOperation(e.to_string()))?;
 
         let low_balance_threshold = 100_000_000; // 100MB in bytes
         let mut low_balance_count = 0;
 
         for key in keys {
-            if let Ok(balance) = conn.get::<_, u64>(&key).await {
+            if let Ok(balance) = redis::AsyncCommands::get::<_, u64>(&mut conn, &key).await {
                 if balance < low_balance_threshold {
                     low_balance_count += 1;
                     warn!("Low balance alert for {}: {} bytes remaining", key, balance);
                     
                     // Store alert
                     let alert_key = format!("alert:low_balance:{}", key);
-                    let _: () = conn.setex(&alert_key, 3600, "low_balance").await.unwrap_or(());
+                    let _: () = redis::AsyncCommands::set(&mut conn, &alert_key, "low_balance").await.unwrap_or(());
+                    let _: () = redis::AsyncCommands::expire(&mut conn, &alert_key, 3600).await.unwrap_or(());
                 }
             }
         }
@@ -115,11 +125,11 @@ impl super::ChargingEngine {
     }
 
     async fn apply_monthly_fees_if_needed(&self) -> ChargingResult<()> {
-        let mut conn = self.redis_client.get_async_connection().await
-            .context("Failed to get Redis connection")?;
+        let mut conn = self.redis_client.get_multiplexed_async_connection().await
+            .map_err(|e| crate::errors::ChargingError::RedisConnection(e.to_string()))?;
 
         let last_fee_key = "last_monthly_fee";
-        let last_fee: Option<String> = conn.get(last_fee_key).await.unwrap_or(None);
+        let last_fee: Option<String> = redis::AsyncCommands::get(&mut conn, last_fee_key).await.unwrap_or(None);
 
         let now = chrono::Utc::now();
         let current_month = format!("{}-{}", now.year(), now.month());
@@ -134,20 +144,23 @@ impl super::ChargingEngine {
         let processed = self.apply_monthly_fees().await?;
         
         // Update last fee timestamp
-        let _: () = conn.set(last_fee_key, current_month).await.unwrap_or(());
+        let _: () = redis::AsyncCommands::set(&mut conn, last_fee_key, &current_month).await.unwrap_or(());
 
         info!("Applied monthly fees to {} accounts for {}", processed, current_month);
         Ok(())
     }
 
     pub async fn get_system_statistics(&self) -> ChargingResult<SystemStats> {
-        let mut conn = self.redis_client.get_async_connection().await
-            .context("Failed to get Redis connection")?;
+        let mut conn = self.redis_client.get_multiplexed_async_connection().await
+            .map_err(|e| crate::errors::ChargingError::RedisConnection(e.to_string()))?;
 
-        let active_sessions: u64 = conn.get("stats:active_sessions").await.unwrap_or(0);
-        let total_accounts: u64 = conn.keys("account:*").await.unwrap_or_default().len() as u64;
-        let blocked_users: u64 = conn.keys("block:*").await.unwrap_or_default().len() as u64;
-        let low_balance_alerts: u64 = conn.keys("alert:low_balance:*").await.unwrap_or_default().len() as u64;
+        let active_sessions: u64 = redis::AsyncCommands::get(&mut conn, "stats:active_sessions").await.unwrap_or(0);
+        let account_keys: Vec<String> = redis::AsyncCommands::keys(&mut conn, "account:*").await.unwrap_or_default();
+        let total_accounts: u64 = account_keys.len() as u64;
+        let block_keys: Vec<String> = redis::AsyncCommands::keys(&mut conn, "block:*").await.unwrap_or_default();
+        let blocked_users: u64 = block_keys.len() as u64;
+        let alert_keys: Vec<String> = redis::AsyncCommands::keys(&mut conn, "alert:low_balance:*").await.unwrap_or_default();
+        let low_balance_alerts: u64 = alert_keys.len() as u64;
 
         let stats = SystemStats {
             active_sessions,
@@ -160,7 +173,7 @@ impl super::ChargingEngine {
         Ok(stats)
     }
 
-    async fn get_uptime(&self) -> ChargingResult<u64> {
+    pub async fn get_uptime(&self) -> ChargingResult<u64> {
         // Calculate actual uptime since startup
         match self.startup_time.elapsed() {
             Ok(duration) => Ok(duration.as_secs()),
@@ -175,11 +188,11 @@ impl super::ChargingEngine {
     }
 
     pub async fn health_check(&self) -> ChargingResult<HealthStatus> {
-        let mut conn = self.redis_client.get_async_connection().await
-            .context("Failed to get Redis connection")?;
+        let mut conn = self.redis_client.get_multiplexed_async_connection().await
+            .map_err(|e| crate::errors::ChargingError::RedisConnection(e.to_string()))?;
 
         // Test Redis connection
-        let _: String = conn.get("health_check").await.unwrap_or_else(|_| "ok".to_string());
+        let _: String = redis::AsyncCommands::get(&mut conn, "health_check").await.unwrap_or_else(|_| "ok".to_string());
 
         let status = HealthStatus {
             redis_connected: true,
@@ -233,8 +246,8 @@ impl super::ChargingEngine {
     }
 
     async fn get_redis_memory_usage(&self) -> ChargingResult<u64> {
-        let mut conn = self.redis_client.get_async_connection().await
-            .context("Failed to get Redis connection")?;
+        let mut conn = self.redis_client.get_multiplexed_async_connection().await
+            .map_err(|e| crate::errors::ChargingError::RedisConnection(e.to_string()))?;
 
         // Get Redis memory info
         let info: String = redis::cmd("INFO").query_async(&mut conn).await.unwrap_or_default();

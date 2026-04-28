@@ -9,13 +9,13 @@ import (
 )
 
 type Config struct {
-	ConfigFile   string
+	ConfigFile  string
 	Profile     string
 	APIEndpoint string
 	APIToken    string
 	Verbose     bool
 	NoColor     bool
-	
+
 	// Configuration sections
 	API     APIConfig     `mapstructure:"api"`
 	UI      UIConfig      `mapstructure:"ui"`
@@ -24,11 +24,11 @@ type Config struct {
 }
 
 type APIConfig struct {
-	Endpoint string        `mapstructure:"endpoint"`
-	Timeout  string        `mapstructure:"timeout"`
-	Retries  int           `mapstructure:"retries"`
-	Token    string        `mapstructure:"token"`
-	Insecure bool          `mapstructure:"insecure"`
+	Endpoint string            `mapstructure:"endpoint"`
+	Timeout  string            `mapstructure:"timeout"`
+	Retries  int               `mapstructure:"retries"`
+	Token    string            `mapstructure:"token"`
+	Insecure bool              `mapstructure:"insecure"`
 	Headers  map[string]string `mapstructure:"headers"`
 }
 
@@ -42,9 +42,9 @@ type UIConfig struct {
 }
 
 type PluginConfig struct {
-	Enabled  []string          `mapstructure:"enabled"`
-	Disabled []string          `mapstructure:"disabled"`
-	Config   map[string]interface{} `mapstructure:"config"`
+	Enabled  []string       `mapstructure:"enabled"`
+	Disabled []string       `mapstructure:"disabled"`
+	Config   map[string]any `mapstructure:"config"`
 }
 
 type LoggingConfig struct {
@@ -85,7 +85,7 @@ func NewConfig() *Config {
 		Plugins: PluginConfig{
 			Enabled:  []string{},
 			Disabled: []string{},
-			Config:   make(map[string]interface{}),
+			Config:   make(map[string]any),
 		},
 		Logging: LoggingConfig{
 			Level:      "info",
@@ -174,46 +174,46 @@ func (c *Config) createDefaultConfig() error {
 	}
 
 	configFile := filepath.Join(configDir, "config.yaml")
-	
+
 	// Create default config
-	defaultConfig := map[string]interface{}{
-		"api": map[string]interface{}{
+	defaultConfig := map[string]any{
+		"api": map[string]any{
 			"endpoint": "http://localhost:8000",
 			"timeout":  "30s",
 			"retries":  3,
 			"insecure": false,
 		},
-		"ui": map[string]interface{}{
+		"ui": map[string]any{
 			"theme":       "default",
 			"colors":      true,
 			"pager":       true,
 			"table-style": "default",
 		},
-		"logging": map[string]interface{}{
+		"logging": map[string]any{
 			"level":  "info",
 			"format": "text",
 			"output": "stdout",
 		},
-		"plugins": map[string]interface{}{
+		"plugins": map[string]any{
 			"enabled":  []string{},
 			"disabled": []string{},
 		},
-		"profiles": map[string]interface{}{
-			"development": map[string]interface{}{
-				"api": map[string]interface{}{
+		"profiles": map[string]any{
+			"development": map[string]any{
+				"api": map[string]any{
 					"endpoint": "http://dev-api:8000",
 					"insecure": true,
 				},
-				"logging": map[string]interface{}{
+				"logging": map[string]any{
 					"level": "debug",
 				},
 			},
-			"production": map[string]interface{}{
-				"api": map[string]interface{}{
+			"production": map[string]any{
+				"api": map[string]any{
 					"endpoint": "https://api.telecom-platform.com",
 					"timeout":  "60s",
 				},
-				"logging": map[string]interface{}{
+				"logging": map[string]any{
 					"level": "warn",
 				},
 			},
@@ -232,9 +232,9 @@ func (c *Config) applyProfile(profileName string) error {
 	}
 
 	// Apply profile configuration
-	if profile, ok := profileData.(map[string]interface{}); ok {
+	if profile, ok := profileData.(map[string]any); ok {
 		// Apply API settings
-		if api, ok := profile["api"].(map[string]interface{}); ok {
+		if api, ok := profile["api"].(map[string]any); ok {
 			if endpoint, ok := api["endpoint"].(string); ok {
 				c.API.Endpoint = endpoint
 			}
@@ -250,7 +250,7 @@ func (c *Config) applyProfile(profileName string) error {
 		}
 
 		// Apply UI settings
-		if ui, ok := profile["ui"].(map[string]interface{}); ok {
+		if ui, ok := profile["ui"].(map[string]any); ok {
 			if theme, ok := ui["theme"].(string); ok {
 				c.UI.Theme = theme
 			}
@@ -260,7 +260,7 @@ func (c *Config) applyProfile(profileName string) error {
 		}
 
 		// Apply logging settings
-		if logging, ok := profile["logging"].(map[string]interface{}); ok {
+		if logging, ok := profile["logging"].(map[string]any); ok {
 			if level, ok := logging["level"].(string); ok {
 				c.Logging.Level = level
 			}

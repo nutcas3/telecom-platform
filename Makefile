@@ -1,7 +1,4 @@
-# Master Makefile - Telecom Platform
-# Orchestrates builds across Go, Rust, and TypeScript
-
-.PHONY: all build-ui build-rust build-go clean test dev help install-deps
+.PHONY: all build-ui build-rust build-go build-cli build-packet-gateway clean test dev help install-deps db-setup db-migrate
 
 # Colors for terminal output
 CYAN := \033[0;36m
@@ -14,12 +11,13 @@ help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-20s$(RESET) %s\n", $$1, $$2}'
 
-all: build-ui build-rust build-go ## Build all components
+all: build-ui build-rust build-go build-cli build-packet-gateway ## Build all components
 
 install-deps: ## Install all dependencies
 	@echo "$(CYAN)Installing Go dependencies...$(RESET)"
 	@cd apps/api-server && go mod download
 	@cd apps/carrier-connector && go mod download
+	@cd apps/cli && go mod download
 	@echo "$(CYAN)Installing Rust dependencies...$(RESET)"
 	@cargo fetch
 	@echo "$(CYAN)Installing Node.js dependencies...$(RESET)"
@@ -45,25 +43,40 @@ build-rust: ## Build Rust components (release mode)
 	@cargo build --release
 	@echo "$(GREEN)Rust build complete!$(RESET)"
 
+build-packet-gateway: ## Build eBPF packet gateway
+	@echo "$(CYAN)Building packet gateway...$(RESET)"
+	@cd apps/packet-gateway && cargo build --release
+	@echo "$(GREEN)Packet gateway build complete!$(RESET)"
+
 build-rust-dev: ## Build Rust components (debug mode)
 	@cargo build
 
 test-rust: ## Run Rust tests
 	@cargo test --workspace
 
+test-rust-release: ## Run Rust tests in release mode
+	@cargo test --workspace --release
+
 lint-rust: ## Run Rust linter (clippy)
 	@cargo clippy --workspace -- -D warnings
 
 # Go - BSS API & Carrier Connector
-build-go: ## Build Go services
-	@echo "$(CYAN)Building Go projects...$(RESET)"
-	@mkdir -p dist
-	@cd apps/api-server && go build -o ../../dist/api-server
-	@cd apps/carrier-connector && go build -o ../../dist/carrier-connector
+build-go: ## Build Go applications
+	@echo "$(GREEN)Building Go applications...$(RESET)"
+	@cd apps/api-server && go build -o ../../dist/api-server ./cmd/
+	@cd apps/carrier-connector && go build -o ../../dist/carrier-connector .
 	@echo "$(GREEN)Go build complete!$(RESET)"
 
+build-cli: ## Build CLI tool
+	@echo "$(CYAN)Building CLI...$(RESET)"
+	@mkdir -p dist
+	@cd apps/cli && go build -o ../../dist/taas-cli .
+	@echo "$(GREEN)CLI build complete!$(RESET)"
+
 test-go: ## Run Go tests
-	@go test ./apps/...
+	@go test -v -race -coverprofile=coverage.out ./apps/api-server/...
+	@go test -v ./apps/carrier-connector/...
+	@go test -v ./apps/cli/...
 
 lint-go: ## Run Go linter
 	@golangci-lint run ./apps/...
@@ -122,7 +135,17 @@ docker-build: ## Build Docker images for all services
 	@docker build -f deployments/docker/carrier-connector.Dockerfile -t taas-carrier-connector .
 	@docker build -f deployments/docker/charging-engine.Dockerfile -t taas-charging-engine .
 	@docker build -f deployments/docker/web-dashboard.Dockerfile -t taas-web-dashboard .
+	@docker build -f deployments/docker/packet-gateway.Dockerfile -t taas-packet-gateway .
 	@echo "$(GREEN)Docker images built!$(RESET)"
+
+docker-push: ## Push Docker images to registry
+	@echo "$(CYAN)Pushing Docker images...$(RESET)"
+	@docker push taas-api-server
+	@docker push taas-carrier-connector
+	@docker push taas-charging-engine
+	@docker push taas-web-dashboard
+	@docker push taas-packet-gateway
+	@echo "$(GREEN)Docker images pushed!$(RESET)"
 
 docker-up: ## Start all services with docker-compose
 	@docker-compose up -d
@@ -132,17 +155,36 @@ docker-down: ## Stop all services
 
 # Kubernetes
 k8s-deploy: ## Deploy to Kubernetes
+	@echo "$(CYAN)Deploying to Kubernetes...$(RESET)"
 	@kubectl apply -f deployments/kubernetes/
+	@echo "$(GREEN)Deployment complete!$(RESET)"
+
+k8s-deploy-helm: ## Deploy to Kubernetes using Helm
+	@echo "$(CYAN)Deploying with Helm...$(RESET)"
+	@helm upgrade --install telecom-platform deployments/helm/telecom-platform
+	@echo "$(GREEN)Helm deployment complete!$(RESET)"
 
 k8s-delete: ## Delete Kubernetes resources
 	@kubectl delete -f deployments/kubernetes/
 
+k8s-logs: ## Show logs for all services
+	@kubectl logs -l app=telecom-platform --all-containers=true -f --tail=100
+
+k8s-status: ## Show status of all pods
+	@kubectl get pods -l app=telecom-platform
+
 # Database setup
-db-setup: ## Set up MongoDB and Redis
+db-setup: ## Set up PostgreSQL, MongoDB and Redis
 	@echo "$(CYAN)Setting up databases...$(RESET)"
+	@bash scripts/setup-postgres.sh
 	@bash scripts/setup-mongodb.sh
 	@bash scripts/setup-redis.sh
 	@echo "$(GREEN)Database setup complete!$(RESET)"
+
+db-migrate: ## Run database migrations
+	@echo "$(CYAN)Running database migrations...$(RESET)"
+	@cd apps/api-server && go run cmd/migrate/main.go
+	@echo "$(GREEN)Migrations complete!$(RESET)"
 
 # Free5GC integration
 free5gc-setup: ## Set up free5GC configuration files

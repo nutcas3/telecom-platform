@@ -1,9 +1,17 @@
-use anyhow::Context;
+
+use super::types::ChargingError;
 
 pub type ChargingResult<T> = Result<T, ChargingError>;
 
 pub trait ErrorContext<T> {
     fn with_context(self, msg: &str) -> ChargingResult<T>;
+}
+
+impl<T> ErrorContext<T> for anyhow::Result<T> {
+    fn with_context(self, msg: &str) -> ChargingResult<T> {
+        self.map_err(|e| ChargingError::InternalError(format!("{}: {}", msg, e)))
+            .map_err(|e| e.into())
+    }
 }
 
 impl<T, E> ErrorContext<T> for Result<T, E>
@@ -53,24 +61,14 @@ pub fn validate_bytes(bytes: u64) -> ChargingResult<()> {
         return Err(ChargingError::InvalidInput("Bytes cannot be zero".to_string()));
     }
 
-    if bytes > 1_000_000_000_000 { // 1TB limit
+    // Configurable via MAX_BYTES_LIMIT, defaults to 1TB
+    let max_bytes: u64 = std::env::var("MAX_BYTES_LIMIT")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(1_000_000_000_000);
+
+    if bytes > max_bytes {
         return Err(ChargingError::InvalidInput("Bytes exceed maximum limit".to_string()));
-    }
-
-    Ok(())
-}
-
-pub fn validate_imsi(imsi: &str) -> ChargingResult<()> {
-    if imsi.is_empty() {
-        return Err(ChargingError::InvalidInput("IMSI cannot be empty".to_string()));
-    }
-
-    if imsi.len() < 15 || imsi.len() > 15 {
-        return Err(ChargingError::InvalidInput("IMSI must be exactly 15 digits".to_string()));
-    }
-
-    if !imsi.chars().all(|c| c.is_ascii_digit()) {
-        return Err(ChargingError::InvalidInput("IMSI must contain only digits".to_string()));
     }
 
     Ok(())
@@ -93,7 +91,13 @@ pub fn validate_amount(amount: f64) -> ChargingResult<()> {
         return Err(ChargingError::InvalidInput("Amount must be positive".to_string()));
     }
 
-    if amount > 10_000.0 {
+    // Configurable via MAX_AMOUNT_LIMIT, defaults to 10,000
+    let max_amount: f64 = std::env::var("MAX_AMOUNT_LIMIT")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(10_000.0);
+
+    if amount > max_amount {
         return Err(ChargingError::InvalidInput("Amount exceeds maximum limit".to_string()));
     }
 
@@ -134,6 +138,9 @@ pub fn log_error(error: &ChargingError) {
         ChargingError::RedisOperation(msg) => {
             tracing::error!("Redis operation error: {}", msg);
         }
+        ChargingError::DatabaseError(msg) => {
+            tracing::error!("Database error: {}", msg);
+        }
         ChargingError::SubscriberNotFound(imsi) => {
             tracing::warn!("Subscriber not found: {}", imsi);
         }
@@ -151,9 +158,6 @@ pub fn log_error(error: &ChargingError) {
         }
         ChargingError::SerializationError(msg) => {
             tracing::error!("Serialization error: {}", msg);
-        }
-        ChargingError::ConfigurationError(msg) => {
-            tracing::error!("Configuration error: {}", msg);
         }
         ChargingError::InternalError(msg) => {
             tracing::error!("Internal error: {}", msg);

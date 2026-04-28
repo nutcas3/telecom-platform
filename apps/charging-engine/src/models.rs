@@ -1,8 +1,11 @@
 use serde::{Deserialize, Serialize};
 
+use crate::auth::AuthConfig;
+
 #[derive(Clone)]
 pub struct AppState {
     pub charging_engine: std::sync::Arc<crate::charging::ChargingEngine>,
+    pub auth_config: AuthConfig,
 }
 
 #[derive(Deserialize)]

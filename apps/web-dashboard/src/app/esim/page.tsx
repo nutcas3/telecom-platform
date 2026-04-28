@@ -1,20 +1,83 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Radio, Download, RefreshCw } from "lucide-react";
+import { api, Subscriber } from "@/lib/api";
 
-const profiles = [
-  { id: "prof_001", imsi: "208930000000001", euiccId: "89049032004008882600001", status: "active", subscriber: "Alice Martin", activatedAt: "2026-03-15" },
-  { id: "prof_002", imsi: "208930000000002", euiccId: "89049032004008882600002", status: "active", subscriber: "Bob Dupont", activatedAt: "2026-03-20" },
-  { id: "prof_003", imsi: "208930000000003", euiccId: "89049032004008882600003", status: "downloading", subscriber: "Claire Moreau", activatedAt: "-" },
-  { id: "prof_004", imsi: "208930000000005", euiccId: "89049032004008882600005", status: "active", subscriber: "Emma Petit", activatedAt: "2026-02-10" },
-  { id: "prof_005", imsi: "208930000000008", euiccId: "89049032004008882600008", status: "inactive", subscriber: "Henri Faure", activatedAt: "-" },
-];
+interface ESIMProfile {
+  id: string;
+  imsi: string;
+  euiccId: string;
+  status: "active" | "downloading" | "inactive" | "failed";
+  subscriber: string;
+  activatedAt: string;
+}
 
 const statusVariant = (s: string) =>
   s === "active" ? "success" : s === "downloading" ? "secondary" : s === "failed" ? "destructive" : "warning";
 
 export default function ESIMPage() {
+  const [profiles, setProfiles] = useState<ESIMProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadProfiles = async () => {
+      try {
+        setLoading(true);
+        const subscribersResponse = await api.subscribers.list(1, 100);
+        
+        // Map subscribers to eSIM profiles (mock data structure for now)
+        const esimProfiles: ESIMProfile[] = subscribersResponse.data.map((subscriber) => ({
+          id: `prof_${subscriber.id.toString().padStart(3, '0')}`,
+          imsi: subscriber.imsi,
+          euiccId: `890490320040088826${subscriber.id.toString().padStart(5, '0')}`,
+          status: subscriber.profile_status === "active" ? "active" : 
+                 subscriber.status === "provisioning" ? "downloading" : 
+                 "inactive",
+          subscriber: `${subscriber.first_name} ${subscriber.last_name}`,
+          activatedAt: subscriber.created_at.split('T')[0]
+        }));
+
+        setProfiles(esimProfiles);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load eSIM profiles");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProfiles();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="p-8 space-y-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-48 mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-96"></div>
+        </div>
+        <div className="animate-pulse">
+          <div className="h-96 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h3 className="text-red-800 font-medium">Error loading eSIM profiles</h3>
+          <p className="text-red-600 text-sm mt-1">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">

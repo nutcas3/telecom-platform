@@ -16,6 +16,7 @@ pub struct HealthStatus {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct PerformanceMetrics {
     pub connected_clients: u64,
     pub used_memory: u64,
@@ -25,6 +26,7 @@ pub struct PerformanceMetrics {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct ErrorStats {
     pub total_errors: u64,
     pub error_types: std::collections::HashMap<String, u64>,

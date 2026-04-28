@@ -47,10 +47,11 @@ func NewDatabase(cfg *config.DatabaseConfig) (*Database, error) {
 		return nil, fmt.Errorf("failed to get underlying sql.DB: %w", err)
 	}
 
-	// Configure connection pool
-	sqlDB.SetMaxIdleConns(10)
-	sqlDB.SetMaxOpenConns(100)
-	sqlDB.SetConnMaxLifetime(time.Hour)
+	// Configure connection pool for optimal performance
+	sqlDB.SetMaxIdleConns(25)                  // Minimum idle connections
+	sqlDB.SetMaxOpenConns(100)                 // Maximum open connections
+	sqlDB.SetConnMaxLifetime(time.Hour)        // Max connection lifetime
+	sqlDB.SetConnMaxIdleTime(30 * time.Minute) // Max idle time before closing
 
 	database := &Database{DB: db}
 
@@ -74,6 +75,12 @@ func (d *Database) AutoMigrate() error {
 		&models.Session{},
 		&models.UsageRecord{},
 		&IMSIAllocation{},
+		&models.Plugin{},
+		&models.Automation{},
+		&models.AutomationRun{},
+		&models.ConfigEntry{},
+		&models.DeploymentRecord{},
+		&models.ChaosExperimentRecord{},
 	)
 }
 
@@ -107,6 +114,35 @@ func (d *Database) Close() error {
 		return err
 	}
 	return sqlDB.Close()
+}
+
+// PoolStats returns current connection pool statistics
+func (d *Database) PoolStats() (map[string]any, error) {
+	sqlDB, err := d.DB.DB()
+	if err != nil {
+		return nil, err
+	}
+	stats := sqlDB.Stats()
+	return map[string]any{
+		"max_open_connections": stats.MaxOpenConnections,
+		"open_connections":     stats.OpenConnections,
+		"in_use":               stats.InUse,
+		"idle":                 stats.Idle,
+		"wait_count":           stats.WaitCount,
+		"wait_duration":        stats.WaitDuration.String(),
+		"max_idle_closed":      stats.MaxIdleClosed,
+		"max_idle_time_closed": stats.MaxIdleTimeClosed,
+		"max_lifetime_closed":  stats.MaxLifetimeClosed,
+	}, nil
+}
+
+// Ping verifies database connectivity
+func (d *Database) Ping(ctx context.Context) error {
+	sqlDB, err := d.DB.DB()
+	if err != nil {
+		return err
+	}
+	return sqlDB.PingContext(ctx)
 }
 
 func (d *Database) CreateSubscriber(ctx context.Context, subscriber *models.Subscriber) error {

@@ -5,7 +5,7 @@ defmodule TelecomSDK.MixProject do
     [
       app: :telecom_sdk,
       version: "1.0.0",
-      elixir: "~> 1.15",
+      elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       description: "Elixir SDK for Telecom Platform",
@@ -23,10 +23,10 @@ defmodule TelecomSDK.MixProject do
   # Run "mix help deps.get" to learn about dependencies.
   defp deps do
     [
-      {:finch, "~> 0.16"},
+      {:finch, "~> 0.19"},
       {:jason, "~> 1.4"},
       {:websockex, "~> 0.4"},
-      {:ex_doc, "~> 0.27", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.37", only: :dev, runtime: false}
     ]
   end
 

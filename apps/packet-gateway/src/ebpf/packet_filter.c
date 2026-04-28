@@ -141,10 +141,73 @@ int packet_filter(struct xdp_md *ctx) {
     return XDP_PASS;
 }
 
+struct {
+    __uint(type, BPF_MAP_TYPE_ARRAY);
+    __uint(max_entries, 1);
+    __type(key, __u32);
+    __type(value, __u64);
+} sync_control SEC(".maps");
+
+struct {
+    __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
+    __uint(max_entries, 1024);
+    __type(key, __u32);
+    __type(value, struct sync_entry);
+} sync_buffer SEC(".maps");
+
+struct sync_entry {
+    __u32 ip;
+    __u64 bytes;
+    __s64 credit;
+    __u8 blocked;
+    __u8 valid;
+};
+
 SEC("xdp")
 int sync_stats(struct xdp_md *ctx) {
-    // This would be called periodically from userspace
-    // to sync eBPF map data to Redis
+    // Get sync control flag
+    __u32 key = 0;
+    __u64 *sync_flag = bpf_map_lookup_elem(&sync_control, &key);
+    if (!sync_flag || *sync_flag == 0) {
+        return XDP_PASS;
+    }
+    
+    // Reset sync flag
+    __u64 reset_flag = 0;
+    bpf_map_update_elem(&sync_control, &key, &reset_flag, BPF_ANY);
+    
+    // Batch sync packet stats
+    __u32 buffer_idx = 0;
+    struct sync_entry *entry = bpf_map_lookup_elem(&sync_buffer, &buffer_idx);
+    if (!entry) {
+        return XDP_PASS;
+    }
+    
+    // Iterate through packet_stats map and batch into buffer
+    __u32 stats_key = 0;
+    __u64 *bytes = bpf_map_lookup_elem(&packet_stats, &stats_key);
+    if (bytes) {
+        entry->ip = stats_key;
+        entry->bytes = *bytes;
+        entry->valid = 1;
+        
+        // Get corresponding credit info
+        __s64 *credit = bpf_map_lookup_elem(&user_credits, &stats_key);
+        if (credit) {
+            entry->credit = *credit;
+        }
+        
+        // Get block status
+        __u8 *blocked = bpf_map_lookup_elem(&block_list, &stats_key);
+        if (blocked) {
+            entry->blocked = *blocked;
+        }
+        
+        // Signal to userspace that data is ready
+        bpf_printk("Synced stats for IP %x: %lu bytes, credit %ld, blocked %d\n", 
+                   stats_key, *bytes, credit ? *credit : 0, blocked ? *blocked : 0);
+    }
+    
     return XDP_PASS;
 }
 

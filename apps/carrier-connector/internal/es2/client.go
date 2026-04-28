@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 	"time"
 
@@ -16,6 +17,8 @@ type ES2Client struct {
 	httpClient *http.Client
 	config     *config.ES2Config
 	baseURL    string
+	maxRetries int
+	retryDelay time.Duration
 }
 
 func NewES2Client(cfg *config.ES2Config) *ES2Client {
@@ -28,9 +31,66 @@ func NewES2Client(cfg *config.ES2Config) *ES2Client {
 				},
 			},
 		},
-		config:  cfg,
-		baseURL: cfg.BaseURL,
+		config:     cfg,
+		baseURL:    cfg.BaseURL,
+		maxRetries: 3,
+		retryDelay: 1 * time.Second,
 	}
+}
+
+// retryableError checks if an error is retryable
+func (c *ES2Client) retryableError(err error, statusCode int) bool {
+	if err != nil {
+		return true // Network errors are retryable
+	}
+	// Retry on 5xx server errors and 429 rate limit
+	return statusCode >= 500 || statusCode == 429
+}
+
+// executeWithRetry executes an HTTP request with retry logic
+func (c *ES2Client) executeWithRetry(ctx context.Context, req *http.Request) (*http.Response, error) {
+	var lastErr error
+	var lastResp *http.Response
+
+	for attempt := 0; attempt <= c.maxRetries; attempt++ {
+		if attempt > 0 {
+			// Exponential backoff
+			backoff := c.retryDelay * time.Duration(math.Pow(2, float64(attempt-1)))
+			select {
+			case <-time.After(backoff):
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			}
+		}
+
+		resp, err := c.httpClient.Do(req)
+		if err != nil {
+			lastErr = err
+			if !c.retryableError(err, 0) {
+				return nil, err
+			}
+			continue
+		}
+
+		if resp.StatusCode == http.StatusOK {
+			return resp, nil
+		}
+
+		// Save response body for potential error reporting
+		lastResp = resp
+
+		if !c.retryableError(nil, resp.StatusCode) {
+			return resp, nil
+		}
+
+		resp.Body.Close()
+		lastErr = fmt.Errorf("HTTP %d", resp.StatusCode)
+	}
+
+	if lastResp != nil {
+		return lastResp, lastErr
+	}
+	return nil, lastErr
 }
 
 func (c *ES2Client) DownloadProfile(ctx context.Context, req *DownloadProfileRequest) (*DownloadProfileResponse, error) {
@@ -48,9 +108,9 @@ func (c *ES2Client) DownloadProfile(ctx context.Context, req *DownloadProfileReq
 
 	c.setHeaders(httpReq)
 
-	resp, err := c.httpClient.Do(httpReq)
+	resp, err := c.executeWithRetry(ctx, httpReq)
 	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
+		return nil, fmt.Errorf("failed to send request after retries: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -81,9 +141,9 @@ func (c *ES2Client) GetProfileStatus(ctx context.Context, req *GetProfileStatusR
 
 	c.setHeaders(httpReq)
 
-	resp, err := c.httpClient.Do(httpReq)
+	resp, err := c.executeWithRetry(ctx, httpReq)
 	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
+		return nil, fmt.Errorf("failed to send request after retries: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -114,9 +174,9 @@ func (c *ES2Client) DeleteProfile(ctx context.Context, req *DeleteProfileRequest
 
 	c.setHeaders(httpReq)
 
-	resp, err := c.httpClient.Do(httpReq)
+	resp, err := c.executeWithRetry(ctx, httpReq)
 	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
+		return nil, fmt.Errorf("failed to send request after retries: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -147,9 +207,9 @@ func (c *ES2Client) EnableProfile(ctx context.Context, req *EnableProfileRequest
 
 	c.setHeaders(httpReq)
 
-	resp, err := c.httpClient.Do(httpReq)
+	resp, err := c.executeWithRetry(ctx, httpReq)
 	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
+		return nil, fmt.Errorf("failed to send request after retries: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -180,9 +240,9 @@ func (c *ES2Client) DisableProfile(ctx context.Context, req *DisableProfileReque
 
 	c.setHeaders(httpReq)
 
-	resp, err := c.httpClient.Do(httpReq)
+	resp, err := c.executeWithRetry(ctx, httpReq)
 	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
+		return nil, fmt.Errorf("failed to send request after retries: %w", err)
 	}
 	defer resp.Body.Close()
 

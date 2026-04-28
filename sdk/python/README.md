@@ -4,6 +4,7 @@ Async Python SDK for the Telecom Platform with full type hints and modern async/
 
 ## Features
 
+- **Modular Architecture**: Separate modules for authentication, API clients, and WebSocket
 - **Async/Await Support**: Full async/await support with aiohttp
 - **Type Safety**: Complete type hints with Pydantic models
 - **WebSocket Support**: Real-time updates via WebSocket
@@ -31,6 +32,15 @@ uv pip install -e .
 pip install -r requirements.txt
 pip install -e .
 ```
+
+## Architecture
+
+The SDK is organized into modular components:
+
+- `auth.py` - Authentication provider handling API keys and JWT tokens
+- `api.py` - Main API client with HTTP request handling and retry logic
+- `websocket.py` - WebSocket client for real-time updates
+- `types.py` - Type definitions and Pydantic models
 
 ## Quick Start
 

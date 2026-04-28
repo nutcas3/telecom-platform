@@ -1,132 +1,92 @@
 package main
 
 import (
-	"crypto/tls"
 	"fmt"
 	"os"
 	"time"
 
-	"github.com/go-resty/resty/v2"
+	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/config"
+	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/es2"
+	handler "github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/handler"
+	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/mq"
+	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/repository"
+	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/webhook"
 	"github.com/rs/zerolog"
 )
 
-var logger zerolog.Logger
-
-type ES2Client struct {
-	baseURL    string
-	apiKey     string
-	httpClient *resty.Client
-}
-
-type ProfileOrder struct {
-	ICCID       string `json:"iccid"`
-	IMSI        string `json:"imsi"`
-	K           string `json:"k"`
-	OPc         string `json:"opc"`
-	MCC         string `json:"mcc"`
-	MNC         string `json:"mnc"`
-	ProfileType string `json:"profileType"`
-}
-
-type ProfileResponse struct {
-	ActivationCode string `json:"activationCode"`
-	ProfileID      string `json:"profileId"`
-	Status         string `json:"status"`
-}
-
 func main() {
-	// Initialize logger
-	logger = zerolog.New(os.Stdout).With().
+	handler.Logger = zerolog.New(os.Stdout).With().
 		Timestamp().
 		Str("service", "carrier-connector").
 		Logger()
 
-	// Load environment variables
 	if err := godotenv.Load(); err != nil {
-		logger.Info().Msg("No .env file found, using system environment")
+		handler.Logger.Info().Msg("No .env file found, using system environment")
 	}
 
-	logger.Info().Msg("Carrier Connector started")
+	client := es2.NewES2Client(&config.ES2Config{
+		BaseURL:                  handler.GetEnv("SMDP_URL", "https://smdp.example.com"),
+		APIKey:                   handler.GetEnv("SMDP_API_KEY", "test-api-key"),
+		FunctionalityRequesterID: handler.GetEnv("FUNCTIONALITY_REQUESTER_ID", "carrier-connector"),
+		InsecureSkipVerify:       handler.GetEnv("INSECURE_SKIP_VERIFY", "true") == "true",
+	})
+	port := handler.GetEnv("PORT", "8080")
 
-	// Initialize ES2+ client
-	smdpURL := getEnv("SMDP_URL", "https://smdp.example.com")
-	apiKey := getEnv("SMDP_API_KEY", "test-api-key")
+	router := gin.Default()
+	router.Use(gin.LoggerWithFormatter(func(p gin.LogFormatterParams) string {
+		return fmt.Sprintf("%s - [%s] \"%s %s %s %d %s \"%s\" %s\"\n",
+			p.ClientIP, p.TimeStamp.Format(time.RFC1123),
+			p.Method, p.Path, p.Request.Proto,
+			p.StatusCode, p.Latency, p.Request.UserAgent(), p.ErrorMessage,
+		)
+	}))
+	router.Use(gin.Recovery())
 
-	client := NewES2Client(smdpURL, apiKey)
-
-	// Example: Order a profile
-	order := &ProfileOrder{
-		ICCID:       "8933123456789012345",
-		IMSI:        "208930000000001",
-		K:           "465B5CE8B199B49FAA5F0A2EE238A6BC",
-		OPc:         "E8ED289DEBA952E4283B54E88E6183CA",
-		MCC:         "208",
-		MNC:         "93",
-		ProfileType: "operational",
+	dsn := handler.GetEnv("DATABASE_DSN", "")
+	if dsn == "" {
+		handler.Logger.Fatal().Msg("DATABASE_DSN is required (no in-memory fallback)")
 	}
-
-	logger.Info().
-		Str("imsi", order.IMSI).
-		Msg("Ordering eSIM profile from SM-DP+")
-
-	// In production, this would be triggered by API requests
-	response, err := client.OrderProfile(order)
+	postgresRepo, err := repository.NewPostgresProfileStore(dsn)
 	if err != nil {
-		logger.Error().Err(err).Msg("Failed to order profile")
-	} else {
-		logger.Info().
-			Str("activation_code", response.ActivationCode).
-			Str("profile_id", response.ProfileID).
-			Msg("Profile ordered successfully")
+		handler.Logger.Fatal().Err(err).Msg("Failed to connect to Postgres")
+	}
+	defer postgresRepo.Close()
+
+	// Wrap with cache (5 minute TTL)
+	profileRepo := repository.NewCachedProfileStore(postgresRepo, 5*time.Minute)
+	defer profileRepo.Close()
+
+	// Initialize webhook client for api-server notifications
+	webhookURL := handler.GetEnv("API_SERVER_WEBHOOK_URL", "")
+	webhookAPIKey := handler.GetEnv("API_SERVER_WEBHOOK_API_KEY", "")
+	webhookClient := webhook.NewWebhookClient(webhookURL, webhookAPIKey)
+
+	// Initialize message queue for async events (optional)
+	var messageQueue *mq.MessageQueue
+	rabbitmqURL := handler.GetEnv("RABBITMQ_URL", "")
+	if rabbitmqURL != "" {
+		mq, err := mq.NewMessageQueue(rabbitmqURL)
+		if err != nil {
+			handler.Logger.Warn().Err(err).Msg("Failed to connect to RabbitMQ, continuing without message queue")
+		} else {
+			// Declare profile events queue
+			if err := mq.DeclareQueue("profile-events"); err != nil {
+				handler.Logger.Warn().Err(err).Msg("Failed to declare profile-events queue")
+				mq.Close()
+			} else {
+				messageQueue = mq
+				handler.Logger.Info().Msg("Message queue initialized")
+				defer messageQueue.Close()
+			}
+		}
 	}
 
-	// Keep service running
-	logger.Info().Msg("Carrier Connector running. Press Ctrl+C to exit.")
-	select {}
-}
+	setupRoutes(router, client, profileRepo, webhookClient, messageQueue)
 
-func NewES2Client(baseURL, apiKey string) *ES2Client {
-	client := resty.New().
-		SetBaseURL(baseURL).
-		SetHeader("Authorization", fmt.Sprintf("Bearer %s", apiKey)).
-		SetHeader("Content-Type", "application/json").
-		SetTimeout(10 * time.Second).
-		SetTLSClientConfig(&tls.Config{
-			MinVersion: tls.VersionTLS12,
-		})
-
-	return &ES2Client{
-		baseURL:    baseURL,
-		apiKey:     apiKey,
-		httpClient: client,
+	handler.Logger.Info().Str("port", port).Msg("Carrier Connector API server starting")
+	if err := router.Run(":" + port); err != nil {
+		handler.Logger.Fatal().Err(err).Msg("Failed to start server")
 	}
-}
-
-func (c *ES2Client) OrderProfile(order *ProfileOrder) (*ProfileResponse, error) {
-	var response ProfileResponse
-
-	// NOTE: This is a simplified example
-	// In production, implement full GSMA ES2+ protocol
-	resp, err := c.httpClient.R().
-		SetBody(order).
-		SetResult(&response).
-		Post("/gsma/rsp2/es2plus/createProfile")
-
-	if err != nil {
-		return nil, fmt.Errorf("ES2+ API call failed: %w", err)
-	}
-
-	if resp.StatusCode() != 200 {
-		return nil, fmt.Errorf("SM-DP+ returned error: %s", resp.String())
-	}
-
-	return &response, nil
-}
-
-func getEnv(key, fallback string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return fallback
 }

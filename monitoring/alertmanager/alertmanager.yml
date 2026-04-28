@@ -1,0 +1,124 @@
+global:
+  resolve_timeout: 5m
+  # Slack webhook URL (replace with actual webhook)
+  slack_api_url: 'https://hooks.slack.com/services/YOUR/WEBHOOK/URL'
+
+# Templates for alert notifications
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Route configuration
+route:
+  group_by: ['alertname', 'severity', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+  receiver: 'default'
+
+  routes:
+    # Critical alerts go to critical receiver
+    - match:
+        severity: critical
+      receiver: 'critical'
+      continue: false
+
+    # Warning alerts go to warning receiver
+    - match:
+        severity: warning
+      receiver: 'warning'
+      continue: false
+
+    # Info alerts go to info receiver
+    - match:
+        severity: info
+      receiver: 'info'
+      continue: false
+
+# Receivers configuration
+receivers:
+  - name: 'default'
+    slack_configs:
+      - channel: '#telecom-platform-alerts'
+        send_resolved: true
+        title: '{{ .GroupLabels.alertname }}'
+        text: >-
+          {{ range .Alerts }}
+          Alert: {{ .Labels.alertname }}
+          Severity: {{ .Labels.severity }}
+          Service: {{ .Labels.service }}
+          Description: {{ .Annotations.description }}
+          {{ end }}
+
+  - name: 'critical'
+    slack_configs:
+      - channel: '#telecom-platform-critical'
+        send_resolved: true
+        title: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
+        color: 'danger'
+        text: >-
+          {{ range .Alerts }}
+          Alert: {{ .Labels.alertname }}
+          Severity: {{ .Labels.severity }}
+          Service: {{ .Labels.service }}
+          Description: {{ .Annotations.description }}
+          {{ end }}
+    # Email configuration for critical alerts
+    email_configs:
+      - to: 'oncall@telecom-platform.com'
+        from: 'alertmanager@telecom-platform.com'
+        headers:
+          Subject: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
+        html: >-
+          {{ range .Alerts }}
+          <h3>{{ .Labels.alertname }}</h3>
+          <p><strong>Severity:</strong> {{ .Labels.severity }}</p>
+          <p><strong>Service:</strong> {{ .Labels.service }}</p>
+          <p><strong>Description:</strong> {{ .Annotations.description }}</p>
+          <hr>
+          {{ end }}
+
+  - name: 'warning'
+    slack_configs:
+      - channel: '#telecom-platform-warnings'
+        send_resolved: true
+        title: '⚠️ WARNING: {{ .GroupLabels.alertname }}'
+        color: 'warning'
+        text: >-
+          {{ range .Alerts }}
+          Alert: {{ .Labels.alertname }}
+          Severity: {{ .Labels.severity }}
+          Service: {{ .Labels.service }}
+          Description: {{ .Annotations.description }}
+          {{ end }}
+
+  - name: 'info'
+    slack_configs:
+      - channel: '#telecom-platform-info'
+        send_resolved: true
+        title: 'ℹ️ INFO: {{ .GroupLabels.alertname }}'
+        color: 'good'
+        text: >-
+          {{ range .Alerts }}
+          Alert: {{ .Labels.alertname }}
+          Severity: {{ .Labels.severity }}
+          Service: {{ .Labels.service }}
+          Description: {{ .Annotations.description }}
+          {{ end }}
+
+# Inhibition rules
+inhibit_rules:
+  # If a critical alert is firing, inhibit warnings for the same service
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['service']
+    target_match_re:
+      alertname: '.*'
+
+  # If a service is down, inhibit other alerts for that service
+  - source_match:
+      alertname: '.*Down'
+    target_match_re:
+      alertname: '.*'
+    equal: ['service']

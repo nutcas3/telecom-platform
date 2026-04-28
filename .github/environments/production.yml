@@ -1,0 +1,53 @@
+# Production Environment Configuration
+name: production
+url: https://telecom-platform.com
+
+# Environment protection rules
+protection_rules:
+  # Require approval from production team
+  required_reviewers:
+    - cto
+    - head-of-operations
+    - security-lead
+  
+  # Prevent force pushes
+  prevent_force_pushes: true
+  
+  # Require status checks
+  required_status_checks:
+    strict: true
+    contexts:
+      - build-and-push
+      - test-suite
+      - security-scan
+      - performance-tests
+  
+  # Require branches to be up to date
+  require_branch_up_to_date: true
+  
+  # Limit who can deploy
+  deployment_restrictions:
+    users:
+      - cto
+      - head-of-operations
+      - devops-lead
+    teams:
+      - platform-engineers
+
+# Environment variables
+environment_variables:
+  API_BASE_URL: https://api.telecom-platform.com
+  DATABASE_URL: postgresql://prod-user:prod-pass@prod-db.internal:5432/telecom_prod
+  REDIS_URL: redis://prod-redis.internal:6379
+  LOG_LEVEL: warn
+  ENVIRONMENT: production
+
+# Secrets (configured in GitHub repository settings)
+# These are referenced but not stored in the file
+secrets:
+  - PROD_DB_PASSWORD
+  - PROD_API_KEY
+  - PROD_JWT_SECRET
+  - KUBECONFIG_PRODUCTION
+  - SSL_CERTIFICATE
+  - SSL_PRIVATE_KEY

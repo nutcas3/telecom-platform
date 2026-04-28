@@ -73,7 +73,7 @@ func dataSourceSubscriber() *schema.Resource {
 	}
 }
 
-func dataSourceSubscriberRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceSubscriberRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*APIClient)
 	id := d.Get("id").(string)
 
@@ -126,7 +126,7 @@ func dataSourceSystemStats() *schema.Resource {
 	}
 }
 
-func dataSourceSystemStatsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceSystemStatsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*APIClient)
 
 	var result SystemStats

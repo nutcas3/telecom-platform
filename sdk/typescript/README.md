@@ -2,6 +2,22 @@
 
 A comprehensive TypeScript SDK for integrating with the Telecom Platform API. This SDK provides a clean, type-safe interface for managing subscribers, monitoring usage, handling payments, and receiving real-time updates.
 
+## Architecture
+
+The SDK is organized into modular components:
+
+- `auth.ts` - Authentication provider handling API keys and JWT tokens
+- `api/` - Directory containing API modules:
+  - `http-client.ts` - HTTP client with retry logic
+  - `subscribers.ts` - Subscriber management API
+  - `usage.ts` - Usage tracking API
+  - `payments.ts` - Payment processing API
+  - `rating-plans.ts` - Rating plan management API
+  - `system.ts` - System monitoring API
+  - `graphql.ts` - GraphQL query execution
+- `websocket.ts` - WebSocket client for real-time updates
+- `types.ts` - Type definitions and interfaces
+
 ## Installation
 
 ```bash
@@ -74,22 +90,17 @@ const sdk = TelecomSDK.initialize({
 
 ```typescript
 // List subscribers
-const subscribers = await sdk.subscribersService.listSubscribers({
+const subscribers = await sdk.subscribers.listSubscribers({
   page: 1,
   pageSize: 20,
   status: 'active',
-  organizationId: 'org-123',
-  search: 'John Doe',
 });
 
 // Get subscriber by ID
-const subscriber = await sdk.subscribersService.getSubscriber(123);
-
-// Get subscriber by IMSI
-const subscriber = await sdk.subscribersService.getSubscriberByImsi('123456789012345');
+const subscriber = await sdk.subscribers.getSubscriber(123);
 
 // Create new subscriber
-const newSubscriber = await sdk.subscribersService.createSubscriber({
+const newSubscriber = await sdk.subscribers.createSubscriber({
   msisdn: '+1234567890',
   firstName: 'John',
   lastName: 'Doe',
@@ -98,70 +109,96 @@ const newSubscriber = await sdk.subscribersService.createSubscriber({
 });
 
 // Update subscriber
-const updated = await sdk.subscribersService.updateSubscriber(123, {
+const updated = await sdk.subscribers.updateSubscriber(123, {
   firstName: 'Jane',
   email: 'jane.doe@example.com',
 });
 
 // Delete subscriber
-await sdk.subscribersService.deleteSubscriber(123);
+await sdk.subscribers.deleteSubscriber(123);
 
 // Suspend subscriber
-await sdk.subscribersService.suspendSubscriber(123);
+await sdk.subscribers.suspendSubscriber(123);
 
 // Activate subscriber
-await sdk.subscribersService.activateSubscriber(123);
-
-// Terminate subscriber
-await sdk.subscribersService.terminateSubscriber(123);
+await sdk.subscribers.activateSubscriber(123);
 ```
 
-### Account Management
+### Usage Management
 
 ```typescript
-// Get subscriber account
-const account = await sdk.subscribersService.getSubscriberAccount('123456789012345');
+// Get usage stats
+const stats = await sdk.usage.getStats(1, '2024-01-01', '2024-01-31');
 
-// Top up balance
-const updatedAccount = await sdk.subscribersService.topUpBalance('123456789012345', {
-  amount: 1000, // $10.00 in cents
-  paymentMethodId: 'pm_123',
+// List usage events
+const events = await sdk.usage.listEvents({
+  subscriberId: 1,
+  usageType: 'data',
+  page: 1,
+  pageSize: 50,
 });
 
-// Get usage statistics
-const stats = await sdk.subscribersService.getUsageStats('123456789012345', 'monthly');
-
 // Get real-time usage
-const realtime = await sdk.subscribersService.getRealTimeUsage('123456789012345');
+const realtime = await sdk.usage.getRealTimeUsage(1);
 ```
 
-### eSIM Management
+### Payment Management
 
 ```typescript
-// Provision eSIM profile
-const esim = await sdk.subscribersService.provisionESIM('123456789012345');
+// Create payment transaction
+const transaction = await sdk.payments.createTransaction({
+  subscriberId: 1,
+  amount: 25.00,
+  currency: 'USD',
+  gateway: 'stripe',
+  metadata: { description: 'Monthly plan' }
+});
 
-// Activate eSIM profile
-await sdk.subscribersService.activateESIM('123456789012345', esim.profileId);
+// Get transaction
+const transaction = await sdk.payments.getTransaction('txn-123');
 
-// Deactivate eSIM profile
-await sdk.subscribersService.deactivateESIM('123456789012345', esim.profileId);
-
-// Get eSIM status
-const status = await sdk.subscribersService.getESIMStatus('123456789012345');
+// List transactions
+const transactions = await sdk.payments.listTransactions({
+  subscriberId: 1,
+  status: 'completed',
+  page: 1,
+  pageSize: 50,
+});
 ```
 
-### Billing & Invoices
+### Rating Plans
 
 ```typescript
-// Get subscriber invoices
-const invoices = await sdk.subscribersService.getInvoices('123456789012345');
+// List rating plans
+const plans = await sdk.ratingPlans.list();
 
-// Get specific invoice
-const invoice = await sdk.subscribersService.getInvoice('inv_123');
+// Get specific plan
+const plan = await sdk.ratingPlans.get('plan-123');
+```
 
-// Download invoice PDF
-const pdfBlob = await sdk.subscribersService.downloadInvoicePDF('inv_123');
+### System Management
+
+```typescript
+// Get system stats
+const stats = await sdk.system.getStats();
+
+// Get health status
+const health = await sdk.system.getHealth();
+```
+
+### GraphQL
+
+```typescript
+// Execute GraphQL query
+const result = await sdk.graphql.execute(`
+  query GetSubscribers($first: Int) {
+    subscribers(first: $first) {
+      id
+      firstName
+      lastName
+    }
+  }
+`, { first: 10 });
 ```
 
 ### Real-time Updates
@@ -208,17 +245,13 @@ sdk.disconnectWebSocket();
 
 ```typescript
 // Get system statistics
-const stats = await sdk.getSystemStats();
+const stats = await sdk.system.getStats();
 console.log('Active sessions:', stats.activeSessions);
 console.log('Total accounts:', stats.totalAccounts);
 
 // Get health status
-const health = await sdk.getHealthStatus();
+const health = await sdk.system.getHealth();
 console.log('Redis connected:', health.redisConnected);
-
-// Test connection
-const test = await sdk.testConnection();
-console.log('API status:', test.status);
 ```
 
 ## Error Handling
@@ -227,7 +260,7 @@ The SDK provides comprehensive error handling with detailed error information:
 
 ```typescript
 try {
-  const subscriber = await sdk.subscribersService.getSubscriber(123);
+  const subscriber = await sdk.subscribers.getSubscriber(123);
 } catch (error) {
   console.error('Error:', error.code);
   console.error('Message:', error.message);
@@ -263,7 +296,7 @@ The SDK is fully typed with TypeScript. All methods have proper type definitions
 import { Subscriber, SubscriberStatus, UsageType } from '@telecom-platform/sdk';
 
 // Types are automatically inferred
-const subscriber: Subscriber = await sdk.subscribersService.getSubscriber(123);
+const subscriber: Subscriber = await sdk.subscribers.getSubscriber(123);
 const status: SubscriberStatus = subscriber.status;
 ```
 

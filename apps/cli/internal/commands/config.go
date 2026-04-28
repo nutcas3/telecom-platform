@@ -127,21 +127,33 @@ func getConfig(u *uiContext, args []string) error {
 func validateConfig(u *uiContext) error {
 	u.header("Validating Configuration")
 
+	if u.config == nil {
+		u.errorln("No configuration loaded")
+		return fmt.Errorf("no configuration")
+	}
+
+	errors := u.config.Validate()
+
 	t := u.newTable()
-	t.AddColumn("Check", 28, "left")
-	t.AddColumn("Result", 12, "left")
+	t.AddColumn("Field", 20, "left")
+	t.AddColumn("Value", 30, "left")
+	t.AddColumn("Status", 10, "left")
 
-	if u.config != nil && u.config.APIEndpoint != "" {
-		t.AddStyledRow(statusStyle("OK").Style, "API endpoint configured", "OK")
-	} else {
-		t.AddStyledRow(statusStyle("ERROR").Style, "API endpoint configured", "Missing")
-	}
-
-	if u.connected {
-		t.AddStyledRow(statusStyle("OK").Style, "API connectivity", "OK")
-	} else {
-		t.AddStyledRow(statusStyle("WARNING").Style, "API connectivity", "Unreachable")
-	}
+	t.AddRow("API Endpoint", u.config.APIEndpoint, "")
+	t.AddRow("API Token", maskToken(u.config.APIToken), "")
+	t.AddRow("Profile", u.config.Profile, "")
+	t.AddRow("Theme", u.config.Theme, "")
 	fmt.Println(t.Render())
-	return nil
+
+	if len(errors) == 0 {
+		u.success("Configuration is valid!")
+		return nil
+	}
+
+	u.warn(fmt.Sprintf("Found %d validation issue(s):", len(errors)))
+	for i, err := range errors {
+		u.errorln(fmt.Sprintf("%d. %s", i+1, err.Error()))
+	}
+
+	return fmt.Errorf("configuration validation failed")
 }

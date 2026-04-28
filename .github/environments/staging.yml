@@ -1,0 +1,36 @@
+# Staging Environment Configuration
+name: staging
+url: https://staging.telecom-platform.com
+
+# Environment protection rules
+protection_rules:
+  # Require approval from staging team
+  required_reviewers:
+    - staging-team-lead
+    - devops-engineer
+  
+  # Prevent force pushes
+  prevent_force_pushes: true
+  
+  # Require status checks
+  required_status_checks:
+    strict: true
+    contexts:
+      - build-and-push
+      - test-suite
+
+# Environment variables
+environment_variables:
+  API_BASE_URL: https://api.staging.telecom-platform.com
+  DATABASE_URL: postgresql://staging-user:staging-pass@staging-db.internal:5432/telecom_staging
+  REDIS_URL: redis://staging-redis.internal:6379
+  LOG_LEVEL: info
+  ENVIRONMENT: staging
+
+# Secrets (configured in GitHub repository settings)
+# These are referenced but not stored in the file
+secrets:
+  - STAGING_DB_PASSWORD
+  - STAGING_API_KEY
+  - STAGING_JWT_SECRET
+  - KUBECONFIG_STAGING

@@ -2,7 +2,6 @@ package gateways
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -20,13 +19,6 @@ import (
 	"github.com/nutcas3/telecom-platform/apps/api-server/internal/payment"
 )
 
-// StripeGateway implements payment processing via Stripe
-type StripeGateway struct {
-	secretKey     string
-	webhookSecret string
-	client        *http.Client
-}
-
 // NewStripeGateway creates a new Stripe payment gateway
 func NewStripeGateway(secretKey, webhookSecret string) *StripeGateway {
 	stripe.Key = secretKey
@@ -42,7 +34,7 @@ func NewStripeGateway(secretKey, webhookSecret string) *StripeGateway {
 func (g *StripeGateway) ProcessPayment(ctx context.Context, req *PaymentRequest) (*PaymentResponse, error) {
 	// Create payment intent
 	params := &stripe.PaymentIntentParams{
-		Amount:   stripe.Int64(int64(req.Amount * 100)), // Convert to cents
+		Amount:   new(int64(req.Amount * 100)), // Convert to cents
 		Currency: stripe.String(string(req.Currency)),
 		Metadata: map[string]string{
 			"subscriber_id": fmt.Sprintf("%d", req.SubscriberID),
@@ -132,7 +124,7 @@ func (g *StripeGateway) ProcessRefund(ctx context.Context, transactionID string,
 	}
 
 	if amount > 0 {
-		params.Amount = stripe.Int64(int64(amount * 100)) // Convert to cents
+		params.Amount = new(int64(amount * 100)) // Convert to cents
 	}
 
 	refund, err := refund.New(params)
@@ -185,10 +177,10 @@ func (g *StripeGateway) CreateInvoice(ctx context.Context, customerID string, it
 	for _, item := range items {
 		itemParams := &stripe.InvoiceItemParams{
 			Customer:    stripe.String(customerID),
-			Amount:      stripe.Int64(int64(item.Amount * 100)),
+			Amount:      new(int64(item.Amount * 100)),
 			Currency:    stripe.String(string(item.Currency)),
 			Description: stripe.String(item.Description),
-			Quantity:    stripe.Int64(int64(item.Quantity)),
+			Quantity:    new(int64(item.Quantity)),
 		}
 
 		_, err := invoiceitem.New(itemParams)
@@ -200,7 +192,7 @@ func (g *StripeGateway) CreateInvoice(ctx context.Context, customerID string, it
 	// Create the invoice
 	params := &stripe.InvoiceParams{
 		Customer:    stripe.String(customerID),
-		AutoAdvance: stripe.Bool(true),
+		AutoAdvance: new(true),
 	}
 
 	inv, err := invoice.New(params)
@@ -215,74 +207,4 @@ func (g *StripeGateway) CreateInvoice(ctx context.Context, customerID string, it
 		Currency:  string(inv.Currency),
 		CreatedAt: time.Unix(inv.Created, 0),
 	}, nil
-}
-
-// PaymentRequest represents a payment request
-type PaymentRequest struct {
-	SubscriberID uint    `json:"subscriber_id"`
-	InvoiceID    uint    `json:"invoice_id"`
-	Amount       float64 `json:"amount"`
-	Currency     string  `json:"currency"`
-	CustomerID   string  `json:"customer_id,omitempty"`
-	Description  string  `json:"description,omitempty"`
-}
-
-// PaymentResponse represents a payment response
-type PaymentResponse struct {
-	TransactionID string    `json:"transaction_id"`
-	Status        string    `json:"status"`
-	ClientSecret  string    `json:"client_secret"`
-	Amount        float64   `json:"amount"`
-	Currency      string    `json:"currency"`
-	CreatedAt     time.Time `json:"created_at"`
-}
-
-// CustomerResponse represents a customer creation response
-type CustomerResponse struct {
-	CustomerID string    `json:"customer_id"`
-	Email      string    `json:"email"`
-	Name       string    `json:"name"`
-	CreatedAt  time.Time `json:"created_at"`
-}
-
-// RefundResponse represents a refund response
-type RefundResponse struct {
-	RefundID  string    `json:"refund_id"`
-	Amount    float64   `json:"amount"`
-	Status    string    `json:"status"`
-	CreatedAt time.Time `json:"created_at"`
-}
-
-// PaymentStatusResponse represents payment status response
-type PaymentStatusResponse struct {
-	TransactionID string    `json:"transaction_id"`
-	Status        string    `json:"status"`
-	Amount        float64   `json:"amount"`
-	Currency      string    `json:"currency"`
-	CreatedAt     time.Time `json:"created_at"`
-}
-
-// WebhookEvent represents a webhook event
-type WebhookEvent struct {
-	Type    string          `json:"type"`
-	EventID string          `json:"event_id"`
-	Created time.Time       `json:"created"`
-	Data    json.RawMessage `json:"data"`
-}
-
-// InvoiceItem represents an invoice line item
-type InvoiceItem struct {
-	Description string  `json:"description"`
-	Amount      float64 `json:"amount"`
-	Currency    string  `json:"currency"`
-	Quantity    int     `json:"quantity"`
-}
-
-// InvoiceResponse represents an invoice response
-type InvoiceResponse struct {
-	InvoiceID string    `json:"invoice_id"`
-	Status    string    `json:"status"`
-	Amount    float64   `json:"amount"`
-	Currency  string    `json:"currency"`
-	CreatedAt time.Time `json:"created_at"`
 }

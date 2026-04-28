@@ -10,30 +10,30 @@ import (
 )
 
 type Subscriber struct {
-	ID             int    `json:"id"`
-	IMSI           string `json:"imsi"`
-	MSISDN         string `json:"msisdn"`
-	FirstName      string `json:"first_name"`
-	LastName       string `json:"last_name"`
-	Email          string `json:"email"`
-	OrganizationID string `json:"organization_id"`
-	Status         string `json:"status"`
-	PlanID         int    `json:"plan_id"`
+	ID             int     `json:"id"`
+	IMSI           string  `json:"imsi"`
+	MSISDN         string  `json:"msisdn"`
+	FirstName      string  `json:"first_name"`
+	LastName       string  `json:"last_name"`
+	Email          string  `json:"email"`
+	OrganizationID string  `json:"organization_id"`
+	Status         string  `json:"status"`
+	PlanID         int     `json:"plan_id"`
 	Balance        float64 `json:"balance"`
-	CreatedAt      string `json:"created_at"`
-	UpdatedAt      string `json:"updated_at"`
+	CreatedAt      string  `json:"created_at"`
+	UpdatedAt      string  `json:"updated_at"`
 }
 
 type RatingPlan struct {
-	PlanID      string  `json:"plan_id"`
-	Name        string  `json:"name"`
-	DataRate    float64 `json:"data_rate"`
-	VoiceRate   float64 `json:"voice_rate"`
-	SMSRate     float64 `json:"sms_rate"`
-	MonthlyFee  float64 `json:"monthly_fee"`
-	DataLimit   float64 `json:"data_limit"`
-	VoiceLimit  float64 `json:"voice_limit"`
-	SMSLimit    float64 `json:"sms_limit"`
+	PlanID     string  `json:"plan_id"`
+	Name       string  `json:"name"`
+	DataRate   float64 `json:"data_rate"`
+	VoiceRate  float64 `json:"voice_rate"`
+	SMSRate    float64 `json:"sms_rate"`
+	MonthlyFee float64 `json:"monthly_fee"`
+	DataLimit  float64 `json:"data_limit"`
+	VoiceLimit float64 `json:"voice_limit"`
+	SMSLimit   float64 `json:"sms_limit"`
 }
 
 func resourceSubscriber() *schema.Resource {
@@ -93,17 +93,17 @@ func resourceSubscriber() *schema.Resource {
 	}
 }
 
-func resourceSubscriberCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceSubscriberCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*APIClient)
 
-	sub := map[string]interface{}{
-		"imsi":           d.Get("imsi").(string),
-		"msisdn":         d.Get("msisdn").(string),
-		"first_name":     d.Get("first_name").(string),
-		"last_name":      d.Get("last_name").(string),
-		"email":          d.Get("email").(string),
+	sub := map[string]any{
+		"imsi":            d.Get("imsi").(string),
+		"msisdn":          d.Get("msisdn").(string),
+		"first_name":      d.Get("first_name").(string),
+		"last_name":       d.Get("last_name").(string),
+		"email":           d.Get("email").(string),
 		"organization_id": d.Get("organization_id").(string),
-		"plan_id":        d.Get("plan_id").(int),
+		"plan_id":         d.Get("plan_id").(int),
 	}
 
 	var result Subscriber
@@ -115,7 +115,7 @@ func resourceSubscriberCreate(ctx context.Context, d *schema.ResourceData, meta 
 	return resourceSubscriberRead(ctx, d, meta)
 }
 
-func resourceSubscriberRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceSubscriberRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*APIClient)
 	id := d.Id()
 
@@ -139,16 +139,16 @@ func resourceSubscriberRead(ctx context.Context, d *schema.ResourceData, meta in
 	return nil
 }
 
-func resourceSubscriberUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceSubscriberUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*APIClient)
 	id := d.Id()
 
-	sub := map[string]interface{}{
-		"first_name":     d.Get("first_name").(string),
-		"last_name":      d.Get("last_name").(string),
-		"email":          d.Get("email").(string),
+	sub := map[string]any{
+		"first_name":      d.Get("first_name").(string),
+		"last_name":       d.Get("last_name").(string),
+		"email":           d.Get("email").(string),
 		"organization_id": d.Get("organization_id").(string),
-		"plan_id":        d.Get("plan_id").(int),
+		"plan_id":         d.Get("plan_id").(int),
 	}
 
 	var result Subscriber
@@ -159,7 +159,7 @@ func resourceSubscriberUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	return resourceSubscriberRead(ctx, d, meta)
 }
 
-func resourceSubscriberDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceSubscriberDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*APIClient)
 	id := d.Id()
 
@@ -218,13 +218,13 @@ func resourceRatingPlan() *schema.Resource {
 	}
 }
 
-func resourceRatingPlanCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceRatingPlanCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	// Placeholder - would implement actual plan creation
 	d.SetId(d.Get("plan_id").(string))
 	return resourceRatingPlanRead(ctx, d, meta)
 }
 
-func resourceRatingPlanRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceRatingPlanRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	// Placeholder - would fetch actual plan data
 	d.Set("plan_id", d.Get("plan_id"))
 	d.Set("name", d.Get("name"))
@@ -238,10 +238,10 @@ func resourceRatingPlanRead(ctx context.Context, d *schema.ResourceData, meta in
 	return nil
 }
 
-func resourceRatingPlanUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceRatingPlanUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	return resourceRatingPlanRead(ctx, d, meta)
 }
 
-func resourceRatingPlanDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceRatingPlanDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	return nil
 }

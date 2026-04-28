@@ -1,0 +1,236 @@
+groups:
+  - name: telecom_platform_alerts
+    interval: 30s
+    rules:
+      # API Server Alerts
+      - alert: APIServerHighErrorRate
+        expr: rate(http_requests_total{job="telecom-api-server",status=~"5.."}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+          service: api-server
+        annotations:
+          summary: "API Server error rate is high"
+          description: "API Server error rate is {{ $value }} errors per second for the last 5 minutes"
+
+      - alert: APIServerHighLatency
+        expr: histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{job="telecom-api-server"}[5m])) > 1
+        for: 10m
+        labels:
+          severity: warning
+          service: api-server
+        annotations:
+          summary: "API Server latency is high"
+          description: "API Server 99th percentile latency is {{ $value }}s for the last 10 minutes"
+
+      - alert: APIServerDown
+        expr: up{job="telecom-api-server"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: api-server
+        annotations:
+          summary: "API Server is down"
+          description: "API Server has been down for more than 2 minutes"
+
+      # Charging Engine Alerts
+      - alert: ChargingEngineHighErrorRate
+        expr: rate(http_requests_total{job="telecom-charging-engine",status=~"5.."}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+          service: charging-engine
+        annotations:
+          summary: "Charging Engine error rate is high"
+          description: "Charging Engine error rate is {{ $value }} errors per second for the last 5 minutes"
+
+      - alert: ChargingEngineDown
+        expr: up{job="telecom-charging-engine"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: charging-engine
+        annotations:
+          summary: "Charging Engine is down"
+          description: "Charging Engine has been down for more than 2 minutes"
+
+      - alert: ChargingEngineHighMemoryUsage
+        expr: container_memory_usage_bytes{container="charging-engine"} / container_spec_memory_limit_bytes{container="charging-engine"} > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: charging-engine
+        annotations:
+          summary: "Charging Engine memory usage is high"
+          description: "Charging Engine memory usage is above 90%"
+
+      # Carrier Connector Alerts
+      - alert: CarrierConnectorHighErrorRate
+        expr: rate(http_requests_total{job="telecom-carrier-connector",status=~"5.."}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+          service: carrier-connector
+        annotations:
+          summary: "Carrier Connector error rate is high"
+          description: "Carrier Connector error rate is {{ $value }} errors per second for the last 5 minutes"
+
+      - alert: CarrierConnectorDown
+        expr: up{job="telecom-carrier-connector"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: carrier-connector
+        annotations:
+          summary: "Carrier Connector is down"
+          description: "Carrier Connector has been down for more than 2 minutes"
+
+      # Packet Gateway Alerts
+      - alert: PacketGatewayDown
+        expr: up{job="telecom-packet-gateway"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: packet-gateway
+        annotations:
+          summary: "Packet Gateway is down"
+          description: "Packet Gateway has been down for more than 2 minutes"
+
+      - alert: PacketGatewayHighPacketDropRate
+        expr: rate(packet_drops_total[5m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+          service: packet-gateway
+        annotations:
+          summary: "Packet Gateway packet drop rate is high"
+          description: "Packet Gateway is dropping {{ $value }} packets per second"
+
+      # Web Dashboard Alerts
+      - alert: WebDashboardDown
+        expr: up{job="web-dashboard"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: web-dashboard
+        annotations:
+          summary: "Web Dashboard is down"
+          description: "Web Dashboard has been down for more than 2 minutes"
+
+      # Database Alerts
+      - alert: PostgresDown
+        expr: up{job="postgres"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: postgres
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL has been down for more than 2 minutes"
+
+      - alert: PostgresHighConnectionCount
+        expr: pg_stat_database_numbackends / pg_settings_max_connections > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: postgres
+        annotations:
+          summary: "PostgreSQL connection count is high"
+          description: "PostgreSQL connection usage is above 80%"
+
+      - alert: PostgresSlowQueries
+        expr: rate(pg_stat_statements_calls_total{datname="telecom_platform"}[5m]) > 100
+        for: 10m
+        labels:
+          severity: warning
+          service: postgres
+        annotations:
+          summary: "PostgreSQL slow queries detected"
+          description: "PostgreSQL is experiencing slow queries"
+
+      # Redis Alerts
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: redis
+        annotations:
+          summary: "Redis is down"
+          description: "Redis has been down for more than 2 minutes"
+
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "Redis memory usage is high"
+          description: "Redis memory usage is above 90%"
+
+      - alert: RedisHighConnectionCount
+        expr: redis_connected_clients > 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "Redis connection count is high"
+          description: "Redis has {{ $value }} connected clients"
+
+      # Infrastructure Alerts
+      - alert: HighCPUUsage
+        expr: rate(container_cpu_usage_seconds_total[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage detected"
+          description: "Container CPU usage is above 80%"
+
+      - alert: HighMemoryUsage
+        expr: container_memory_usage_bytes / container_spec_memory_limit_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage detected"
+          description: "Container memory usage is above 90%"
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Disk space is low"
+          description: "Disk space on / is below 10%"
+
+      - alert: PodCrashLooping
+        expr: rate(kube_pod_container_status_restarts_total[15m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pod is crash looping"
+          description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is crash looping"
+
+      # Business Logic Alerts
+      - alert: LowSubscriberCount
+        expr: teleco_subscribers_total < 100
+        for: 30m
+        labels:
+          severity: info
+        annotations:
+          summary: "Low subscriber count"
+          description: "Total subscriber count is {{ $value }}"
+
+      - alert: HighFailedTransactions
+        expr: rate(teleco_transactions_failed_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High failed transaction rate"
+          description: "Failed transaction rate is {{ $value }} per second"

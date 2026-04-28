@@ -25,6 +25,8 @@ func HandleMonitoring(args []string, config *types.CLIConfig) error {
 		return showAlerts(u)
 	case "health":
 		return showHealth(u)
+	case "check-all":
+		return checkAllServices(u)
 	case "logs":
 		return showLogs(u, args[1:])
 	default:
@@ -45,6 +47,7 @@ func showMonitoringHelp(u *uiContext) {
 	t.AddRow("metrics", "Show system metrics")
 	t.AddRow("alerts", "Show active alerts")
 	t.AddRow("health", "Show system health")
+	t.AddRow("check-all", "Check health of all services")
 	t.AddRow("logs <service>", "Show service logs")
 	fmt.Println(t.Render())
 }
@@ -157,6 +160,39 @@ func showHealth(u *uiContext) error {
 	return nil
 }
 
+func checkAllServices(u *uiContext) error {
+	u.header("All Services Health Check")
+
+	healthResults, err := u.client.CheckAllServices()
+	t := u.newTable()
+	t.AddColumn("Service", 18, "left")
+	t.AddColumn("Status", 12, "left")
+	t.AddColumn("Endpoint", 25, "left")
+	t.AddColumn("Message", 30, "left")
+
+	if err != nil {
+		u.errorln("Failed to check services: " + err.Error())
+		return err
+	}
+
+	allHealthy := true
+	for _, h := range healthResults {
+		style := statusStyle(strings.ToUpper(h.Status))
+		if h.Status != "healthy" {
+			allHealthy = false
+		}
+		t.AddStyledRow(style.Style, h.Name, h.Status, h.Endpoint, h.Message)
+	}
+	fmt.Println(t.Render())
+
+	if allHealthy {
+		u.success("All services are healthy")
+	} else {
+		u.warn("Some services are unhealthy or unreachable")
+	}
+	return nil
+}
+
 func showLogs(u *uiContext, args []string) error {
 	service := "all"
 	if len(args) > 0 {
@@ -168,13 +204,13 @@ func showLogs(u *uiContext, args []string) error {
 		line  string
 		level string
 	}{
-		{"2024-01-15 16:45:30 [INFO] Service started successfully", "OK"},
-		{"2024-01-15 16:45:35 [INFO] Database connection established", "OK"},
-		{"2024-01-15 16:45:40 [INFO] API server listening on port 8000", "OK"},
-		{"2024-01-15 16:45:45 [INFO] Health check passed", "OK"},
-		{"2024-01-15 16:45:50 [WARN] High memory usage detected", "WARNING"},
-		{"2024-01-15 16:45:55 [ERROR] Database connection timeout", "ERROR"},
-		{"2024-01-15 16:46:00 [INFO] Database connection restored", "OK"},
+		{"2026-05-30 16:45:30 [INFO] Service started successfully", "OK"},
+		{"2026-05-30 16:45:35 [INFO] Database connection established", "OK"},
+		{"2026-05-30 16:45:40 [INFO] API server listening on port 8000", "OK"},
+		{"2026-05-30 16:45:45 [INFO] Health check passed", "OK"},
+		{"2026-05-30 16:45:50 [WARN] High memory usage detected", "WARNING"},
+		{"2026-05-30 16:45:55 [ERROR] Database connection timeout", "ERROR"},
+		{"2026-05-30 16:46:00 [INFO] Database connection restored", "OK"},
 	}
 	for _, l := range logs {
 		fmt.Println(u.colorizer.Colorize(l.line, statusStyle(l.level)))

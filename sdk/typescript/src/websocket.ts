@@ -1,20 +1,21 @@
-import { SDKConfig } from './config';
 import { WebSocketMessage } from './types';
 
 export type WebSocketEventHandler = (message: WebSocketMessage) => void;
 
 export class WebSocketClient {
   private ws: WebSocket | null = null;
-  private config: SDKConfig;
   private eventHandlers: Map<string, WebSocketEventHandler[]> = new Map();
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
   private isConnecting = false;
   private pingInterval: ReturnType<typeof setInterval> | null = null;
+  private websocketURL: string;
+  private enableLogging: boolean;
 
-  constructor() {
-    this.config = SDKConfig.getInstance();
+  constructor(websocketURL: string, enableLogging: boolean = false) {
+    this.websocketURL = websocketURL;
+    this.enableLogging = enableLogging;
   }
 
   /**
@@ -25,14 +26,10 @@ export class WebSocketClient {
       return;
     }
 
-    if (!this.config.websocketURL) {
-      throw new Error('WebSocket URL not configured');
-    }
-
     this.isConnecting = true;
 
     try {
-      this.ws = new WebSocket(this.config.websocketURL);
+      this.ws = new WebSocket(this.websocketURL);
 
       await new Promise<void>((resolve, reject) => {
         if (!this.ws) return reject(new Error('WebSocket not initialized'));
@@ -41,7 +38,7 @@ export class WebSocketClient {
           this.isConnecting = false;
           this.reconnectAttempts = 0;
           this.startPing();
-          if (this.config.enableLogging) {
+          if (this.enableLogging) {
             console.log('[SDK] WebSocket connected');
           }
           resolve();
@@ -54,7 +51,7 @@ export class WebSocketClient {
             );
             this.handleMessage(message);
           } catch (error) {
-            if (this.config.enableLogging) {
+            if (this.enableLogging) {
               console.error('[SDK] Failed to parse WebSocket message:', error);
             }
           }
@@ -63,7 +60,7 @@ export class WebSocketClient {
         this.ws.onclose = (event: CloseEvent) => {
           this.isConnecting = false;
           this.stopPing();
-          if (this.config.enableLogging) {
+          if (this.enableLogging) {
             console.log(`[SDK] WebSocket closed: ${event.code} - ${event.reason}`);
           }
           if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
@@ -73,7 +70,7 @@ export class WebSocketClient {
 
         this.ws.onerror = () => {
           this.isConnecting = false;
-          if (this.config.enableLogging) {
+          if (this.enableLogging) {
             console.error('[SDK] WebSocket error');
           }
           reject(new Error('WebSocket connection failed'));
@@ -176,11 +173,11 @@ export class WebSocketClient {
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts);
     setTimeout(() => {
       this.reconnectAttempts++;
-      if (this.config.enableLogging) {
+      if (this.enableLogging) {
         console.log(`[SDK] Reconnecting (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
       }
       this.connect().catch(error => {
-        if (this.config.enableLogging) {
+        if (this.enableLogging) {
           console.error('[SDK] Reconnection failed:', error);
         }
       });

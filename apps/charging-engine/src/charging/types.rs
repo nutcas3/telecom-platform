@@ -1,16 +1,42 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use redis::{FromRedisValue, ToRedisArgs, ToSingleRedisArg};
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum ChargingRule {
+    Allowed,
+    InsufficientCredit,
+    DataLimitExceeded,
+    VoiceLimitExceeded,
+    SmsLimitExceeded,
+    UserBlocked,
+    Blocked,
+}
+
+impl ChargingRule {
+    pub fn as_str(&self) -> &str {
+        match self {
+            ChargingRule::Allowed => "ALLOWED",
+            ChargingRule::InsufficientCredit => "INSUFFICIENT_CREDIT",
+            ChargingRule::DataLimitExceeded => "DATA_LIMIT_EXCEEDED",
+            ChargingRule::VoiceLimitExceeded => "VOICE_LIMIT_EXCEEDED",
+            ChargingRule::SmsLimitExceeded => "SMS_LIMIT_EXCEEDED",
+            ChargingRule::UserBlocked => "USER_BLOCKED",
+            ChargingRule::Blocked => "BLOCKED",
+        }
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SubscriberAccount {
     pub imsi: String,
-    pub balance: i64,        // in smallest currency unit (e.g., cents)
-    pub data_limit: u64,    // bytes
-    pub data_used: u64,     // bytes
-    pub voice_limit: u64,   // seconds
-    pub voice_used: u64,    // seconds
-    pub sms_limit: u64,     // count
-    pub sms_used: u64,      // count
+    pub balance: i64,
+    pub data_limit: u64,
+    pub data_used: u64,
+    pub voice_limit: u64,
+    pub voice_used: u64,
+    pub sms_limit: u64,
+    pub sms_used: u64,
     pub status: AccountStatus,
     pub last_updated: DateTime<Utc>,
 }
@@ -28,10 +54,10 @@ pub struct UsageEvent {
     pub imsi: String,
     pub session_id: String,
     pub usage_type: UsageType,
-    pub volume: u64,        // bytes, seconds, or count
+    pub volume: u64,
     pub timestamp: DateTime<Utc>,
-    pub rate: f64,          // cost per unit
-    pub cost: f64,          // total cost
+    pub rate: f64,
+    pub cost: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -45,53 +71,56 @@ pub enum UsageType {
 pub struct RatingPlan {
     pub plan_id: String,
     pub name: String,
-    pub data_rate: f64,     // cost per MB
-    pub voice_rate: f64,    // cost per minute
-    pub sms_rate: f64,      // cost per SMS
+    pub data_rate: f64,
+    pub voice_rate: f64,
+    pub sms_rate: f64,
     pub monthly_fee: f64,
-    pub data_limit: u64,    // bytes
-    pub voice_limit: u64,   // seconds
-    pub sms_limit: u64,     // count
+    pub data_limit: u64,
+    pub voice_limit: u64,
+    pub sms_limit: u64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ChargingSession {
-    pub session_id: String,
-    pub imsi: String,
-    pub start_time: DateTime<Utc>,
-    pub end_time: Option<DateTime<Utc>>,
-    pub data_bytes: u64,
-    pub voice_seconds: u64,
-    pub sms_count: u64,
-    pub total_cost: f64,
-    pub status: SessionStatus,
+// Redis trait implementations for serialization
+impl FromRedisValue for SubscriberAccount {
+    fn from_redis_value(v: redis::Value) -> Result<Self, redis::ParsingError> {
+        let json: String = redis::from_redis_value(v)?;
+        let account: SubscriberAccount = serde_json::from_str(&json)
+            .map_err(|e| redis::ParsingError::from(e.to_string()))?;
+        Ok(account)
+    }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum SessionStatus {
-    Active,
-    Completed,
-    Terminated,
+impl ToRedisArgs for SubscriberAccount {
+    fn write_redis_args<W>(&self, out: &mut W)
+    where
+        W: redis::RedisWrite + ?Sized,
+    {
+        let json = serde_json::to_string(self)
+            .expect("Failed to serialize SubscriberAccount");
+        json.write_redis_args(out)
+    }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ChargingRule {
-    pub rule_id: String,
-    pub name: String,
-    pub priority: u32,
-    pub conditions: Vec<Condition>,
-    pub actions: Vec<Action>,
+impl ToSingleRedisArg for SubscriberAccount {}
+
+impl FromRedisValue for UsageEvent {
+    fn from_redis_value(v: redis::Value) -> Result<Self, redis::ParsingError> {
+        let json: String = redis::from_redis_value(v)?;
+        let event: UsageEvent = serde_json::from_str(&json)
+            .map_err(|e| redis::ParsingError::from(e.to_string()))?;
+        Ok(event)
+    }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Condition {
-    pub field: String,
-    pub operator: String,
-    pub value: String,
+impl ToRedisArgs for UsageEvent {
+    fn write_redis_args<W>(&self, out: &mut W)
+    where
+        W: redis::RedisWrite + ?Sized,
+    {
+        let json = serde_json::to_string(self)
+            .expect("Failed to serialize UsageEvent");
+        json.write_redis_args(out)
+    }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Action {
-    pub action_type: String,
-    pub parameters: std::collections::HashMap<String, String>,
-}
+impl ToSingleRedisArg for UsageEvent {}

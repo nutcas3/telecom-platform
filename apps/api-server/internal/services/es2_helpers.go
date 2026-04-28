@@ -39,7 +39,7 @@ func (e *ES2Service) sendActivationRequest(ctx context.Context, req ActivationRe
 	return nil
 }
 
-func (e *ES2Service) sendDeactivationRequest(ctx context.Context, req interface{}) error {
+func (e *ES2Service) sendDeactivationRequest(ctx context.Context, req any) error {
 	jsonData, err := json.Marshal(req)
 	if err != nil {
 		return fmt.Errorf("failed to marshal deactivation request: %w", err)

@@ -6,12 +6,20 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 
+[lib]
+name = "charging_engine"
+path = "src/lib.rs"
+
 [dependencies]
 tokio = { workspace = true }
 redis = { workspace = true }
+sqlx = { workspace = true }
+chrono = { workspace = true }
 axum = { workspace = true }
 tower = { workspace = true }
 tower-http = { workspace = true }
+tower_governor = "0.8.0"
+governor = "0.10.4"
 serde = { workspace = true }
 serde_json = { workspace = true }
 tracing = { workspace = true }
@@ -19,6 +27,12 @@ tracing-subscriber = { workspace = true }
 anyhow = { workspace = true }
 dotenv = { workspace = true }
 uuid = { workspace = true }
+jsonwebtoken = "10.3.0"
+
+[dev-dependencies]
+tokio-test = "0.4.5"
+mockall = "0.14.0"
+serial_test = "3.4.0"
 
 [[bin]]
 name = "charging-engine"

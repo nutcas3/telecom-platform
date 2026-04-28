@@ -1,23 +1,72 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { UserPlus, Search, Download } from "lucide-react";
-
-const subscribers = [
-  { id: 1, name: "Alice Martin", msisdn: "+33612345678", imsi: "208930000000001", email: "alice@example.com", status: "active" as const, balance: 45.0, plan: "Premium 5G" },
-  { id: 2, name: "Bob Dupont", msisdn: "+33698765432", imsi: "208930000000002", email: "bob@example.com", status: "active" as const, balance: 12.5, plan: "Basic LTE" },
-  { id: 3, name: "Claire Moreau", msisdn: "+33678901234", imsi: "208930000000003", email: "claire@example.com", status: "provisioning" as const, balance: 0.0, plan: "Premium 5G" },
-  { id: 4, name: "David Leroy", msisdn: "+33667890123", imsi: "208930000000004", email: "david@example.com", status: "suspended" as const, balance: -2.3, plan: "Standard" },
-  { id: 5, name: "Emma Petit", msisdn: "+33656789012", imsi: "208930000000005", email: "emma@example.com", status: "active" as const, balance: 78.9, plan: "Premium 5G" },
-  { id: 6, name: "François Blanc", msisdn: "+33645678901", imsi: "208930000000006", email: "francois@example.com", status: "active" as const, balance: 25.0, plan: "Standard" },
-  { id: 7, name: "Gabrielle Roux", msisdn: "+33634567890", imsi: "208930000000007", email: "gabrielle@example.com", status: "terminated" as const, balance: 0.0, plan: "Basic LTE" },
-  { id: 8, name: "Henri Faure", msisdn: "+33623456789", imsi: "208930000000008", email: "henri@example.com", status: "active" as const, balance: 156.2, plan: "Enterprise" },
-];
+import { api, Subscriber, PaginatedResponse } from "@/lib/api";
 
 const statusVariant = (s: string) =>
   s === "active" ? "success" : s === "suspended" ? "warning" : s === "terminated" ? "destructive" : "secondary";
 
 export default function SubscribersPage() {
+  const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  useEffect(() => {
+    const loadSubscribers = async () => {
+      try {
+        setLoading(true);
+        const response = await api.subscribers.list(currentPage, 20);
+        setSubscribers(response.data);
+        setTotalPages(Math.ceil(response.total / response.page_size));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load subscribers");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSubscribers();
+  }, [currentPage]);
+
+  const filteredSubscribers = subscribers.filter(sub =>
+    sub.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    sub.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    sub.msisdn.includes(searchTerm) ||
+    sub.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <div className="p-8 space-y-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-48 mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-96"></div>
+        </div>
+        <div className="animate-pulse">
+          <div className="h-96 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h3 className="text-red-800 font-medium">Error loading subscribers</h3>
+          <p className="text-red-600 text-sm mt-1">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
@@ -40,6 +89,8 @@ export default function SubscribersPage() {
               <input
                 type="text"
                 placeholder="Search subscribers..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="h-9 rounded-lg border border-input bg-background pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring/50 w-64"
               />
             </div>
@@ -60,20 +111,20 @@ export default function SubscribersPage() {
                 </tr>
               </thead>
               <tbody>
-                {subscribers.map((sub) => (
+                {filteredSubscribers.map((sub) => (
                   <tr key={sub.id} className="border-b last:border-0 hover:bg-muted/50 transition-colors">
                     <td className="py-3">
                       <div>
-                        <p className="font-medium">{sub.name}</p>
+                        <p className="font-medium">{sub.first_name} {sub.last_name}</p>
                         <p className="text-xs text-muted-foreground">{sub.email}</p>
                       </div>
                     </td>
                     <td className="py-3 font-mono text-xs">{sub.msisdn}</td>
                     <td className="py-3 font-mono text-xs">{sub.imsi}</td>
-                    <td className="py-3">{sub.plan}</td>
+                    <td className="py-3">Plan {sub.plan_id}</td>
                     <td className="py-3 text-right font-mono">
                       <span className={sub.balance < 0 ? "text-red-600" : ""}>
-                        €{sub.balance.toFixed(2)}
+                        ${sub.balance.toFixed(2)}
                       </span>
                     </td>
                     <td className="py-3">
