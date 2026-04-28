@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os/exec"
 	"time"
 
 	"gorm.io/driver/postgres"
@@ -34,8 +35,9 @@ type PostgresProfileStore struct {
 	db *gorm.DB
 }
 
-// NewPostgresProfileStore connects to Postgres using the given DSN and returns a repository ready to use.
-// Note: Database schema should be created by running migrations via `make db-migrate`
+// NewPostgresProfileStore connects to Postgres using the given DSN and runs migrations.
+// Note: Database schema is managed by centralized migration system using Goose.
+// Migrations are automatically run on startup.
 func NewPostgresProfileStore(dsn string) (*PostgresProfileStore, error) {
 	if dsn == "" {
 		return nil, errors.New("postgres DSN is empty")
@@ -46,9 +48,23 @@ func NewPostgresProfileStore(dsn string) (*PostgresProfileStore, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open postgres: %w", err)
 	}
-	// Note: AutoMigrate removed - schema managed by migration system
-	// Run `make db-migrate` to create/update database schema
+
+	// Run Goose migrations on startup
+	if err := runMigrations(dsn); err != nil {
+		return nil, fmt.Errorf("migration failed: %w", err)
+	}
+
 	return &PostgresProfileStore{db: db}, nil
+}
+
+// runMigrations executes Goose migrations using the goose binary
+func runMigrations(dsn string) error {
+	cmd := exec.Command("goose", "postgres", dsn, "up", "migrations")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("goose migration failed: %w, output: %s", err, string(output))
+	}
+	return nil
 }
 
 // Create inserts a profile row.
