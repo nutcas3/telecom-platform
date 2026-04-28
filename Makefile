@@ -181,10 +181,29 @@ db-setup: ## Set up PostgreSQL, MongoDB and Redis
 	@bash scripts/setup-redis.sh
 	@echo "$(GREEN)Database setup complete!$(RESET)"
 
-db-migrate: ## Run database migrations
+db-migrate: ## Run database migrations (Go and Rust)
 	@echo "$(CYAN)Running database migrations...$(RESET)"
-	@cd apps/api-server && go run cmd/migrate/main.go
+	@goose postgres $(DATABASE_URL) up migrations
 	@echo "$(GREEN)Migrations complete!$(RESET)"
+
+db-migrate-down: ## Rollback database migrations
+	@echo "$(CYAN)Rolling back database migrations...$(RESET)"
+	@goose postgres $(DATABASE_URL) down migrations
+	@echo "$(GREEN)Rollback complete!$(RESET)"
+
+db-migrate-status: ## Show migration status
+	@echo "$(CYAN)Migration status:$(RESET)"
+	@goose postgres $(DATABASE_URL) status migrations
+
+db-create-migration: ## Create a new migration file (usage: make db-create-migration NAME=migration_name)
+	@echo "$(CYAN)Creating new migration...$(RESET)"
+	@if [ -z "$(NAME)" ]; then echo "Error: NAME parameter is required. Usage: make db-create-migration NAME=migration_name"; exit 1; fi
+	@goose create $(NAME) sql
+
+db-migrate-rust: ## Run migrations for Rust services (uses goose binary)
+	@echo "$(CYAN)Running migrations for Rust services...$(RESET)"
+	@goose postgres $(DATABASE_URL) up migrations
+	@echo "$(GREEN)Rust migrations complete!$(RESET)"
 
 # Free5GC integration
 free5gc-setup: ## Set up free5GC configuration files
