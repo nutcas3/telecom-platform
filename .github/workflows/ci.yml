@@ -261,7 +261,8 @@ jobs:
       - name: Build API server image
         uses: docker/build-push-action@v5
         with:
-          context: ./apps/api-server
+          context: .
+          file: ./deployments/docker/api-server.Dockerfile
           push: false
           tags: telecom-platform/api-server:latest
           cache-from: type=gha
@@ -270,7 +271,8 @@ jobs:
       - name: Build carrier connector image
         uses: docker/build-push-action@v5
         with:
-          context: ./apps/carrier-connector
+          context: .
+          file: ./deployments/docker/carrier-connector.Dockerfile
           push: false
           tags: telecom-platform/carrier-connector:latest
           cache-from: type=gha
@@ -279,7 +281,8 @@ jobs:
       - name: Build charging engine image
         uses: docker/build-push-action@v5
         with:
-          context: ./apps/charging-engine
+          context: .
+          file: ./deployments/docker/charging-engine.Dockerfile
           push: false
           tags: telecom-platform/charging-engine:latest
           cache-from: type=gha
@@ -288,7 +291,8 @@ jobs:
       - name: Build packet gateway image
         uses: docker/build-push-action@v5
         with:
-          context: ./apps/packet-gateway
+          context: .
+          file: ./deployments/docker/packet-gateway.Dockerfile
           push: false
           tags: telecom-platform/packet-gateway:latest
           cache-from: type=gha
@@ -297,7 +301,8 @@ jobs:
       - name: Build CLI image
         uses: docker/build-push-action@v5
         with:
-          context: ./apps/cli
+          context: .
+          file: ./deployments/docker/cli.Dockerfile
           push: false
           tags: telecom-platform/cli:latest
           cache-from: type=gha
@@ -306,7 +311,8 @@ jobs:
       - name: Build web dashboard image
         uses: docker/build-push-action@v5
         with:
-          context: ./apps/web-dashboard
+          context: .
+          file: ./deployments/docker/web-dashboard.Dockerfile
           push: false
           tags: telecom-platform/web-dashboard:latest
           cache-from: type=gha
