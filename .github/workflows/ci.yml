@@ -43,10 +43,13 @@ jobs:
       - name: Install goose
         run: go install github.com/pressly/goose/v3/cmd/goose@latest
 
+      - name: Add goose to PATH
+        run: echo "$HOME/go/bin" >> $GITHUB_PATH
+
       - name: Run database migrations
         env:
           DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db?sslmode=disable
-        run: goose postgres $DATABASE_URL up migrations
+        run: goose postgres $DATABASE_URL up ./migrations
 
       - name: Run linter
         working-directory: apps/api-server
@@ -151,10 +154,13 @@ jobs:
       - name: Install goose
         run: go install github.com/pressly/goose/v3/cmd/goose@latest
 
+      - name: Add goose to PATH
+        run: echo "$HOME/go/bin" >> $GITHUB_PATH
+
       - name: Run database migrations
         env:
           DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db?sslmode=disable
-        run: goose postgres $DATABASE_URL up migrations
+        run: goose postgres $DATABASE_URL up ./migrations
 
       - name: Run tests
         working-directory: apps/charging-engine
@@ -208,10 +214,13 @@ jobs:
       - name: Install goose
         run: go install github.com/pressly/goose/v3/cmd/goose@latest
 
+      - name: Add goose to PATH
+        run: echo "$HOME/go/bin" >> $GITHUB_PATH
+
       - name: Run database migrations
         env:
           DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db?sslmode=disable
-        run: goose postgres $DATABASE_URL up migrations
+        run: goose postgres $DATABASE_URL up ./migrations
 
       - name: Run tests
         working-directory: apps/packet-gateway
