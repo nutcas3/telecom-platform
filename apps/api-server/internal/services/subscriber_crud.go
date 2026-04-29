@@ -109,7 +109,7 @@ func (s *SubscriberService) ListSubscribers(ctx context.Context, req *ListSubscr
 	dbReq := &database.ListSubscribersRequest{
 		Page:           req.Page,
 		PageSize:       req.PageSize,
-		Status:         req.Status,
+		Status:         string(req.Status),
 		OrganizationID: req.OrganizationID,
 		Search:         req.Search,
 	}
