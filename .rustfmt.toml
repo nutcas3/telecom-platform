@@ -1,0 +1,146 @@
+# Rustfmt configuration for consistent code formatting across the workspace
+
+# Maximum line width
+max_width = 100
+
+# Use 4 spaces for indentation
+tab_spaces = 4
+
+# Use spaces instead of tabs
+hard_tabs = false
+
+# Edition to use
+edition = "2021"
+
+# How to use heuristics for splitting lines
+use_small_heuristics = "Max"
+
+# Reorder import statements
+reorder_imports = true
+reorder_modules = true
+
+# Group imports
+group_imports = "StdExternalCrate"
+
+# Format comments
+comment_width = 80
+wrap_comments = true
+normalize_comments = true
+
+# Format strings
+format_strings = true
+
+# Use field init shorthand
+use_field_init_shorthand = true
+
+# Use try shorthand
+use_try_shorthand = true
+
+# Force explicit type for struct fields where possible
+force_explicit_abi = true
+
+# Format code in doc comments
+format_code_in_doc_comments = true
+
+# Normalize doc attributes
+normalize_doc_attributes = true
+
+# Wrap match arms
+match_arm_blocks = false
+match_block_trailing_comma = true
+
+# Trailing comma for lists
+trailing_comma = "Vertical"
+
+# Trailing semicolon
+trailing_semicolon = true
+
+# Space before colon
+space_before_colon = false
+
+# Space after colon
+space_after_colon = true
+
+# Spaces around ranges
+spaces_around_ranges = false
+
+# Type punctuation density
+type_punctuation_density = "Wide"
+
+# Struct field alignment
+struct_field_align_threshold = 0
+
+# Enum discriminant align threshold
+enum_discrim_align_threshold = 0
+
+# Inline attribute width
+inline_attribute_width = 0
+
+# Format macro matchers
+format_macro_matchers = true
+
+# Format macro bodies
+format_macro_bodies = true
+
+# Hex literal case
+hex_literal_case = "Lower"
+
+# Imports indent
+imports_indent = "Block"
+
+# Imports layout
+imports_layout = "Mixed"
+
+# Merge derives
+merge_derives = true
+
+# Remove nested parens
+remove_nested_parens = true
+
+# Short array element width threshold
+short_array_element_width_threshold = 10
+
+# Struct lit single line
+struct_lit_single_line = true
+
+# Struct variant width threshold
+struct_variant_width_threshold = 35
+
+# Skip children
+skip_children = false
+
+# Condense wildcard suffixes
+condense_wildcard_suffixes = true
+
+# Newline style
+newline_style = "Unix"
+
+# Control brace style
+control_brace_style = "AlwaysSameBrace"
+
+# Brace style
+brace_style = "SameLineWhere"
+
+# Empty item single line
+empty_item_single_line = true
+
+# Fn args layout
+fn_args_layout = "Tall"
+
+# Fn call width
+fn_call_width = 80
+
+# Fn single line
+fn_single_line = false
+
+# Where single line
+where_single_line = false
+
+# Indent style
+indent_style = "Block"
+
+# Item brace style
+item_brace_style = "SameLineWhere"
+
+# Literal trailing semicolon
+literal_trailing_comma = "true"

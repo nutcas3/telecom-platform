@@ -8,7 +8,7 @@ resolver = "2"
 [workspace.package]
 version = "1.0.0"
 authors = ["TaaS Team <team@taas-platform.com>"]
-edition = "2021"
+edition = "2026"
 rust-version = "1.94"
 license = "MIT"
 
@@ -22,9 +22,14 @@ unsafe_code = "forbid"
 [workspace.lints.clippy]
 all = "warn"
 pedantic = "warn"
+nursery = "warn"
 unwrap_used = "deny"
 expect_used = "deny"
 panic = "deny"
+unwrap_in_result = "deny"
+expect_used = "deny"
+unimplemented = "deny"
+todo = "warn"
 
 [workspace.dependencies]
 # Async runtime
