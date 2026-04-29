@@ -25,6 +25,7 @@ serde_json = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 anyhow = { workspace = true }
+thiserror = "2.0.18"
 dotenv = { workspace = true }
 uuid = { workspace = true }
 jsonwebtoken = "10.3.0"

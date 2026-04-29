@@ -12,6 +12,20 @@ edition = "2021"
 rust-version = "1.94"
 license = "MIT"
 
+[workspace.metadata.cargo-audit]
+# Ignore advisories that are not relevant to this project
+# advisories = []
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = "warn"
+pedantic = "warn"
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+
 [workspace.dependencies]
 # Async runtime
 tokio = { version = "1.52.1", features = ["full"] }
