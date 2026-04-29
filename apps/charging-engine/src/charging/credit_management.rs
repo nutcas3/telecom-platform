@@ -100,7 +100,7 @@ impl crate::charging::ChargingEngine {
             let blocked: Option<String> = redis::AsyncCommands::get(&mut conn, &key).await
                 .map_err(|e| crate::errors::ChargingError::RedisOperation(e.to_string()))?;
 
-            if blocked.is_some() {
+            if let Some(_blocked) = blocked {
                 return Err(ChargingError::UsageBlocked(format!("User IP {} is already blocked", ip)));
             }
 
@@ -127,12 +127,21 @@ impl crate::charging::ChargingEngine {
             let mut conn = self.redis_client.get_multiplexed_async_connection().await
                 .map_err(|e| crate::errors::ChargingError::RedisConnection(e.to_string()))?;
 
-            let key = format!("block:{}", ip);
-            let _: () = redis::AsyncCommands::del(&mut conn, &key).await
+            // Check if user is blocked
+            let blocked_key = format!("blocked:{}", ip);
+            let blocked: Option<String> = redis::AsyncCommands::get(&mut conn, &blocked_key).await
                 .map_err(|e| crate::errors::ChargingError::RedisOperation(e.to_string()))?;
+            
+            if let Some(_blocked) = blocked {
 
-            info!("User IP: {} has been unblocked", ip);
-            Ok(())
+                let _: () = redis::AsyncCommands::del(&mut conn, &blocked_key).await
+                    .map_err(|e| crate::errors::ChargingError::RedisOperation(e.to_string()))?;
+
+                info!("User IP: {} has been unblocked", ip);
+                Ok(())
+            } else {
+                Ok(())
+            }
         }).await.map_err(|e| match e {
             CircuitBreakerError::Open => ChargingError::RedisConnection("Circuit breaker is open".to_string()),
             CircuitBreakerError::Inner(e) => e,
