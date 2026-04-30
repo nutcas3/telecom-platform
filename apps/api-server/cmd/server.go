@@ -14,22 +14,31 @@ import (
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	csrf "github.com/utrack/gin-csrf"
 
 	"github.com/nutcas3/telecom-platform/apps/api-server/internal/config"
 	"github.com/nutcas3/telecom-platform/apps/api-server/internal/database"
 	"github.com/nutcas3/telecom-platform/apps/api-server/internal/discovery"
-	"github.com/nutcas3/telecom-platform/apps/api-server/internal/graphql"
 	"github.com/nutcas3/telecom-platform/apps/api-server/internal/middleware"
 	"github.com/nutcas3/telecom-platform/apps/api-server/internal/monitoring"
 	"github.com/nutcas3/telecom-platform/apps/api-server/internal/websocket"
 )
 
+// @title Telecom Platform API
+// @version 1.0
+// @description API for Telecom Platform
+// @host localhost:8080
+// @BasePath /api/v1
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func main() {
 	cfg := config.LoadConfig()
 
 	db, err := database.NewDatabase(&cfg.Database)
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
+		return
 	}
 	defer db.Close()
 
@@ -72,10 +81,17 @@ func main() {
 		}
 	}()
 
-	resolver := graphql.NewResolver(db, cfg)
-
 	router := gin.Default()
-	graphql.SetupGraphQLHandler(router, resolver)
+
+	// Add CSRF protection middleware
+	csrfSecret := os.Getenv("CSRF_SECRET")
+	if csrfSecret == "" {
+		csrfSecret = "change-me-in-production-csrf-secret-32-chars-min"
+		log.Printf("WARNING: Using default CSRF secret, set CSRF_SECRET environment variable")
+	}
+	router.Use(csrf.Middleware(csrf.Options{
+		Secret: csrfSecret,
+	}))
 
 	router.Use(func(c *gin.Context) {
 		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { c.Next() })
@@ -136,7 +152,7 @@ func main() {
 	go func() {
 		log.Printf("Starting API server on port %s", cfg.Server.Port)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Server failed to start: %v", err)
+			log.Printf("Server failed to start: %v", err)
 		}
 	}()
 
