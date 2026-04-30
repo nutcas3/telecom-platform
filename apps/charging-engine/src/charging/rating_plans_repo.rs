@@ -245,7 +245,8 @@ async fn run_migrations(database_url: &str) -> Result<(), Box<dyn std::error::Er
     use std::process::Command;
     
     // Change to repo root to find migrations directory
-    let repo_root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+    let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let repo_root = manifest_dir
         .parent()
         .and_then(|p| p.parent())
         .ok_or("Failed to determine repo root")?;

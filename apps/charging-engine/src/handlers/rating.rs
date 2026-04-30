@@ -66,12 +66,13 @@ pub async fn add_rating_plan(
         sms_limit: req.get("sms_limit").and_then(|v| v.as_u64()).unwrap_or(100),
     };
     
+    let plan_id = plan.plan_id.clone();
     state.charging_engine.add_rating_plan(plan).await
         .with_context("Failed to add rating plan")?;
     
     Ok(Json(serde_json::json!({
         "status": "added",
-        "plan_id": plan.plan_id,
+        "plan_id": plan_id,
     })))
 }
 

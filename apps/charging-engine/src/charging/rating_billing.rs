@@ -7,7 +7,7 @@ use crate::errors::{ChargingError, ChargingResult, validate_amount};
 impl super::ChargingEngine {
     pub async fn calculate_usage_cost(&self, event: &UsageEvent) -> ChargingResult<f64> {
         // Get subscriber account to determine rating plan
-        let account = self.get_subscriber_account(&event.imsi).await?;
+        let _account = self.get_subscriber_account(&event.imsi).await?;
 
         // Get rating plan from Postgres (simplified - defaults to basic).
         let plan = self

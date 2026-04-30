@@ -88,7 +88,7 @@ async fn main() -> Result<()> {
     info!("Connected to Redis successfully");
     
     // Initialize charging engine client
-    let charging_client = ChargingEngineClient::new(&args.charging_engine_url);
+    let charging_client = ChargingEngineClient::new(args.charging_engine_url.clone());
     info!("Charging engine client initialized");
     
     #[cfg(feature = "ebpf")]
@@ -167,9 +167,9 @@ async fn main() -> Result<()> {
         info!("Health check server listening on {}", addr);
 
         let listener = tokio::net::TcpListener::bind(&addr).await
-            .map_err(|e| anyhow::anyhow!("Failed to bind health check server: {}", e))?;
+            .expect("Failed to bind health check server");
         axum::serve(listener, app).await
-            .map_err(|e| anyhow::anyhow!("Failed to start health check server: {}", e))?;
+            .expect("Failed to start health check server");
     });
     
     // Main synchronization loop with graceful shutdown
