@@ -2,6 +2,8 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"github.com/nutcas3/telecom-platform/apps/api-server/internal/middleware"
 	"github.com/nutcas3/telecom-platform/apps/api-server/internal/rbac"
@@ -11,12 +13,15 @@ import (
 // RBAC enforcement uses Casbin when configured, falling back to role-based
 // middleware otherwise.
 func registerV1Routes(router *gin.Engine, d *serverDeps) {
-	v1 := router.Group("/v1")
+	v1 := router.Group("/api/v1")
 
 	// Health check
 	v1.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
+
+	// Swagger documentation
+	v1.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Charging engine integration (public for packet-gateway integration)
 	charging := v1.Group("/charging")
@@ -46,7 +51,7 @@ func registerV1Routes(router *gin.Engine, d *serverDeps) {
 		}
 
 		users := protected.Group("/users")
-		applyRBAC(users, d.casbinSvc, "/v1/users", "GET", "admin")
+		applyRBAC(users, d.casbinSvc, "/api/v1/users", "GET", "admin")
 		{
 			users.GET("", d.authH.GetUsers)
 			users.POST("", d.authH.CreateUser)
