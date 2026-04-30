@@ -37,13 +37,11 @@ impl crate::charging::ChargingEngine {
         let info: String = redis::cmd("INFO").query_async(&mut conn).await.unwrap_or_default();
         
         for line in info.lines() {
-            if line.starts_with("instantaneous_ops_per_sec:") {
-                if let Some(rps_str) = line.split(':').nth(1) {
-                    if let Ok(rps) = rps_str.parse::<f64>() {
-                        return Ok(rps);
-                    }
+            if line.starts_with("instantaneous_ops_per_sec:")
+                && let Some(rps_str) = line.split(':').nth(1)
+                && let Ok(rps) = rps_str.parse::<f64>() {
+                    return Ok(rps);
                 }
-            }
         }
         
         let total_commands = self.extract_metric(&info, "total_commands_processed");
