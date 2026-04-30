@@ -1,0 +1,500 @@
+definitions:
+  handlers.ErrorResponse:
+    properties:
+      code:
+        type: string
+      details:
+        type: string
+      error:
+        type: string
+    type: object
+  models.AMBR:
+    properties:
+      downlink:
+        type: integer
+      uplink:
+        type: integer
+    type: object
+  models.PLMN:
+    properties:
+      mcc:
+        type: string
+      mnc:
+        type: string
+    type: object
+  models.ProfileStatus:
+    enum:
+    - inactive
+    - active
+    - downloading
+    - error
+    type: string
+    x-enum-varnames:
+    - ProfileStatusInactive
+    - ProfileStatusActive
+    - ProfileStatusDownloading
+    - ProfileStatusError
+  models.QoSProfile:
+    properties:
+      arpa:
+        type: integer
+      gbr:
+        $ref: '#/definitions/models.AMBR'
+      mbr:
+        $ref: '#/definitions/models.AMBR'
+      priority:
+        type: integer
+      qci:
+        type: integer
+    type: object
+  models.SNSSAI:
+    properties:
+      sd:
+        type: integer
+      sst:
+        type: integer
+    type: object
+  models.ServicePlan:
+    properties:
+      ambr:
+        $ref: '#/definitions/models.AMBR'
+      arpa:
+        type: integer
+      created_at:
+        type: string
+      data_limit:
+        type: integer
+      data_rate:
+        type: number
+      description:
+        type: string
+      id:
+        type: integer
+      monthly_fee:
+        type: number
+      name:
+        type: string
+      sms_limit:
+        type: integer
+      sms_rate:
+        type: number
+      updated_at:
+        type: string
+      voice_limit:
+        type: integer
+      voice_rate:
+        type: number
+    type: object
+  models.Session:
+    properties:
+      created_at:
+        type: string
+      data_used:
+        type: integer
+      dnn:
+        type: string
+      end_time:
+        type: string
+      id:
+        type: integer
+      pdu_address:
+        type: string
+      qos:
+        $ref: '#/definitions/models.QoSProfile'
+      session_id:
+        type: string
+      sms_used:
+        type: integer
+      snssai:
+        $ref: '#/definitions/models.SNSSAI'
+      start_time:
+        type: string
+      status:
+        $ref: '#/definitions/models.SessionStatus'
+      subscriber_id:
+        type: integer
+      updated_at:
+        type: string
+      voice_used:
+        type: integer
+    type: object
+  models.SessionStatus:
+    enum:
+    - active
+    - inactive
+    - terminating
+    type: string
+    x-enum-varnames:
+    - SessionStatusActive
+    - SessionStatusInactive
+    - SessionStatusTerminating
+  models.Subscriber:
+    properties:
+      auth_key:
+        type: string
+      balance:
+        type: number
+      created_at:
+        type: string
+      email:
+        type: string
+      euicc_id:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: integer
+      imei:
+        description: Device identifier
+        type: string
+      imsi:
+        type: string
+      last_name:
+        type: string
+      msisdn:
+        description: Mobile phone number
+        type: string
+      opc:
+        type: string
+      organization_id:
+        type: string
+      plan:
+        $ref: '#/definitions/models.ServicePlan'
+      plan_id:
+        type: integer
+      profile_id:
+        type: string
+      profile_status:
+        $ref: '#/definitions/models.ProfileStatus'
+      serving_plmn:
+        $ref: '#/definitions/models.PLMN'
+      sessions:
+        items:
+          $ref: '#/definitions/models.Session'
+        type: array
+      status:
+        $ref: '#/definitions/models.SubscriberStatus'
+      updated_at:
+        type: string
+      usage_records:
+        items:
+          $ref: '#/definitions/models.UsageRecord'
+        type: array
+    type: object
+  models.SubscriberStatus:
+    enum:
+    - active
+    - inactive
+    - suspended
+    - terminated
+    - provisioning
+    type: string
+    x-enum-varnames:
+    - SubscriberStatusActive
+    - SubscriberStatusInactive
+    - SubscriberStatusSuspended
+    - SubscriberStatusTerminated
+    - SubscriberStatusProvisioning
+  models.UsageRecord:
+    properties:
+      billing_cycle:
+        type: string
+      cost:
+        type: number
+      created_at:
+        type: string
+      end_time:
+        type: string
+      id:
+        type: integer
+      invoice_id:
+        type: integer
+      rate:
+        type: number
+      session_id:
+        type: integer
+      start_time:
+        type: string
+      subscriber_id:
+        type: integer
+      updated_at:
+        type: string
+      usage_type:
+        $ref: '#/definitions/models.UsageType'
+      volume:
+        type: integer
+    type: object
+  models.UsageType:
+    enum:
+    - data
+    - voice
+    - sms
+    type: string
+    x-enum-varnames:
+    - UsageTypeData
+    - UsageTypeVoice
+    - UsageTypeSMS
+  services.CreateSubscriberRequest:
+    properties:
+      email:
+        type: string
+      euicc_id:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      msisdn:
+        type: string
+      organization_id:
+        type: string
+      plan_id:
+        type: integer
+    required:
+    - email
+    - first_name
+    - last_name
+    - msisdn
+    - plan_id
+    type: object
+  services.ListSubscribersResponse:
+    properties:
+      page:
+        type: integer
+      page_size:
+        type: integer
+      subscribers:
+        items:
+          $ref: '#/definitions/models.Subscriber'
+        type: array
+      total:
+        type: integer
+    type: object
+  services.UpdateSubscriberRequest:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      plan_id:
+        type: integer
+      status:
+        $ref: '#/definitions/models.SubscriberStatus'
+    type: object
+info:
+  contact: {}
+paths:
+  /api/v1/subscribers:
+    get:
+      description: List subscribers with pagination and filtering
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: Subscriber status
+        in: query
+        name: status
+        type: string
+      - description: Organization ID
+        in: query
+        name: organization_id
+        type: string
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/services.ListSubscribersResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: List subscribers
+      tags:
+      - subscribers
+    post:
+      consumes:
+      - application/json
+      description: Create a new subscriber with allocated IMSI
+      parameters:
+      - description: Subscriber data
+        in: body
+        name: subscriber
+        required: true
+        schema:
+          $ref: '#/definitions/services.CreateSubscriberRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Subscriber'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Create a new subscriber
+      tags:
+      - subscribers
+  /api/v1/subscribers/{id}:
+    get:
+      description: Retrieve subscriber information by ID
+      parameters:
+      - description: Subscriber ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Subscriber'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get subscriber by ID
+      tags:
+      - subscribers
+    put:
+      consumes:
+      - application/json
+      description: Update subscriber information
+      parameters:
+      - description: Subscriber ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated subscriber data
+        in: body
+        name: subscriber
+        required: true
+        schema:
+          $ref: '#/definitions/services.UpdateSubscriberRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Subscriber'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Update subscriber
+      tags:
+      - subscribers
+  /api/v1/subscribers/{id}/suspend:
+    post:
+      description: Suspend a subscriber and terminate their sessions
+      parameters:
+      - description: Subscriber ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Suspend subscriber
+      tags:
+      - subscribers
+  /api/v1/subscribers/{id}/terminate:
+    post:
+      description: Terminate a subscriber and deactivate their eSIM profile
+      parameters:
+      - description: Subscriber ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Terminate subscriber
+      tags:
+      - subscribers
+  /api/v1/subscribers/imsi/{imsi}:
+    get:
+      description: Retrieve subscriber information by IMSI
+      parameters:
+      - description: IMSI
+        in: path
+        name: imsi
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Subscriber'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get subscriber by IMSI
+      tags:
+      - subscribers
+swagger: "2.0"

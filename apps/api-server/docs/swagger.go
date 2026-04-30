@@ -1,9 +1,5 @@
 package docs
 
-import (
-	"github.com/swaggo/swag"
-)
-
 // @title Telecom Platform API
 // @version 1.0.0
 // @description A comprehensive telecom platform API for managing subscribers, services, monitoring, deployments, plugins, automation, and billing
@@ -19,7 +15,3 @@ import (
 // @in header
 // @name Authorization
 // @description Type "Bearer" followed by a space and JWT token.
-
-func init() {
-	swag.Register(swag.Name, &s{})
-}
