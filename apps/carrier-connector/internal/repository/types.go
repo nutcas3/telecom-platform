@@ -3,7 +3,52 @@ package repository
 import (
 	"context"
 	"time"
+
+	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/tenant"
 )
+
+// TenantRepository defines the interface for tenant data operations
+type TenantRepository interface {
+	// Tenant operations
+	CreateTenant(ctx context.Context, tenant *tenant.Tenant) error
+	GetTenant(ctx context.Context, id string) (*tenant.Tenant, error)
+	GetTenantByDomain(ctx context.Context, domain string) (*tenant.Tenant, error)
+	UpdateTenant(ctx context.Context, tenant *tenant.Tenant) error
+	DeleteTenant(ctx context.Context, id string) error
+	ListTenants(ctx context.Context, filter *tenant.TenantFilter) ([]*tenant.Tenant, error)
+	CountTenants(ctx context.Context, filter *tenant.TenantFilter) (int, error)
+
+	// Tenant user operations
+	CreateTenantUser(ctx context.Context, user *tenant.TenantUser) error
+	GetTenantUser(ctx context.Context, tenantID, userID string) (*tenant.TenantUser, error)
+	UpdateTenantUser(ctx context.Context, user *tenant.TenantUser) error
+	DeleteTenantUser(ctx context.Context, tenantID, userID string) error
+	ListTenantUsers(ctx context.Context, filter *tenant.TenantUserFilter) ([]*tenant.TenantUser, error)
+	CountTenantUsers(ctx context.Context, filter *tenant.TenantUserFilter) (int, error)
+
+	// API key operations
+	CreateAPIKey(ctx context.Context, apiKey *tenant.TenantAPIKey) error
+	GetAPIKey(ctx context.Context, id string) (*tenant.TenantAPIKey, error)
+	GetAPIKeyByHash(ctx context.Context, keyHash string) (*tenant.TenantAPIKey, error)
+	UpdateAPIKey(ctx context.Context, apiKey *tenant.TenantAPIKey) error
+	DeleteAPIKey(ctx context.Context, id string) error
+	ListAPIKeys(ctx context.Context, tenantID string) ([]*tenant.TenantAPIKey, error)
+
+	// Usage operations
+	CreateUsage(ctx context.Context, usage *tenant.TenantUsage) error
+	GetUsage(ctx context.Context, tenantID, resourceType string) (*tenant.TenantUsage, error)
+	UpdateUsage(ctx context.Context, usage *tenant.TenantUsage) error
+	ListUsage(ctx context.Context, filter *tenant.TenantUsageFilter) ([]*tenant.TenantUsage, error)
+	GetUsageStats(ctx context.Context, tenantID string) (*tenant.TenantUsageStats, error)
+
+	// Configuration operations
+	GetConfig(ctx context.Context, tenantID string) (*tenant.TenantConfig, error)
+	UpdateConfig(ctx context.Context, config *tenant.TenantConfig) error
+
+	// Event operations
+	CreateEvent(ctx context.Context, event *tenant.TenantEvent) error
+	ListEvents(ctx context.Context, tenantID string, limit int) ([]*tenant.TenantEvent, error)
+}
 
 // Repository defines the interface for rate plan data operations
 type Repository interface {
