@@ -1,7 +1,7 @@
 # Telecom-as-a-Service (TaaS) Platform
 
 > **Sovereign, Full-Stack Cellular Connectivity Platform**  
-> Built with Go 1.26, Rust 1.94, TypeScript, eBPF, and 5G Core Network Technologies
+> Built with Go 1.26, Rust 1.95, TypeScript, eBPF, and 5G Core Network Technologies
 
 ## Overview
 
