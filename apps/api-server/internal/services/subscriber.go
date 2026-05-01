@@ -53,17 +53,16 @@ type UpdateSubscriberRequest struct {
 
 // ListSubscribersRequest is the query-filter payload for listing subscribers.
 type ListSubscribersRequest struct {
-	Page           int                     `json:"page" query:"page"`
-	PageSize       int                     `json:"page_size" query:"page_size"`
+	Cursor         string                  `json:"cursor" query:"cursor"`
+	Limit          int                     `json:"limit" query:"limit"`
 	Status         models.SubscriberStatus `json:"status" query:"status"`
 	OrganizationID string                  `json:"organization_id" query:"organization_id"`
 	Search         string                  `json:"search" query:"search"`
 }
 
-// ListSubscribersResponse is the paginated subscriber list result.
+// ListSubscribersResponse is the cursor-paginated subscriber list result.
 type ListSubscribersResponse struct {
 	Subscribers []models.Subscriber `json:"subscribers"`
-	Total       int64               `json:"total"`
-	Page        int                 `json:"page"`
-	PageSize    int                 `json:"page_size"`
+	NextCursor  string              `json:"next_cursor,omitempty"`
+	HasMore     bool                `json:"has_more"`
 }
