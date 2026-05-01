@@ -1,4 +1,4 @@
-package tenant
+package repository
 
 import (
 	"context"

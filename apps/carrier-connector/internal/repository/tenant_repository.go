@@ -1,4 +1,4 @@
-package tenant
+package repository
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/tenant"
 	"gorm.io/gorm"
 )
 
@@ -55,7 +56,7 @@ func (r *GormTenantRepository) DeleteTenant(ctx context.Context, id string) erro
 }
 
 // ListTenants lists tenants with filtering
-func (r *GormTenantRepository) ListTenants(ctx context.Context, filter *TenantFilter) ([]*Tenant, error) {
+func (r *GormTenantRepository) ListTenants(ctx context.Context, filter *tenant.TenantFilter) ([]*Tenant, error) {
 	query := r.db.WithContext(ctx).Model(&Tenant{})
 
 	// Apply filters
@@ -100,7 +101,7 @@ func (r *GormTenantRepository) ListTenants(ctx context.Context, filter *TenantFi
 }
 
 // CountTenants counts tenants with filtering
-func (r *GormTenantRepository) CountTenants(ctx context.Context, filter *TenantFilter) (int, error) {
+func (r *GormTenantRepository) CountTenants(ctx context.Context, filter *tenant.TenantFilter) (int, error) {
 	query := r.db.WithContext(ctx).Model(&Tenant{})
 
 	// Apply filters
@@ -151,7 +152,7 @@ func (r *GormTenantRepository) DeleteTenantUser(ctx context.Context, tenantID, u
 }
 
 // ListTenantUsers lists tenant users with filtering
-func (r *GormTenantRepository) ListTenantUsers(ctx context.Context, filter *TenantUserFilter) ([]*TenantUser, error) {
+func (r *GormTenantRepository) ListTenantUsers(ctx context.Context, filter *tenant.TenantUserFilter) ([]*TenantUser, error) {
 	query := r.db.WithContext(ctx).Model(&TenantUser{})
 
 	// Apply filters
@@ -185,7 +186,7 @@ func (r *GormTenantRepository) ListTenantUsers(ctx context.Context, filter *Tena
 }
 
 // CountTenantUsers counts tenant users with filtering
-func (r *GormTenantRepository) CountTenantUsers(ctx context.Context, filter *TenantUserFilter) (int, error) {
+func (r *GormTenantRepository) CountTenantUsers(ctx context.Context, filter *tenant.TenantUserFilter) (int, error) {
 	query := r.db.WithContext(ctx).Model(&TenantUser{})
 
 	// Apply filters
@@ -273,7 +274,7 @@ func (r *GormTenantRepository) UpdateUsage(ctx context.Context, usage *TenantUsa
 }
 
 // ListUsage lists usage records with filtering
-func (r *GormTenantRepository) ListUsage(ctx context.Context, filter *TenantUsageFilter) ([]*TenantUsage, error) {
+func (r *GormTenantRepository) ListUsage(ctx context.Context, filter *tenant.TenantUsageFilter) ([]*TenantUsage, error) {
 	query := r.db.WithContext(ctx).Model(&TenantUsage{})
 
 	// Apply filters
@@ -304,17 +305,17 @@ func (r *GormTenantRepository) ListUsage(ctx context.Context, filter *TenantUsag
 }
 
 // GetUsageStats retrieves usage statistics for a tenant
-func (r *GormTenantRepository) GetUsageStats(ctx context.Context, tenantID string) (*TenantUsageStats, error) {
+func (r *GormTenantRepository) GetUsageStats(ctx context.Context, tenantID string) (*tenant.TenantUsageStats, error) {
 	// This is a complex query that would typically involve joins and aggregations
 	// For now, return a basic implementation
-	stats := &TenantUsageStats{
-		TenantID:         tenantID,
+	stats := &tenant.TenantUsageStats{
+		TenantID:          tenantID,
 		ResourceBreakdown: make(map[string]int64),
-		QuotaStatus:      make(map[string]QuotaStatus),
+		QuotaStatus:       make(map[string]tenant.QuotaStatus),
 	}
 
 	// Get all usage records for the tenant
-	usageRecords, err := r.ListUsage(ctx, &TenantUsageFilter{TenantID: tenantID})
+	usageRecords, err := r.ListUsage(ctx, &tenant.TenantUsageFilter{TenantID: tenantID})
 	if err != nil {
 		return nil, err
 	}
@@ -322,7 +323,7 @@ func (r *GormTenantRepository) GetUsageStats(ctx context.Context, tenantID strin
 	// Process usage records
 	for _, usage := range usageRecords {
 		stats.ResourceBreakdown[usage.ResourceType] = int64(usage.QuotaUsed)
-		stats.QuotaStatus[usage.ResourceType] = QuotaStatus{
+		stats.QuotaStatus[usage.ResourceType] = tenant.QuotaStatus{
 			Used:      usage.QuotaUsed,
 			Limit:     usage.QuotaLimit,
 			Remaining: usage.QuotaRemaining,
@@ -485,12 +486,12 @@ func (r *GormTenantRepository) ListEvents(ctx context.Context, tenantID string, 
 // TenantAwareQuery adds tenant filtering to database queries
 func (r *GormTenantRepository) TenantAwareQuery(ctx context.Context, model interface{}, tenantID string) *gorm.DB {
 	query := r.db.WithContext(ctx).Model(model)
-	
+
 	// Add tenant filter if the model has tenant_id field
 	if tenantID != "" {
 		query = query.Where("tenant_id = ?", tenantID)
 	}
-	
+
 	return query
 }
 
@@ -499,13 +500,13 @@ func (r *GormTenantRepository) EnsureTenantIsolation(ctx context.Context, tenant
 	if tenantID == "" {
 		return fmt.Errorf("tenant ID is required for tenant-isolated operations")
 	}
-	
+
 	// Validate tenant exists
 	_, err := r.GetTenant(ctx, tenantID)
 	if err != nil {
 		return fmt.Errorf("invalid tenant ID: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -523,12 +524,12 @@ func (r *GormTenantRepository) WithTenantIsolation(ctx context.Context, operatio
 	if tenantID == "" {
 		return fmt.Errorf("tenant ID not found in context")
 	}
-	
+
 	// Validate tenant exists
 	if err := r.EnsureTenantIsolation(ctx, tenantID); err != nil {
 		return err
 	}
-	
+
 	// Execute operation with tenant filtering
 	tx := r.db.WithContext(ctx).Where("tenant_id = ?", tenantID)
 	return operation(tx)
