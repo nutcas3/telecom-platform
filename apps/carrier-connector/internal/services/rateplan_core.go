@@ -38,7 +38,7 @@ func NewRatePlanCurrencyIntegrator(
 }
 
 // SubscribeToPlanWithCurrency subscribes to a rate plan with currency conversion
-func (rpci *RatePlanCurrencyIntegrator) SubscribeToPlanWithCurrency(ctx context.Context, profileID string, planID string, currency string) (*rateplan.RatePlanSubscription, error) {
+func (rpci *RatePlanCurrencyIntegrator) SubscribeToPlanWithCurrency(ctx context.Context, profileID string, planID string, targetCurrency string) (*rateplan.RatePlanSubscription, error) {
 	// Get the rate plan
 	plan, err := rpci.ratePlanService.GetRatePlan(ctx, planID)
 	if err != nil {
@@ -49,8 +49,8 @@ func (rpci *RatePlanCurrencyIntegrator) SubscribeToPlanWithCurrency(ctx context.
 	subscriptionPrice := plan.BasePrice
 	exchangeRate := 1.0
 
-	if currency != plan.Currency {
-		conversion, err := rpci.exchangeService.ConvertAmount(ctx, plan.BasePrice, plan.Currency, currency)
+	if targetCurrency != plan.Currency {
+		conversion, err := rpci.exchangeService.ConvertAmount(ctx, plan.BasePrice, plan.Currency, targetCurrency)
 		if err != nil {
 			rpci.logger.WithError(err).Error("Failed to convert rate plan price")
 			return nil, fmt.Errorf("currency conversion failed: %w", err)
@@ -67,7 +67,7 @@ func (rpci *RatePlanCurrencyIntegrator) SubscribeToPlanWithCurrency(ctx context.
 		StartedAt:  time.Now(),
 		Metadata: map[string]interface{}{
 			"original_currency":     plan.Currency,
-			"subscription_currency": currency,
+			"subscription_currency": targetCurrency,
 			"original_price":        plan.BasePrice,
 			"subscription_price":    subscriptionPrice,
 			"exchange_rate":         exchangeRate,
@@ -94,7 +94,7 @@ func (rpci *RatePlanCurrencyIntegrator) SubscribeToPlanWithCurrency(ctx context.
 		ProfileID:      profileID,
 		SubscriptionID: createdSubscription.ID,
 		Amount:         subscriptionPrice,
-		Currency:       currency,
+		Currency:       targetCurrency,
 		Description:    fmt.Sprintf("Initial subscription to %s", plan.Name),
 		BillingDate:    time.Now(),
 	}
@@ -108,7 +108,7 @@ func (rpci *RatePlanCurrencyIntegrator) SubscribeToPlanWithCurrency(ctx context.
 	rpci.logger.WithFields(logrus.Fields{
 		"profile_id":      profileID,
 		"plan_id":         planID,
-		"currency":        currency,
+		"currency":        targetCurrency,
 		"subscription_id": createdSubscription.ID,
 	}).Info("Rate plan subscription created with currency support")
 
@@ -116,7 +116,7 @@ func (rpci *RatePlanCurrencyIntegrator) SubscribeToPlanWithCurrency(ctx context.
 }
 
 // CalculatePlanCostInCurrency calculates the cost of a rate plan in a specific currency
-func (rpci *RatePlanCurrencyIntegrator) CalculatePlanCostInCurrency(ctx context.Context, planID string, currency string, usageData *rateplan.RatePlanUsage) (*currency.BillingSummary, error) {
+func (rpci *RatePlanCurrencyIntegrator) CalculatePlanCostInCurrency(ctx context.Context, planID string, targetCurrency string, usageData *rateplan.RatePlanUsage) (*currency.BillingSummary, error) {
 	// Get the rate plan
 	plan, err := rpci.ratePlanService.GetRatePlan(ctx, planID)
 	if err != nil {
@@ -140,8 +140,8 @@ func (rpci *RatePlanCurrencyIntegrator) CalculatePlanCostInCurrency(ctx context.
 	convertedCost := baseCost
 	exchangeRate := 1.0
 
-	if currency != plan.Currency {
-		conversion, err := rpci.exchangeService.ConvertAmount(ctx, baseCost, plan.Currency, currency)
+	if targetCurrency != plan.Currency {
+		conversion, err := rpci.exchangeService.ConvertAmount(ctx, baseCost, plan.Currency, targetCurrency)
 		if err != nil {
 			return nil, fmt.Errorf("currency conversion failed: %w", err)
 		}
@@ -153,7 +153,7 @@ func (rpci *RatePlanCurrencyIntegrator) CalculatePlanCostInCurrency(ctx context.
 	summary := &currency.BillingSummary{
 		ProfileID:        usageData.ProfileID,
 		TotalAmount:      convertedCost,
-		Currency:         currency,
+		Currency:         targetCurrency,
 		BaseTotalAmount:  baseCost,
 		BaseCurrency:     plan.Currency,
 		TransactionCount: 1,

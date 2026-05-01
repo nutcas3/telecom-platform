@@ -194,9 +194,9 @@ func (s *AnalyticsServiceImpl) GetTopCurrenciesByRevenue(ctx context.Context, li
 
 	// Convert to slice and sort
 	var currencyRevenues []*currency.CurrencyRevenue
-	for currency, revenue := range revenueByCurrency {
+	for currCode, revenue := range revenueByCurrency {
 		currencyRevenues = append(currencyRevenues, &currency.CurrencyRevenue{
-			Currency: currency,
+			Currency: currCode,
 			Revenue:  revenue,
 		})
 	}
