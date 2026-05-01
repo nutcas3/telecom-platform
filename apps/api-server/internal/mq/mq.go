@@ -82,7 +82,7 @@ func (mq *MessageQueue) DeclareQueue(name string) error {
 }
 
 // Publish publishes a message to a queue
-func (mq *MessageQueue) Publish(queue string, msg Message) error {
+func (mq *MessageQueue) Publish(ctx context.Context, queue string, msg Message) error {
 	msg.Timestamp = time.Now()
 
 	body, err := json.Marshal(msg)
@@ -90,11 +90,12 @@ func (mq *MessageQueue) Publish(queue string, msg Message) error {
 		return fmt.Errorf("failed to marshal message: %w", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// Use provided context with timeout
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	err = mq.channel.PublishWithContext(
-		ctx,
+		timeoutCtx,
 		"",    // exchange
 		queue, // routing key
 		false, // mandatory
