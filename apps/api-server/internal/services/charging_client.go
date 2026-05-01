@@ -4,8 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net"
 	"net/http"
+	"net/url"
+	"slices"
 
 	"github.com/nutcas3/telecom-platform/apps/api-server/internal/config"
 )
@@ -26,6 +30,32 @@ func NewChargingEngineClient(cfg *config.ChargingEngineConfig) *ChargingEngineCl
 			Timeout: cfg.Timeout,
 		},
 	}
+}
+
+// validateURL prevents SSRF by checking if URL is safe to access
+func (c *ChargingEngineClient) validateURL(urlStr string) error {
+	u, err := url.Parse(urlStr)
+	if err != nil {
+		return fmt.Errorf("invalid URL: %w", err)
+	}
+
+	host := u.Hostname()
+	ip := net.ParseIP(host)
+
+	// Block private IPs, loopback, and link-local addresses
+	if ip != nil && (ip.IsPrivate() || ip.IsLoopback() || ip.IsLinkLocalUnicast()) {
+		return errors.New("access to private IP addresses is not allowed")
+	}
+
+	// Whitelist allowed domains (charging-engine should be internal)
+	allowedDomains := []string{"localhost", "127.0.0.1", "charging-engine", "charging-engine.default.svc.cluster.local"}
+	allowed := slices.Contains(allowedDomains, host)
+
+	if !allowed {
+		return fmt.Errorf("domain %s is not in allowed list", host)
+	}
+
+	return nil
 }
 
 // setAPIKeyHeader adds the X-API-Key header to a request if an API key is configured
@@ -70,6 +100,12 @@ func (c *ChargingEngineClient) CheckCredit(ctx context.Context, ip string, bytes
 	}
 
 	url := fmt.Sprintf("%s/v1/credit/%s/check", c.baseURL, ip)
+
+	// Validate URL to prevent SSRF
+	if err := c.validateURL(url); err != nil {
+		return nil, fmt.Errorf("SSRF protection: %w", err)
+	}
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
@@ -102,6 +138,12 @@ func (c *ChargingEngineClient) DeductCredit(ctx context.Context, ip string, byte
 	}
 
 	url := fmt.Sprintf("%s/v1/credit/%s/deduct", c.baseURL, ip)
+
+	// Validate URL to prevent SSRF
+	if err := c.validateURL(url); err != nil {
+		return fmt.Errorf("SSRF protection: %w", err)
+	}
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("create request: %w", err)
@@ -129,6 +171,12 @@ func (c *ChargingEngineClient) AddCredit(ctx context.Context, ip string, bytesTo
 	}
 
 	url := fmt.Sprintf("%s/v1/credit/%s/add", c.baseURL, ip)
+
+	// Validate URL to prevent SSRF
+	if err := c.validateURL(url); err != nil {
+		return fmt.Errorf("SSRF protection: %w", err)
+	}
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("create request: %w", err)
@@ -151,6 +199,12 @@ func (c *ChargingEngineClient) AddCredit(ctx context.Context, ip string, bytesTo
 // GetBalance gets the current credit balance for a subscriber
 func (c *ChargingEngineClient) GetBalance(ctx context.Context, ip string) (*BalanceResponse, error) {
 	url := fmt.Sprintf("%s/v1/credit/%s/balance", c.baseURL, ip)
+
+	// Validate URL to prevent SSRF
+	if err := c.validateURL(url); err != nil {
+		return nil, fmt.Errorf("SSRF protection: %w", err)
+	}
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
@@ -176,7 +230,13 @@ func (c *ChargingEngineClient) GetBalance(ctx context.Context, ip string) (*Bala
 
 // HealthCheck checks if the Rust charging engine is healthy
 func (c *ChargingEngineClient) HealthCheck(ctx context.Context) (*EngineHealthResponse, error) {
-	url := fmt.Sprintf("%s/health", c.baseURL)
+	url := fmt.Sprintf("%s/v1/health", c.baseURL)
+
+	// Validate URL to prevent SSRF
+	if err := c.validateURL(url); err != nil {
+		return nil, fmt.Errorf("SSRF protection: %w", err)
+	}
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
