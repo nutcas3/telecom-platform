@@ -1,7 +1,7 @@
 # Telecom-as-a-Service (TaaS) Platform
 
 > **Sovereign, Full-Stack Cellular Connectivity Platform**  
-> Built with Go 1.26, Rust 1.94, TypeScript, eBPF, and 5G Core Network Technologies
+> Built with Go 1.26, Rust 1.95, TypeScript, eBPF, and 5G Core Network Technologies
 
 ## Overview
 
@@ -21,6 +21,28 @@ The TaaS Platform allows enterprises, telecom operators, and system integrators 
 - **Developer APIs**: Expose cellular network capabilities through REST and GraphQL APIs for custom application development
 - **Network Orchestration**: Automate network operations, scaling, and health monitoring across distributed infrastructure
 - **Service Discovery**: Enable dynamic service registration and discovery for microservices architecture
+
+### Commercial Applications
+
+The platform is designed for various commercial use cases:
+
+**eSIM Operators (Airalo-style)**
+- Multi-carrier aggregation across 400+ global carriers
+- Real-time eSIM provisioning via GSMA ES2+ standards
+- Usage-based billing with global rate plans
+- B2B2C model for MVNO partnerships
+
+**Enterprise Private Networks**
+- Industrial IoT and manufacturing connectivity
+- Campus networks for universities and hospitals
+- Critical infrastructure communications
+- Secure data sovereignty deployments
+
+**Telecom Service Providers**
+- MVNO enablement platform
+- Network slicing as a service
+- Edge computing integration
+- 5G core network hosting
 
 ### Architecture
 
@@ -248,6 +270,8 @@ pnpm dev
 ## Documentation
 
 - **[API Documentation](./docs/api-spec.yaml)**: OpenAPI 3.0 specification
+- **[Building 5G Networks](./docs/building-5g-with-taas.md)**: Complete 5G deployment guide
+- **[Airalo & eSIM Analysis](./docs/airalo-esim-operator-analysis.md)**: Commercial use case analysis
 - **[Gateway Quickstart](./docs/gateway-quickstart.md)**: API Gateway setup and configuration
 - **[API Gateway Guide](./docs/api-gateway.md)**: Implementation details and patterns
 - **[Architecture Guide](./docs/architecture.md)**: System design and data flows
@@ -335,7 +359,8 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 - **Aya eBPF**: [https://aya-rs.dev/](https://aya-rs.dev/)
 - **GSMA eSIM Specs**: [https://www.gsma.com/esim/](https://www.gsma.com/esim/)
 - **Go 1.26 Docs**: [https://go.dev/doc/go1.26](https://go.dev/doc/go1.26)
-- **Rust 1.94 Blog**: [https://blog.rust-lang.org/2026/03/05/Rust-1.94.0/](https://blog.rust-lang.org/2026/03/05/Rust-1.94.0/)
+- **Rust 1.95 Blog**: [https://blog.rust-lang.org/2026/06/05/Rust-1.95.0/](https://blog.rust-lang.org/2026/06/05/Rust-1.95.0/)
+- **Traefik**: [https://traefik.io/](https://traefik.io/)
 
 ## Contributing
 
@@ -351,8 +376,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourorg/telecom-platform/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourorg/telecom-platform/discussions)
+- **Issues**: [GitHub Issues](https://github.com/nutcas3/telecom-platform/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/nutcas3/telecom-platform/discussions)
 - **Email**: support@yourcompany.com
 
 ## Acknowledgments
