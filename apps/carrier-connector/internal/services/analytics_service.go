@@ -1,21 +1,22 @@
-package currency
+package services
 
 import (
 	"context"
 	"fmt"
 	"time"
 
+	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/currency"
 	"github.com/sirupsen/logrus"
 )
 
 // AnalyticsServiceImpl handles currency analytics operations
 type AnalyticsServiceImpl struct {
-	repository Repository
+	repository currency.Repository
 	logger     *logrus.Logger
 }
 
 // NewAnalyticsService creates a new analytics service
-func NewAnalyticsService(repository Repository, logger *logrus.Logger) *AnalyticsServiceImpl {
+func NewAnalyticsService(repository currency.Repository, logger *logrus.Logger) *AnalyticsServiceImpl {
 	return &AnalyticsServiceImpl{
 		repository: repository,
 		logger:     logger,
@@ -23,12 +24,12 @@ func NewAnalyticsService(repository Repository, logger *logrus.Logger) *Analytic
 }
 
 // GetRevenueByCurrency calculates revenue breakdown by currency
-func (s *AnalyticsServiceImpl) GetRevenueByCurrency(ctx context.Context, filter *TransactionFilter) (map[string]float64, error) {
+func (s *AnalyticsServiceImpl) GetRevenueByCurrency(ctx context.Context, filter *currency.TransactionFilter) (map[string]float64, error) {
 	if filter == nil {
-		filter = &TransactionFilter{}
+		filter = &currency.TransactionFilter{}
 	}
 
-	filter.Status = TransactionStatusCompleted
+	filter.Status = currency.TransactionStatusCompleted
 
 	transactions, err := s.repository.ListTransactions(ctx, filter)
 	if err != nil {
@@ -39,7 +40,7 @@ func (s *AnalyticsServiceImpl) GetRevenueByCurrency(ctx context.Context, filter 
 	revenueByCurrency := make(map[string]float64)
 
 	for _, tx := range transactions {
-		if tx.Type == TransactionTypeSubscription || tx.Type == TransactionTypeUsage || tx.Type == TransactionTypeOverage {
+		if tx.Type == currency.TransactionTypeSubscription || tx.Type == currency.TransactionTypeUsage || tx.Type == currency.TransactionTypeOverage {
 			revenueByCurrency[tx.Currency] += tx.Amount
 		}
 	}
@@ -48,9 +49,9 @@ func (s *AnalyticsServiceImpl) GetRevenueByCurrency(ctx context.Context, filter 
 }
 
 // GetTransactionVolumeByCurrency calculates transaction volume by currency
-func (s *AnalyticsServiceImpl) GetTransactionVolumeByCurrency(ctx context.Context, filter *TransactionFilter) (map[string]int64, error) {
+func (s *AnalyticsServiceImpl) GetTransactionVolumeByCurrency(ctx context.Context, filter *currency.TransactionFilter) (map[string]int64, error) {
 	if filter == nil {
-		filter = &TransactionFilter{}
+		filter = &currency.TransactionFilter{}
 	}
 
 	transactions, err := s.repository.ListTransactions(ctx, filter)
@@ -69,8 +70,8 @@ func (s *AnalyticsServiceImpl) GetTransactionVolumeByCurrency(ctx context.Contex
 }
 
 // GetExchangeRateTrends retrieves exchange rate trends for a currency pair
-func (s *AnalyticsServiceImpl) GetExchangeRateTrends(ctx context.Context, fromCurrency, toCurrency string, days int) ([]*ExchangeRate, error) {
-	filter := &ExchangeRateFilter{
+func (s *AnalyticsServiceImpl) GetExchangeRateTrends(ctx context.Context, fromCurrency, toCurrency string, days int) ([]*currency.ExchangeRate, error) {
+	filter := &currency.ExchangeRateFilter{
 		FromCurrency: fromCurrency,
 		ToCurrency:   toCurrency,
 		IsValid:      &[]bool{false}[0], // Include historical rates
@@ -89,15 +90,15 @@ func (s *AnalyticsServiceImpl) GetExchangeRateTrends(ctx context.Context, fromCu
 }
 
 // GetCurrencyUsageStats retrieves currency usage statistics
-func (s *AnalyticsServiceImpl) GetCurrencyUsageStats(ctx context.Context) (*CurrencyUsageStats, error) {
+func (s *AnalyticsServiceImpl) GetCurrencyUsageStats(ctx context.Context) (*currency.CurrencyUsageStats, error) {
 	// Get total currencies
-	totalCurrencies, err := s.repository.CountCurrencies(ctx, &CurrencyFilter{})
+	totalCurrencies, err := s.repository.CountCurrencies(ctx, &currency.CurrencyFilter{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to count currencies: %w", err)
 	}
 
 	// Get active currencies
-	activeCurrencies, err := s.repository.CountCurrencies(ctx, &CurrencyFilter{
+	activeCurrencies, err := s.repository.CountCurrencies(ctx, &currency.CurrencyFilter{
 		IsActive: &[]bool{true}[0],
 	})
 	if err != nil {
@@ -105,14 +106,14 @@ func (s *AnalyticsServiceImpl) GetCurrencyUsageStats(ctx context.Context) (*Curr
 	}
 
 	// Get total transactions
-	totalTransactions, err := s.repository.CountTransactions(ctx, &TransactionFilter{})
+	totalTransactions, err := s.repository.CountTransactions(ctx, &currency.TransactionFilter{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to count transactions: %w", err)
 	}
 
 	// Get total volume
-	transactions, err := s.repository.ListTransactions(ctx, &TransactionFilter{
-		Status: TransactionStatusCompleted,
+	transactions, err := s.repository.ListTransactions(ctx, &currency.TransactionFilter{
+		Status: currency.TransactionStatusCompleted,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transactions for volume: %w", err)
@@ -138,12 +139,12 @@ func (s *AnalyticsServiceImpl) GetCurrencyUsageStats(ctx context.Context) (*Curr
 	}
 
 	// Get exchange rate count (using ListExchangeRates for now since CountExchangeRates doesn't exist)
-	exchangeRates, err := s.repository.ListExchangeRates(ctx, &ExchangeRateFilter{})
+	exchangeRates, err := s.repository.ListExchangeRates(ctx, &currency.ExchangeRateFilter{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to count exchange rates: %w", err)
 	}
 
-	return &CurrencyUsageStats{
+	return &currency.CurrencyUsageStats{
 		TotalCurrencies:      totalCurrencies,
 		ActiveCurrencies:     activeCurrencies,
 		TotalTransactions:    int64(totalTransactions),
@@ -160,8 +161,8 @@ func (s *AnalyticsServiceImpl) GetMonthlyRevenueTrends(ctx context.Context, mont
 	endDate := time.Now()
 	startDate := endDate.AddDate(0, -months, 0)
 
-	filter := &TransactionFilter{
-		Status:   TransactionStatusCompleted,
+	filter := &currency.TransactionFilter{
+		Status:   currency.TransactionStatusCompleted,
 		FromDate: &startDate,
 		ToDate:   &endDate,
 	}
@@ -183,18 +184,18 @@ func (s *AnalyticsServiceImpl) GetMonthlyRevenueTrends(ctx context.Context, mont
 }
 
 // GetTopCurrenciesByRevenue returns top currencies by revenue
-func (s *AnalyticsServiceImpl) GetTopCurrenciesByRevenue(ctx context.Context, limit int) ([]*CurrencyRevenue, error) {
-	revenueByCurrency, err := s.GetRevenueByCurrency(ctx, &TransactionFilter{
-		Status: TransactionStatusCompleted,
+func (s *AnalyticsServiceImpl) GetTopCurrenciesByRevenue(ctx context.Context, limit int) ([]*currency.CurrencyRevenue, error) {
+	revenueByCurrency, err := s.GetRevenueByCurrency(ctx, &currency.TransactionFilter{
+		Status: currency.TransactionStatusCompleted,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	// Convert to slice and sort
-	var currencyRevenues []*CurrencyRevenue
+	var currencyRevenues []*currency.CurrencyRevenue
 	for currency, revenue := range revenueByCurrency {
-		currencyRevenues = append(currencyRevenues, &CurrencyRevenue{
+		currencyRevenues = append(currencyRevenues, &currency.CurrencyRevenue{
 			Currency: currency,
 			Revenue:  revenue,
 		})
@@ -208,16 +209,10 @@ func (s *AnalyticsServiceImpl) GetTopCurrenciesByRevenue(ctx context.Context, li
 	return currencyRevenues, nil
 }
 
-// CurrencyRevenue represents revenue for a specific currency
-type CurrencyRevenue struct {
-	Currency string  `json:"currency"`
-	Revenue  float64 `json:"revenue"`
-}
-
 // GetTransactionTypeAnalytics returns analytics by transaction type
-func (s *AnalyticsServiceImpl) GetTransactionTypeAnalytics(ctx context.Context, filter *TransactionFilter) (map[string]*TransactionTypeStats, error) {
+func (s *AnalyticsServiceImpl) GetTransactionTypeAnalytics(ctx context.Context, filter *currency.TransactionFilter) (map[string]*currency.TransactionTypeStats, error) {
 	if filter == nil {
-		filter = &TransactionFilter{}
+		filter = &currency.TransactionFilter{}
 	}
 
 	transactions, err := s.repository.ListTransactions(ctx, filter)
@@ -226,13 +221,13 @@ func (s *AnalyticsServiceImpl) GetTransactionTypeAnalytics(ctx context.Context, 
 		return nil, fmt.Errorf("failed to get transactions: %w", err)
 	}
 
-	typeStats := make(map[string]*TransactionTypeStats)
+	typeStats := make(map[string]*currency.TransactionTypeStats)
 
 	for _, tx := range transactions {
 		typeKey := string(tx.Type)
 
 		if _, exists := typeStats[typeKey]; !exists {
-			typeStats[typeKey] = &TransactionTypeStats{
+			typeStats[typeKey] = &currency.TransactionTypeStats{
 				Type:     tx.Type,
 				Count:    0,
 				Amount:   0.0,
@@ -246,12 +241,4 @@ func (s *AnalyticsServiceImpl) GetTransactionTypeAnalytics(ctx context.Context, 
 	}
 
 	return typeStats, nil
-}
-
-// TransactionTypeStats represents statistics for a transaction type
-type TransactionTypeStats struct {
-	Type     TransactionType `json:"type"`
-	Count    int             `json:"count"`
-	Amount   float64         `json:"amount"`
-	Currency string          `json:"currency"`
 }

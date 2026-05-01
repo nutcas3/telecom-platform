@@ -1,4 +1,4 @@
-package rateplan
+package repository
 
 import (
 	"context"
@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	
+	
 )
 
 // CreateRatePlan creates a new rate plan

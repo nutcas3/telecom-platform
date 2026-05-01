@@ -1,4 +1,4 @@
-package rateplan
+package repository
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 
 	"gorm.io/gorm"
 )
+
 // CreateSubscription creates a new rate plan subscription
 func (r *GormRepository) CreateSubscription(ctx context.Context, subscription *RatePlanSubscription) error {
 	now := time.Now()
@@ -85,6 +86,7 @@ func (r *GormRepository) DeleteSubscription(ctx context.Context, id string) erro
 
 	return nil
 }
+
 // ListSubscriptions retrieves subscriptions for a profile
 func (r *GormRepository) ListSubscriptions(ctx context.Context, profileID string, filter *SubscriptionFilter) ([]*RatePlanSubscription, error) {
 	query := r.db.WithContext(ctx).Where("profile_id = ?", profileID)

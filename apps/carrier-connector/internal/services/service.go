@@ -1,4 +1,4 @@
-package rateplan
+package services
 
 import (
 	"context"

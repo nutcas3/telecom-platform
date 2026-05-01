@@ -6,14 +6,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/handlers"
 	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/repository"
-	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/service"
+	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/services"
 	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/smdp"
 	"github.com/sirupsen/logrus"
 )
 
 // SMDPIntegration integrates the multi-carrier SM-DP+ system with the existing carrier connector
 type SMDPIntegration struct {
-	service    *service.SMDPService
+	service    *services.SMDPService
 	handler    *handlers.SMDPHandler
 	repository *repository.PostgresProfileStore
 	logger     *logrus.Logger
@@ -24,7 +24,7 @@ func NewSMDPIntegration(repo *repository.PostgresProfileStore) *SMDPIntegration 
 	logger := logrus.New()
 	logger.SetLevel(logrus.InfoLevel)
 
-	svc := service.NewSMDPService(repo)
+	svc := services.NewSMDPService(repo)
 	manager := svc.GetManager()
 	hnd := handlers.NewSMDPHandler(manager)
 
@@ -148,7 +148,7 @@ func (i *SMDPIntegration) metricsHandler(c *gin.Context) {
 }
 
 // GetService returns the SM-DP+ service for direct access
-func (i *SMDPIntegration) GetService() *service.SMDPService {
+func (i *SMDPIntegration) GetService() *services.SMDPService {
 	return i.service
 }
 

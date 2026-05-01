@@ -1,4 +1,4 @@
-package currency
+package services
 
 import (
 	"context"
@@ -85,7 +85,7 @@ func (rpci *RatePlanCurrencyIntegrator) UpdatePlanCurrency(ctx context.Context, 
 	if err != nil {
 		return fmt.Errorf("failed to update rate plan: %w", err)
 	}
-	
+
 	// Use the updated plan for logging
 	plan = updatedPlan
 
@@ -145,7 +145,7 @@ func (rpci *RatePlanCurrencyIntegrator) GetCurrencyUsageForPlan(ctx context.Cont
 
 	// Count currencies
 	currencyUsage := make(map[string]int64)
-	
+
 	for _, subscription := range subscriptions {
 		currency := rpci.baseCurrency // Default to base currency
 		if subscription.Metadata != nil {

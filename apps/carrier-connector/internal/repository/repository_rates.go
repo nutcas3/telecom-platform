@@ -1,4 +1,4 @@
-package currency
+package repository
 
 import (
 	"context"
@@ -6,11 +6,13 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+
+	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/currency"
 )
 
 // ListExchangeRates retrieves exchange rates based on filter
-func (r *GormRepository) ListExchangeRates(ctx context.Context, filter *ExchangeRateFilter) ([]*ExchangeRate, error) {
-	query := r.db.WithContext(ctx).Model(&ExchangeRateModel{})
+func (r *GormRepository) ListExchangeRates(ctx context.Context, filter *currency.ExchangeRateFilter) ([]*currency.ExchangeRate, error) {
+	query := r.db.WithContext(ctx).Model(&currency.ExchangeRateModel{})
 
 	// Apply filters
 	if filter.FromCurrency != "" {
@@ -50,13 +52,13 @@ func (r *GormRepository) ListExchangeRates(ctx context.Context, filter *Exchange
 		query = query.Offset(filter.Offset)
 	}
 
-	var models []ExchangeRateModel
+	var models []currency.ExchangeRateModel
 	if err := query.Find(&models).Error; err != nil {
 		r.logger.WithError(err).Error("Failed to list exchange rates")
 		return nil, fmt.Errorf("failed to list exchange rates: %w", err)
 	}
 
-	rates := make([]*ExchangeRate, 0, len(models))
+	rates := make([]*currency.ExchangeRate, 0, len(models))
 	for _, model := range models {
 		rate, err := r.modelToExchangeRate(&model)
 		if err != nil {
@@ -70,9 +72,9 @@ func (r *GormRepository) ListExchangeRates(ctx context.Context, filter *Exchange
 }
 
 // GetLatestExchangeRate gets the latest valid exchange rate
-func (r *GormRepository) GetLatestExchangeRate(ctx context.Context, fromCurrency, toCurrency string) (*ExchangeRate, error) {
+func (r *GormRepository) GetLatestExchangeRate(ctx context.Context, fromCurrency, toCurrency string) (*currency.ExchangeRate, error) {
 	now := time.Now()
-	var model ExchangeRateModel
+	var model currency.ExchangeRateModel
 
 	if err := r.db.WithContext(ctx).
 		Where("from_currency = ? AND to_currency = ? AND is_active = ?", fromCurrency, toCurrency, true).

@@ -1,36 +1,37 @@
-package currency
+package services
 
 import (
 	"context"
 	"fmt"
 	"time"
 
+	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/currency"
 	"github.com/sirupsen/logrus"
 )
 
 type ExchangeRateService struct {
-	repository   Repository
+	repository   currency.Repository
 	logger       *logrus.Logger
-	providers    []ExchangeRateProvider
+	providers    []currency.ExchangeRateProvider
 	baseCurrency string
 }
 
-func NewExchangeRateService(repository Repository, logger *logrus.Logger, baseCurrency string) *ExchangeRateService {
+func NewExchangeRateService(repository currency.Repository, logger *logrus.Logger, baseCurrency string) *ExchangeRateService {
 	return &ExchangeRateService{
 		repository:   repository,
 		logger:       logger,
-		providers:    make([]ExchangeRateProvider, 0),
+		providers:    make([]currency.ExchangeRateProvider, 0),
 		baseCurrency: baseCurrency,
 	}
 }
 
-func (s *ExchangeRateService) AddProvider(provider ExchangeRateProvider) {
+func (s *ExchangeRateService) AddProvider(provider currency.ExchangeRateProvider) {
 	s.providers = append(s.providers, provider)
 }
 
-func (s *ExchangeRateService) GetExchangeRate(ctx context.Context, fromCurrency, toCurrency string) (*ExchangeRate, error) {
+func (s *ExchangeRateService) GetExchangeRate(ctx context.Context, fromCurrency, toCurrency string) (*currency.ExchangeRate, error) {
 	if fromCurrency == toCurrency {
-		return &ExchangeRate{
+		return &currency.ExchangeRate{
 			FromCurrency: fromCurrency,
 			ToCurrency:   toCurrency,
 			Rate:         1.0,
@@ -48,7 +49,7 @@ func (s *ExchangeRateService) GetExchangeRate(ctx context.Context, fromCurrency,
 	for _, provider := range s.providers {
 		providerRate, err := provider.GetRate(ctx, fromCurrency, toCurrency)
 		if err == nil {
-			newRate := &ExchangeRate{
+			newRate := &currency.ExchangeRate{
 				ID:           fmt.Sprintf("%s_%s_%d", fromCurrency, toCurrency, time.Now().Unix()),
 				FromCurrency: fromCurrency,
 				ToCurrency:   toCurrency,
@@ -69,7 +70,7 @@ func (s *ExchangeRateService) GetExchangeRate(ctx context.Context, fromCurrency,
 	return nil, fmt.Errorf("exchange rate not found: %s to %s", fromCurrency, toCurrency)
 }
 
-func (s *ExchangeRateService) ConvertAmount(ctx context.Context, amount float64, fromCurrency, toCurrency string) (*CurrencyConversionResponse, error) {
+func (s *ExchangeRateService) ConvertAmount(ctx context.Context, amount float64, fromCurrency, toCurrency string) (*currency.CurrencyConversionResponse, error) {
 	rate, err := s.GetExchangeRate(ctx, fromCurrency, toCurrency)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get exchange rate: %w", err)
@@ -77,7 +78,7 @@ func (s *ExchangeRateService) ConvertAmount(ctx context.Context, amount float64,
 
 	convertedAmount := amount * rate.Rate
 
-	return &CurrencyConversionResponse{
+	return &currency.CurrencyConversionResponse{
 		OriginalAmount:    amount,
 		OriginalCurrency:  fromCurrency,
 		ConvertedAmount:   convertedAmount,
@@ -101,8 +102,8 @@ func (s *ExchangeRateService) RefreshRates(ctx context.Context) error {
 	return nil
 }
 
-func (s *ExchangeRateService) GetRateHistory(ctx context.Context, fromCurrency, toCurrency string, days int) ([]*ExchangeRate, error) {
-	filter := &ExchangeRateFilter{
+func (s *ExchangeRateService) GetRateHistory(ctx context.Context, fromCurrency, toCurrency string, days int) ([]*currency.ExchangeRate, error) {
+	filter := &currency.ExchangeRateFilter{
 		FromCurrency: fromCurrency,
 		ToCurrency:   toCurrency,
 		IsValid:      &[]bool{false}[0], // Include historical rates
@@ -119,7 +120,7 @@ func (s *ExchangeRateService) GetRateHistory(ctx context.Context, fromCurrency, 
 	return rates, nil
 }
 
-func (s *ExchangeRateService) UpdateExchangeRate(ctx context.Context, rate *ExchangeRate) error {
+func (s *ExchangeRateService) UpdateExchangeRate(ctx context.Context, rate *currency.ExchangeRate) error {
 	if rate.Rate <= 0 {
 		return fmt.Errorf("invalid exchange rate: must be positive")
 	}
@@ -132,7 +133,7 @@ func (s *ExchangeRateService) UpdateExchangeRate(ctx context.Context, rate *Exch
 	rate.ValidFrom = now
 	rate.IsActive = true
 
-	filter := &ExchangeRateFilter{
+	filter := &currency.ExchangeRateFilter{
 		FromCurrency: rate.FromCurrency,
 		ToCurrency:   rate.ToCurrency,
 		IsValid:      &[]bool{true}[0],
@@ -163,8 +164,8 @@ func (s *ExchangeRateService) UpdateExchangeRate(ctx context.Context, rate *Exch
 	return nil
 }
 
-func (s *ExchangeRateService) GetSupportedCurrencies(ctx context.Context) ([]*Currency, error) {
-	filter := &CurrencyFilter{
+func (s *ExchangeRateService) GetSupportedCurrencies(ctx context.Context) ([]*currency.Currency, error) {
+	filter := &currency.CurrencyFilter{
 		IsActive: &[]bool{true}[0],
 	}
 

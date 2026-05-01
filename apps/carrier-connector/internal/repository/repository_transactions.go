@@ -1,14 +1,16 @@
-package currency
+package repository
 
 import (
 	"context"
 	"fmt"
 
 	"gorm.io/gorm"
+
+	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/currency"
 )
 
 // CreateTransaction creates a new transaction
-func (r *GormRepository) CreateTransaction(ctx context.Context, transaction *Transaction) error {
+func (r *GormRepository) CreateTransaction(ctx context.Context, transaction *currency.Transaction) error {
 	model := r.transactionToModel(transaction)
 
 	if err := r.db.WithContext(ctx).Create(model).Error; err != nil {
@@ -20,8 +22,8 @@ func (r *GormRepository) CreateTransaction(ctx context.Context, transaction *Tra
 }
 
 // GetTransaction retrieves a transaction by ID
-func (r *GormRepository) GetTransaction(ctx context.Context, id string) (*Transaction, error) {
-	var model TransactionModel
+func (r *GormRepository) GetTransaction(ctx context.Context, id string) (*currency.Transaction, error) {
+	var model currency.TransactionModel
 	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&model).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("transaction not found: %s", id)
@@ -34,7 +36,7 @@ func (r *GormRepository) GetTransaction(ctx context.Context, id string) (*Transa
 }
 
 // UpdateTransaction updates an existing transaction
-func (r *GormRepository) UpdateTransaction(ctx context.Context, transaction *Transaction) error {
+func (r *GormRepository) UpdateTransaction(ctx context.Context, transaction *currency.Transaction) error {
 	model := r.transactionToModel(transaction)
 
 	if err := r.db.WithContext(ctx).Save(model).Error; err != nil {
@@ -47,7 +49,7 @@ func (r *GormRepository) UpdateTransaction(ctx context.Context, transaction *Tra
 
 // DeleteTransaction deletes a transaction
 func (r *GormRepository) DeleteTransaction(ctx context.Context, id string) error {
-	if err := r.db.WithContext(ctx).Delete(&TransactionModel{}, "id = ?", id).Error; err != nil {
+	if err := r.db.WithContext(ctx).Delete(&currency.TransactionModel{}, "id = ?", id).Error; err != nil {
 		r.logger.WithError(err).Error("Failed to delete transaction")
 		return fmt.Errorf("failed to delete transaction: %w", err)
 	}
@@ -56,8 +58,8 @@ func (r *GormRepository) DeleteTransaction(ctx context.Context, id string) error
 }
 
 // ListTransactions retrieves transactions based on filter
-func (r *GormRepository) ListTransactions(ctx context.Context, filter *TransactionFilter) ([]*Transaction, error) {
-	query := r.db.WithContext(ctx).Model(&TransactionModel{})
+func (r *GormRepository) ListTransactions(ctx context.Context, filter *currency.TransactionFilter) ([]*currency.Transaction, error) {
+	query := r.db.WithContext(ctx).Model(&currency.TransactionModel{})
 
 	// Apply filters
 	if filter.ProfileID != "" {
@@ -107,13 +109,13 @@ func (r *GormRepository) ListTransactions(ctx context.Context, filter *Transacti
 		query = query.Offset(filter.Offset)
 	}
 
-	var models []TransactionModel
+	var models []currency.TransactionModel
 	if err := query.Find(&models).Error; err != nil {
 		r.logger.WithError(err).Error("Failed to list transactions")
 		return nil, fmt.Errorf("failed to list transactions: %w", err)
 	}
 
-	transactions := make([]*Transaction, 0, len(models))
+	transactions := make([]*currency.Transaction, 0, len(models))
 	for _, model := range models {
 		tx, err := r.modelToTransaction(&model)
 		if err != nil {
@@ -127,8 +129,8 @@ func (r *GormRepository) ListTransactions(ctx context.Context, filter *Transacti
 }
 
 // CountTransactions counts transactions based on filter
-func (r *GormRepository) CountTransactions(ctx context.Context, filter *TransactionFilter) (int, error) {
-	query := r.db.WithContext(ctx).Model(&TransactionModel{})
+func (r *GormRepository) CountTransactions(ctx context.Context, filter *currency.TransactionFilter) (int, error) {
+	query := r.db.WithContext(ctx).Model(&currency.TransactionModel{})
 
 	// Apply filters
 	if filter.ProfileID != "" {

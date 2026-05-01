@@ -8,15 +8,15 @@ import (
 
 	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/handlers"
 	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/repository"
-	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/service"
+	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/services"
 	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/smdp"
 )
 
 type SelectionIntegration struct {
 	manager          *smdp.SMDPManager
-	selectionService *service.SelectionService
+	selectionService *services.SelectionService
 	selectionHandler *handlers.SelectionHandler
-	smdpService      *service.SMDPService
+	smdpService      *services.SMDPService
 	server           *http.Server
 }
 
@@ -33,10 +33,10 @@ func NewSelectionIntegration(repo *repository.PostgresProfileStore) *SelectionIn
 	manager := smdp.NewSMDPManager(repo, config)
 
 	// Create selection service
-	selectionService := service.NewSelectionService(manager)
+	selectionService := services.NewSelectionService(manager)
 
 	// Create SMDP service
-	smdpService := service.NewSMDPService(repo)
+	smdpService := services.NewSMDPService(repo)
 
 	return &SelectionIntegration{
 		manager:          manager,
@@ -85,7 +85,7 @@ func (si *SelectionIntegration) GetManager() *smdp.SMDPManager {
 }
 
 // GetSelectionService returns the selection service for testing
-func (si *SelectionIntegration) GetSelectionService() *service.SelectionService {
+func (si *SelectionIntegration) GetSelectionService() *services.SelectionService {
 	return si.selectionService
 }
 

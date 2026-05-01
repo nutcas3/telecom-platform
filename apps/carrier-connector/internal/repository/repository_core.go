@@ -1,9 +1,10 @@
-package currency
+package repository
 
 import (
 	"context"
 	"fmt"
 
+	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/currency"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -23,7 +24,7 @@ func NewGormRepository(db *gorm.DB, logger *logrus.Logger) *GormRepository {
 }
 
 // CreateCurrency creates a new currency
-func (r *GormRepository) CreateCurrency(ctx context.Context, currency *Currency) error {
+func (r *GormRepository) CreateCurrency(ctx context.Context, currency *currency.Currency) error {
 	model := r.currencyToModel(currency)
 
 	if err := r.db.WithContext(ctx).Create(model).Error; err != nil {
@@ -35,8 +36,8 @@ func (r *GormRepository) CreateCurrency(ctx context.Context, currency *Currency)
 }
 
 // GetCurrency retrieves a currency by code
-func (r *GormRepository) GetCurrency(ctx context.Context, code string) (*Currency, error) {
-	var model CurrencyModel
+func (r *GormRepository) GetCurrency(ctx context.Context, code string) (*currency.Currency, error) {
+	var model currency.CurrencyModel
 	if err := r.db.WithContext(ctx).Where("code = ?", code).First(&model).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("currency not found: %s", code)
@@ -49,7 +50,7 @@ func (r *GormRepository) GetCurrency(ctx context.Context, code string) (*Currenc
 }
 
 // UpdateCurrency updates an existing currency
-func (r *GormRepository) UpdateCurrency(ctx context.Context, currency *Currency) error {
+func (r *GormRepository) UpdateCurrency(ctx context.Context, currency *currency.Currency) error {
 	model := r.currencyToModel(currency)
 
 	if err := r.db.WithContext(ctx).Save(model).Error; err != nil {
@@ -62,7 +63,7 @@ func (r *GormRepository) UpdateCurrency(ctx context.Context, currency *Currency)
 
 // DeleteCurrency deletes a currency
 func (r *GormRepository) DeleteCurrency(ctx context.Context, code string) error {
-	if err := r.db.WithContext(ctx).Delete(&CurrencyModel{}, "code = ?", code).Error; err != nil {
+	if err := r.db.WithContext(ctx).Delete(&currency.CurrencyModel{}, "code = ?", code).Error; err != nil {
 		r.logger.WithError(err).Error("Failed to delete currency")
 		return fmt.Errorf("failed to delete currency: %w", err)
 	}
@@ -71,8 +72,8 @@ func (r *GormRepository) DeleteCurrency(ctx context.Context, code string) error 
 }
 
 // ListCurrencies retrieves currencies based on filter
-func (r *GormRepository) ListCurrencies(ctx context.Context, filter *CurrencyFilter) ([]*Currency, error) {
-	query := r.db.WithContext(ctx).Model(&CurrencyModel{})
+func (r *GormRepository) ListCurrencies(ctx context.Context, filter *currency.CurrencyFilter) ([]*currency.Currency, error) {
+	query := r.db.WithContext(ctx).Model(&currency.CurrencyModel{})
 
 	// Apply filters
 	if filter.IsActive != nil {
@@ -101,13 +102,13 @@ func (r *GormRepository) ListCurrencies(ctx context.Context, filter *CurrencyFil
 		query = query.Offset(filter.Offset)
 	}
 
-	var models []CurrencyModel
+	var models []currency.CurrencyModel
 	if err := query.Find(&models).Error; err != nil {
 		r.logger.WithError(err).Error("Failed to list currencies")
 		return nil, fmt.Errorf("failed to list currencies: %w", err)
 	}
 
-	currencies := make([]*Currency, 0, len(models))
+	currencies := make([]*currency.Currency, 0, len(models))
 	for _, model := range models {
 		curr, err := r.modelToCurrency(&model)
 		if err != nil {
@@ -121,8 +122,8 @@ func (r *GormRepository) ListCurrencies(ctx context.Context, filter *CurrencyFil
 }
 
 // CountCurrencies counts currencies based on filter
-func (r *GormRepository) CountCurrencies(ctx context.Context, filter *CurrencyFilter) (int, error) {
-	query := r.db.WithContext(ctx).Model(&CurrencyModel{})
+func (r *GormRepository) CountCurrencies(ctx context.Context, filter *currency.CurrencyFilter) (int, error) {
+	query := r.db.WithContext(ctx).Model(&currency.CurrencyModel{})
 
 	// Apply filters
 	if filter.IsActive != nil {
@@ -142,7 +143,7 @@ func (r *GormRepository) CountCurrencies(ctx context.Context, filter *CurrencyFi
 }
 
 // CreateExchangeRate creates a new exchange rate
-func (r *GormRepository) CreateExchangeRate(ctx context.Context, rate *ExchangeRate) error {
+func (r *GormRepository) CreateExchangeRate(ctx context.Context, rate *currency.ExchangeRate) error {
 	model := r.exchangeRateToModel(rate)
 
 	if err := r.db.WithContext(ctx).Create(model).Error; err != nil {
@@ -154,8 +155,8 @@ func (r *GormRepository) CreateExchangeRate(ctx context.Context, rate *ExchangeR
 }
 
 // GetExchangeRate retrieves an exchange rate by ID
-func (r *GormRepository) GetExchangeRate(ctx context.Context, fromCurrency, toCurrency string) (*ExchangeRate, error) {
-	var model ExchangeRateModel
+func (r *GormRepository) GetExchangeRate(ctx context.Context, fromCurrency, toCurrency string) (*currency.ExchangeRate, error) {
+	var model currency.ExchangeRateModel
 	if err := r.db.WithContext(ctx).Where("from_currency = ? AND to_currency = ?", fromCurrency, toCurrency).First(&model).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("exchange rate not found: %s to %s", fromCurrency, toCurrency)
@@ -168,7 +169,7 @@ func (r *GormRepository) GetExchangeRate(ctx context.Context, fromCurrency, toCu
 }
 
 // UpdateExchangeRate updates an existing exchange rate
-func (r *GormRepository) UpdateExchangeRate(ctx context.Context, rate *ExchangeRate) error {
+func (r *GormRepository) UpdateExchangeRate(ctx context.Context, rate *currency.ExchangeRate) error {
 	model := r.exchangeRateToModel(rate)
 
 	if err := r.db.WithContext(ctx).Save(model).Error; err != nil {
@@ -181,7 +182,7 @@ func (r *GormRepository) UpdateExchangeRate(ctx context.Context, rate *ExchangeR
 
 // DeleteExchangeRate deletes an exchange rate
 func (r *GormRepository) DeleteExchangeRate(ctx context.Context, id string) error {
-	if err := r.db.WithContext(ctx).Delete(&ExchangeRateModel{}, "id = ?", id).Error; err != nil {
+	if err := r.db.WithContext(ctx).Delete(&currency.ExchangeRateModel{}, "id = ?", id).Error; err != nil {
 		r.logger.WithError(err).Error("Failed to delete exchange rate")
 		return fmt.Errorf("failed to delete exchange rate: %w", err)
 	}

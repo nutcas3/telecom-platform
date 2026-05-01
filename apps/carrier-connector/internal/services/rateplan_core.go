@@ -1,4 +1,4 @@
-package currency
+package services
 
 import (
 	"context"
@@ -7,21 +7,22 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/currency"
 	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/rateplan"
 )
 
 // RatePlanCurrencyIntegrator integrates currency system with rate plans
 type RatePlanCurrencyIntegrator struct {
-	billingService  BillingService
+	billingService  currency.BillingService
 	exchangeService *ExchangeRateService
 	ratePlanService rateplan.Service
-	logger         *logrus.Logger
-	baseCurrency   string
+	logger          *logrus.Logger
+	baseCurrency    string
 }
 
 // NewRatePlanCurrencyIntegrator creates a new rate plan currency integrator
 func NewRatePlanCurrencyIntegrator(
-	billingService BillingService,
+	billingService currency.BillingService,
 	exchangeService *ExchangeRateService,
 	ratePlanService rateplan.Service,
 	logger *logrus.Logger,
@@ -30,9 +31,9 @@ func NewRatePlanCurrencyIntegrator(
 	return &RatePlanCurrencyIntegrator{
 		billingService:  billingService,
 		exchangeService: exchangeService,
-		ratePlanService: rateplanService,
-		logger:         logger,
-		baseCurrency:   baseCurrency,
+		ratePlanService: ratePlanService,
+		logger:          logger,
+		baseCurrency:    baseCurrency,
 	}
 }
 
@@ -47,7 +48,7 @@ func (rpci *RatePlanCurrencyIntegrator) SubscribeToPlanWithCurrency(ctx context.
 	// Convert price to requested currency if needed
 	subscriptionPrice := plan.BasePrice
 	exchangeRate := 1.0
-	
+
 	if currency != plan.Currency {
 		conversion, err := rpci.exchangeService.ConvertAmount(ctx, plan.BasePrice, plan.Currency, currency)
 		if err != nil {
@@ -60,10 +61,10 @@ func (rpci *RatePlanCurrencyIntegrator) SubscribeToPlanWithCurrency(ctx context.
 
 	// Create subscription with currency information
 	subscription := &rateplan.RatePlanSubscription{
-		ProfileID:    profileID,
-		RatePlanID:   planID,
-		Status:       rateplan.SubscriptionStatusActive,
-		StartedAt:    time.Now(),
+		ProfileID:  profileID,
+		RatePlanID: planID,
+		Status:     rateplan.SubscriptionStatusActive,
+		StartedAt:  time.Now(),
 		Metadata: map[string]interface{}{
 			"original_currency":     plan.Currency,
 			"subscription_currency": currency,
@@ -89,13 +90,13 @@ func (rpci *RatePlanCurrencyIntegrator) SubscribeToPlanWithCurrency(ctx context.
 	}
 
 	// Process initial billing
-	billingReq := &BillingRequest{
+	billingReq := &currency.BillingRequest{
 		ProfileID:      profileID,
 		SubscriptionID: createdSubscription.ID,
-		Amount:        subscriptionPrice,
-		Currency:      currency,
+		Amount:         subscriptionPrice,
+		Currency:       currency,
 		Description:    fmt.Sprintf("Initial subscription to %s", plan.Name),
-		BillingDate:   time.Now(),
+		BillingDate:    time.Now(),
 	}
 
 	_, err = rpci.billingService.ProcessBilling(ctx, billingReq)
@@ -115,7 +116,7 @@ func (rpci *RatePlanCurrencyIntegrator) SubscribeToPlanWithCurrency(ctx context.
 }
 
 // CalculatePlanCostInCurrency calculates the cost of a rate plan in a specific currency
-func (rpci *RatePlanCurrencyIntegrator) CalculatePlanCostInCurrency(ctx context.Context, planID string, currency string, usageData *rateplan.RatePlanUsage) (*BillingSummary, error) {
+func (rpci *RatePlanCurrencyIntegrator) CalculatePlanCostInCurrency(ctx context.Context, planID string, currency string, usageData *rateplan.RatePlanUsage) (*currency.BillingSummary, error) {
 	// Get the rate plan
 	plan, err := rpci.ratePlanService.GetRatePlan(ctx, planID)
 	if err != nil {
@@ -138,7 +139,7 @@ func (rpci *RatePlanCurrencyIntegrator) CalculatePlanCostInCurrency(ctx context.
 	// Convert to requested currency
 	convertedCost := baseCost
 	exchangeRate := 1.0
-	
+
 	if currency != plan.Currency {
 		conversion, err := rpci.exchangeService.ConvertAmount(ctx, baseCost, plan.Currency, currency)
 		if err != nil {
@@ -149,15 +150,15 @@ func (rpci *RatePlanCurrencyIntegrator) CalculatePlanCostInCurrency(ctx context.
 	}
 
 	// Create billing summary
-	summary := &BillingSummary{
-		ProfileID:       usageData.ProfileID,
-		TotalAmount:     convertedCost,
-		Currency:        currency,
-		BaseTotalAmount: baseCost,
-		BaseCurrency:    plan.Currency,
+	summary := &currency.BillingSummary{
+		ProfileID:        usageData.ProfileID,
+		TotalAmount:      convertedCost,
+		Currency:         currency,
+		BaseTotalAmount:  baseCost,
+		BaseCurrency:     plan.Currency,
 		TransactionCount: 1,
-		FromDate:        time.Now().AddDate(0, -1, 0),
-		ToDate:          time.Now(),
+		FromDate:         time.Now().AddDate(0, -1, 0),
+		ToDate:           time.Now(),
 		Breakdown: map[string]interface{}{
 			"plan_id":           planID,
 			"plan_name":         plan.Name,

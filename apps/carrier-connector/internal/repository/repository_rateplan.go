@@ -1,27 +1,13 @@
-package rateplan
+package repository
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
-// GormRepository implements the Repository interface using GORM
-type GormRepository struct {
-	db     *gorm.DB
-	logger *logrus.Logger
-}
-
-// NewGormRepository creates a new GORM repository
-func NewGormRepository(db *gorm.DB, logger *logrus.Logger) *GormRepository {
-	return &GormRepository{
-		db:     db,
-		logger: logger,
-	}
-}
 // CreateUsage creates a new usage record
 func (r *GormRepository) CreateUsage(ctx context.Context, usage *RatePlanUsage) error {
 	usage.LastUpdated = time.Now()

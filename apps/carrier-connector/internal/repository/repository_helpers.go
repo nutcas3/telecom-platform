@@ -1,14 +1,16 @@
-package currency
+package repository
 
 import (
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/currency"
 )
 
 // currencyToModel converts currency domain model to database model
-func (r *GormRepository) currencyToModel(currency *Currency) *CurrencyModel {
-	return &CurrencyModel{
+func (r *GormRepository) currencyToModel(currency *currency.Currency) *currency.CurrencyModel {
+	return &currency.CurrencyModel{
 		Code:             currency.Code,
 		Name:             currency.Name,
 		Symbol:           currency.Symbol,
@@ -21,13 +23,13 @@ func (r *GormRepository) currencyToModel(currency *Currency) *CurrencyModel {
 }
 
 // modelToCurrency converts database model to currency domain model
-func (r *GormRepository) modelToCurrency(model *CurrencyModel) (*Currency, error) {
+func (r *GormRepository) modelToCurrency(model *currency.CurrencyModel) (*currency.Currency, error) {
 	var regions []string
 	if model.SupportedRegions != "" {
 		regions = strings.Split(model.SupportedRegions, ",")
 	}
 
-	return &Currency{
+	return &currency.Currency{
 		Code:             model.Code,
 		Name:             model.Name,
 		Symbol:           model.Symbol,
@@ -40,8 +42,8 @@ func (r *GormRepository) modelToCurrency(model *CurrencyModel) (*Currency, error
 }
 
 // exchangeRateToModel converts exchange rate domain model to database model
-func (r *GormRepository) exchangeRateToModel(rate *ExchangeRate) *ExchangeRateModel {
-	return &ExchangeRateModel{
+func (r *GormRepository) exchangeRateToModel(rate *currency.ExchangeRate) *currency.ExchangeRateModel {
+	return &currency.ExchangeRateModel{
 		ID:           rate.ID,
 		FromCurrency: rate.FromCurrency,
 		ToCurrency:   rate.ToCurrency,
@@ -56,8 +58,8 @@ func (r *GormRepository) exchangeRateToModel(rate *ExchangeRate) *ExchangeRateMo
 }
 
 // modelToExchangeRate converts database model to exchange rate domain model
-func (r *GormRepository) modelToExchangeRate(model *ExchangeRateModel) (*ExchangeRate, error) {
-	return &ExchangeRate{
+func (r *GormRepository) modelToExchangeRate(model *currency.ExchangeRateModel) (*currency.ExchangeRate, error) {
+	return &currency.ExchangeRate{
 		ID:           model.ID,
 		FromCurrency: model.FromCurrency,
 		ToCurrency:   model.ToCurrency,
@@ -72,7 +74,7 @@ func (r *GormRepository) modelToExchangeRate(model *ExchangeRateModel) (*Exchang
 }
 
 // transactionToModel converts transaction domain model to database model
-func (r *GormRepository) transactionToModel(transaction *Transaction) *TransactionModel {
+func (r *GormRepository) transactionToModel(transaction *currency.Transaction) *currency.TransactionModel {
 	metadata := ""
 	if transaction.Metadata != nil {
 		if data, err := json.Marshal(transaction.Metadata); err == nil {
@@ -80,7 +82,7 @@ func (r *GormRepository) transactionToModel(transaction *Transaction) *Transacti
 		}
 	}
 
-	return &TransactionModel{
+	return &currency.TransactionModel{
 		ID:             transaction.ID,
 		ProfileID:      transaction.ProfileID,
 		SubscriptionID: transaction.SubscriptionID,
@@ -99,7 +101,7 @@ func (r *GormRepository) transactionToModel(transaction *Transaction) *Transacti
 }
 
 // modelToTransaction converts database model to transaction domain model
-func (r *GormRepository) modelToTransaction(model *TransactionModel) (*Transaction, error) {
+func (r *GormRepository) modelToTransaction(model *currency.TransactionModel) (*currency.Transaction, error) {
 	var metadata map[string]interface{}
 	if model.Metadata != "" {
 		if err := json.Unmarshal([]byte(model.Metadata), &metadata); err != nil {
@@ -107,18 +109,18 @@ func (r *GormRepository) modelToTransaction(model *TransactionModel) (*Transacti
 		}
 	}
 
-	return &Transaction{
+	return &currency.Transaction{
 		ID:             model.ID,
 		ProfileID:      model.ProfileID,
 		SubscriptionID: model.SubscriptionID,
-		Type:           TransactionType(model.Type),
+		Type:           currency.TransactionType(model.Type),
 		Amount:         model.Amount,
 		Currency:       model.Currency,
 		BaseAmount:     model.BaseAmount,
 		BaseCurrency:   model.BaseCurrency,
 		ExchangeRate:   model.ExchangeRate,
 		Description:    model.Description,
-		Status:         TransactionStatus(model.Status),
+		Status:         currency.TransactionStatus(model.Status),
 		Metadata:       metadata,
 		CreatedAt:      model.CreatedAt,
 		UpdatedAt:      model.UpdatedAt,

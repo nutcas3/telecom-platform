@@ -1,4 +1,4 @@
-package currency
+package services
 
 import (
 	"context"
