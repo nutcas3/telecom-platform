@@ -7,6 +7,10 @@
 
 The Telecom-as-a-Service (TaaS) Platform is a comprehensive, sovereign cellular connectivity solution that enables organizations to deploy and manage their own private 5G/LTE networks. This full-stack platform provides end-to-end capabilities from core network integration to subscriber management, charging, and developer APIs.
 
+### API Gateway Integration
+
+The platform now includes **Traefik API Gateway** for centralized request routing, security, and monitoring. All services are accessible through a unified HTTPS endpoint with built-in rate limiting, authentication, and SSL termination.
+
 ### What It Does
 
 The TaaS Platform allows enterprises, telecom operators, and system integrators to:
@@ -21,6 +25,12 @@ The TaaS Platform allows enterprises, telecom operators, and system integrators 
 ### Architecture
 
 The platform is built as a microservices architecture with the following core components:
+
+**API Gateway Layer:**
+- **Traefik API Gateway**: Centralized entry point providing SSL termination, rate limiting, authentication, and request routing
+- **Unified HTTPS Endpoint**: All services accessible via `https://api.telecom.com`
+- **Security Middleware**: JWT authentication, security headers, compression, and retry logic
+- **Monitoring Dashboard**: Real-time metrics and service health visualization
 
 **Core Network Services:**
 - **API Server**: Central BSS (Business Support System) API providing authentication, subscriber management, automation, and plugin system
@@ -43,6 +53,12 @@ The platform is built as a microservices architecture with the following core co
 
 ### Key Features
 
+**API Gateway & Security:**
+- **Unified HTTPS Endpoint**: All services accessible via `https://api.telecom.com`
+- **Centralized Authentication**: JWT validation with rate limiting per service
+- **SSL Termination**: Automatic HTTPS with security headers enforcement
+- **Request Routing**: Intelligent routing with circuit breakers and retry logic
+
 **Sovereignty & Security:**
 - Full data sovereignty with on-premise deployment
 - End-to-end encryption for subscriber data
@@ -53,26 +69,28 @@ The platform is built as a microservices architecture with the following core co
 - eBPF-accelerated packet processing for line-rate throughput
 - Redis-backed distributed rate limiting and caching
 - Horizontal scaling with Kubernetes orchestration
-- Circuit breakers and retry logic for external service resilience
+- Gateway-level load balancing and connection pooling
 
 **Developer Experience:**
+- **Single API Endpoint**: Simplified client integration through gateway
 - REST and GraphQL APIs with comprehensive documentation
 - TypeScript SDK for type-safe client integration
 - Plugin system for extending platform capabilities
 - Automation framework for network operations
 
 **Operations:**
-- Real-time health monitoring with Prometheus integration
+- **Gateway Dashboard**: Real-time monitoring of all services
+- **Unified Metrics**: Prometheus integration with gateway-level insights
 - Automated scaling and service discovery
 - Centralized logging with structured logs
-- Chaos engineering capabilities for testing resilience
+- Health checks and failover automation
 
 
 **Technology Stack:**
 
 **Core Languages & Runtimes:**
 - **Go 1.26**: Core network integration, BSS API, carrier connector
-- **Rust 1.94**: eBPF packet gateway, real-time charging engine
+- **Rust 1.95**: eBPF packet gateway, real-time charging engine
 - **TypeScript/Next.js**: Developer dashboard and SDK
 
 **Databases:**
@@ -105,7 +123,7 @@ The platform is built as a microservices architecture with the following core co
 ### Prerequisites
 
 - **Go 1.26+**: [Download](https://go.dev/dl/)
-- **Rust 1.94+**: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
+- **Rust 1.95+**: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
 - **Node.js 22+**: [Download](https://nodejs.org/)
 - **pnpm**: `npm install -g pnpm`
 - **Docker**: [Install](https://docs.docker.com/get-docker/)
@@ -117,11 +135,28 @@ The platform is built as a microservices architecture with the following core co
 
 ### Installation
 
+#### Quick Start with API Gateway (Recommended)
+
 ```bash
 # Clone the repository
 git clone https://github.com/nutcas3/telecom-platform.git
 cd telecom-platform
 
+# Start with API Gateway (includes all services)
+./scripts/start-gateway.sh
+
+# Add domain to hosts file
+echo "127.0.0.1 api.telecom.com" | sudo tee -a /etc/hosts
+
+# Access services
+# API Gateway Dashboard: http://localhost:8080
+# API Documentation: https://api.telecom.com/api/v1/swagger
+# Web Dashboard: http://localhost:3000
+```
+
+#### Manual Installation
+
+```bash
 # Build all components
 make all
 
@@ -143,24 +178,31 @@ cd apps/web-dashboard && pnpm dev
 
 ```
 telecom-platform/
-├── apps/
-│   ├── api-server/          # Go: Developer BSS API
-│   ├── carrier-connector/   # Go: eSIM ES2+ Provisioning
-│   ├── charging-engine/     # Rust: OCS Real-time Credit Control
-│   ├── packet-gateway/      # Rust: eBPF UPF Data Plane
-│   └── web-dashboard/       # TypeScript: Next.js Frontend
-├── libs/
-│   ├── shared-ts-sdk/       # TypeScript: Drop-in Widget SDK
-│   └── proto/               # Shared Protobufs
-├── deployments/
-│   ├── kubernetes/          # K8s manifests
-│   └── docker/              # Dockerfiles
-├── docs/                    # Architecture & API docs
-├── scripts/                 # Automation scripts
-├── Makefile                 # Master build orchestrator
-├── Cargo.toml              # Rust workspace config
-├── go.work                 # Go workspace config
-└── pnpm-workspace.yaml     # TypeScript workspace config
+|-- apps/
+|   |-- api-server/          # Go: Developer BSS API
+|   |-- carrier-connector/   # Go: eSIM ES2+ Provisioning
+|   |-- charging-engine/     # Rust: OCS Real-time Credit Control
+|   |-- packet-gateway/      # Rust: eBPF UPF Data Plane
+|   |-- web-dashboard/       # TypeScript: Next.js Frontend
+|-- libs/
+|   |-- shared-ts-sdk/       # TypeScript: Drop-in Widget SDK
+|   |-- proto/               # Shared Protobufs
+|-- deployments/
+|   |-- kubernetes/          # K8s manifests
+|   |-- docker/              # Dockerfiles
+|-- traefik/                 # API Gateway configuration
+|   |-- traefik.yml          # Static configuration
+|   |-- dynamic/             # Dynamic middleware config
+|-- docs/                    # Architecture & API docs
+|   |-- gateway-quickstart.md # API Gateway guide
+|   |-- api-gateway.md       # Gateway implementation details
+|-- scripts/                 # Automation scripts
+|   |-- start-gateway.sh     # Gateway startup script
+|-- docker-compose.yml       # Container orchestration
+|-- Makefile                 # Master build orchestrator
+|-- Cargo.toml              # Rust workspace config
+|-- go.work                 # Go workspace config
+|-- pnpm-workspace.yaml     # TypeScript workspace config
 ```
 
 ## Development
@@ -206,6 +248,8 @@ pnpm dev
 ## Documentation
 
 - **[API Documentation](./docs/api-spec.yaml)**: OpenAPI 3.0 specification
+- **[Gateway Quickstart](./docs/gateway-quickstart.md)**: API Gateway setup and configuration
+- **[API Gateway Guide](./docs/api-gateway.md)**: Implementation details and patterns
 - **[Architecture Guide](./docs/architecture.md)**: System design and data flows
 - **[Deployment Guide](./docs/deployment.md)**: Kubernetes and Docker setup
 
@@ -227,7 +271,17 @@ pnpm -r test
 
 ## Deployment
 
-### Docker
+### Docker with API Gateway (Recommended)
+
+```bash
+# Start with API Gateway
+./scripts/start-gateway.sh
+
+# Or manually
+docker-compose up -d
+```
+
+### Docker (Legacy)
 
 ```bash
 make docker-build
@@ -239,6 +293,18 @@ docker-compose up -d
 ```bash
 kubectl apply -f deployments/kubernetes/
 ```
+
+### API Gateway Configuration
+
+The API Gateway provides:
+
+- **Unified Endpoint**: `https://api.telecom.com`
+- **Rate Limiting**: Per-service rate limits
+- **SSL Termination**: Automatic HTTPS
+- **Authentication**: JWT validation
+- **Monitoring**: Real-time metrics dashboard
+
+For detailed setup, see [Gateway Quickstart Guide](./docs/gateway-quickstart.md)
 
 ## Environment Variables
 
