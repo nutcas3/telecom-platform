@@ -124,11 +124,11 @@ func (h *TenantHandler) DeleteTenant(c *gin.Context) {
 // ListTenants handles tenant listing requests
 func (h *TenantHandler) ListTenants(c *gin.Context) {
 	filter := &tenant.TenantFilter{
-		Name:   c.Query("name"),
-		Domain: c.Query("domain"),
-		Status: tenant.TenantStatus(c.Query("status")),
-		Plan:   tenant.TenantPlan(c.Query("plan")),
-		SortBy: c.Query("sort_by"),
+		Name:      c.Query("name"),
+		Domain:    c.Query("domain"),
+		Status:    tenant.TenantStatus(c.Query("status")),
+		Plan:      tenant.TenantPlan(c.Query("plan")),
+		SortBy:    c.Query("sort_by"),
 		SortOrder: c.Query("sort_order"),
 	}
 

@@ -197,3 +197,101 @@ type TenantMetrics struct {
 	HealthScore   float64   `json:"health_score"`
 	Alerts        []string  `json:"alerts"`
 }
+
+// TenantDashboard represents tenant dashboard data
+type TenantDashboard struct {
+	TenantID     string            `json:"tenant_id"`
+	UsageStats   *TenantUsageStats `json:"usage_stats"`
+	Metrics      *TenantMetrics    `json:"metrics"`
+	RecentEvents []*TenantEvent    `json:"recent_events"`
+	QuotaStatus  []*TenantUsage    `json:"quota_status"`
+	LastUpdated  time.Time         `json:"last_updated"`
+}
+
+// TenantUsageAnalytics represents usage analytics
+type TenantUsageAnalytics struct {
+	TenantID    string                             `json:"tenant_id"`
+	TimeRange   string                             `json:"time_range"`
+	StartDate   time.Time                          `json:"start_date"`
+	EndDate     time.Time                          `json:"end_date"`
+	UsageByType map[string]*ResourceUsageAnalytics `json:"usage_by_type"`
+	Trends      map[string][]*UsageTrend           `json:"trends"`
+	Peaks       map[string]*UsagePeak              `json:"peaks"`
+}
+
+// ResourceUsageAnalytics represents analytics for a specific resource type
+type ResourceUsageAnalytics struct {
+	ResourceType string    `json:"resource_type"`
+	TotalUsage   int       `json:"total_usage"`
+	AverageUsage int       `json:"average_usage"`
+	PeakUsage    int       `json:"peak_usage"`
+	PeakTime     time.Time `json:"peak_time"`
+}
+
+// UsageTrend represents usage trend over time
+type UsageTrend struct {
+	Timestamp time.Time `json:"timestamp"`
+	Usage     int       `json:"usage"`
+}
+
+// UsagePeak represents a usage peak
+type UsagePeak struct {
+	Timestamp time.Time              `json:"timestamp"`
+	Usage     int                    `json:"usage"`
+	Context   map[string]interface{} `json:"context"`
+}
+
+// TenantPerformanceAnalytics represents performance analytics
+type TenantPerformanceAnalytics struct {
+	TenantID            string                          `json:"tenant_id"`
+	TimeRange           string                          `json:"time_range"`
+	StartDate           time.Time                       `json:"start_date"`
+	EndDate             time.Time                       `json:"end_date"`
+	APIPerformance      *APIPerformance                 `json:"api_performance"`
+	ResourcePerformance map[string]*ResourcePerformance `json:"resource_performance"`
+	Errors              []*ErrorEvent                   `json:"errors"`
+	SlowQueries         []*SlowQuery                    `json:"slow_queries"`
+}
+
+// APIPerformance represents API performance metrics
+type APIPerformance struct {
+	TotalRequests       int     `json:"total_requests"`
+	AverageResponseTime float64 `json:"average_response_time"`
+	P95ResponseTime     float64 `json:"p95_response_time"`
+	ErrorRate           float64 `json:"error_rate"`
+	RequestsPerSecond   float64 `json:"requests_per_second"`
+}
+
+// ResourcePerformance represents performance metrics for a resource
+type ResourcePerformance struct {
+	ResourceType string  `json:"resource_type"`
+	ResponseTime float64 `json:"response_time"`
+	ErrorRate    float64 `json:"error_rate"`
+	Throughput   float64 `json:"throughput"`
+}
+
+// APIRequestEvent represents an API request event
+type APIRequestEvent struct {
+	Timestamp    time.Time `json:"timestamp"`
+	Endpoint     string    `json:"endpoint"`
+	Method       string    `json:"method"`
+	StatusCode   int       `json:"status_code"`
+	ResponseTime int       `json:"response_time"`
+	UserID       string    `json:"user_id"`
+}
+
+// ErrorEvent represents an error event
+type ErrorEvent struct {
+	Timestamp time.Time              `json:"timestamp"`
+	Error     string                 `json:"error"`
+	Context   map[string]interface{} `json:"context"`
+	UserID    string                 `json:"user_id"`
+}
+
+// SlowQuery represents a slow query event
+type SlowQuery struct {
+	Timestamp time.Time              `json:"timestamp"`
+	Query     string                 `json:"query"`
+	Duration  time.Duration          `json:"duration"`
+	Context   map[string]interface{} `json:"context"`
+}
