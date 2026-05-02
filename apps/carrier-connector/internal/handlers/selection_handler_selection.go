@@ -55,7 +55,7 @@ func (h *SelectionHandler) SelectOptimalCarrier(w http.ResponseWriter, r *http.R
 	}
 
 	// Generate recommendations
-	recommendations := []string{"Carrier selected successfully"}
+	recommendations := h.generateRecommendations(score, criteria)
 
 	response := SelectOptimalCarrierResponse{
 		Success:          true,
@@ -69,7 +69,7 @@ func (h *SelectionHandler) SelectOptimalCarrier(w http.ResponseWriter, r *http.R
 		CapabilityScore:  score.CapabilityScore,
 		SelectedAt:       score.SelectedAt.Format(time.RFC3339),
 		Reason:           score.Reason,
-		Recommendations: recommendations,
+		Recommendations:  recommendations,
 	}
 
 	h.writeJSONResponse(w, http.StatusOK, response)

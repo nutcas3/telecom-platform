@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"time"
 )
 
 // GetSelectionHistory handles the selection history endpoint
@@ -24,10 +23,7 @@ func (h *SelectionHandler) GetSelectionHistory(w http.ResponseWriter, r *http.Re
 	history := h.manager.GetSelectionHistory(carrierID)
 
 	// Generate analytics
-	analytics := map[string]any{
-		"total_selections": len(history),
-		"generated_at":     time.Now().Format(time.RFC3339),
-	}
+	analytics := h.generateHistoryAnalytics(history)
 
 	response := SelectionHistoryResponse{
 		Success:   true,

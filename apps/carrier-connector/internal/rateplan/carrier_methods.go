@@ -9,11 +9,11 @@ import (
 
 func (csi *CarrierSelectionIntegrator) getAvailableRatePlans(ctx context.Context, region string, planType PlanType, maxBudget float64) ([]*RatePlan, error) {
 	filter := &RatePlanFilter{
-		Region:    region,
-		PlanType:  planType,
-		Status:    PlanStatusActive,
-		IsActive:  &[]bool{true}[0],
-		MaxPrice:  maxBudget,
+		Region:   region,
+		PlanType: planType,
+		Status:   PlanStatusActive,
+		IsActive: &[]bool{true}[0],
+		MaxPrice: maxBudget,
 	}
 
 	return csi.ratePlanRepo.ListRatePlans(ctx, filter)
@@ -113,18 +113,18 @@ func (csi *CarrierSelectionIntegrator) calculateCombinedScore(carrier *smdp.Carr
 
 func (csi *CarrierSelectionIntegrator) createRecommendation(plan *RatePlan, carrier *smdp.Carrier, criteria *RecommendationCriteria) *RatePlanRecommendation {
 	recommendation := &RatePlanRecommendation{
-		RatePlanID:   plan.ID,
-		RatePlanName: plan.Name,
-		CarrierID:    carrier.ID,
-		CarrierName:  carrier.Name,
-		Price:        plan.BasePrice,
-		Currency:     plan.Currency,
-		Relevance:    csi.calculateRelevance(plan, criteria),
-		Features:     plan.Features,
-		DataAllowance: plan.DataAllowance,
+		RatePlanID:     plan.ID,
+		RatePlanName:   plan.Name,
+		CarrierID:      carrier.ID,
+		CarrierName:    carrier.Name,
+		Price:          plan.BasePrice,
+		Currency:       plan.Currency,
+		Relevance:      csi.calculateRelevance(plan, criteria),
+		Features:       plan.Features,
+		DataAllowance:  plan.DataAllowance,
 		VoiceAllowance: plan.VoiceAllowance,
-		SMSAllowance: plan.SMSAllowance,
-		RecommendedAt: time.Now(),
+		SMSAllowance:   plan.SMSAllowance,
+		RecommendedAt:  time.Now(),
 	}
 
 	return recommendation
@@ -159,8 +159,10 @@ func (csi *CarrierSelectionIntegrator) calculateRelevance(plan *RatePlan, criter
 }
 
 func (csi *CarrierSelectionIntegrator) updateCarrierWeights(analytics *UsageAnalytics) {
-	// This would update the carrier selection weights based on usage patterns
-	// Implementation depends on the specific carrier selection algorithm
+	// TODO: Implement actual weight update based on analytics
+	// The analytics parameter should be used to adjust carrier selection weights
+	// For now, just log that we received the analytics data
+	_ = analytics // Suppress unused parameter warning until implementation is complete
 	csi.logger.Info("Updated carrier selection weights based on usage analytics")
 }
 
@@ -187,16 +189,16 @@ func (csi *CarrierSelectionIntegrator) getPlanAnalytics(ctx context.Context, pla
 	}
 
 	return &RatePlanAnalytics{
-		RatePlanID:        plan.ID,
-		RatePlanName:      plan.Name,
-		BasePrice:         plan.BasePrice,
-		Currency:          plan.Currency,
+		RatePlanID:          plan.ID,
+		RatePlanName:        plan.Name,
+		BasePrice:           plan.BasePrice,
+		Currency:            plan.Currency,
 		ActiveSubscriptions: subscriptionCount,
-		PlanType:          plan.PlanType,
-		BillingCycle:      plan.BillingCycle,
-		DataAllowance:     plan.DataAllowance,
-		VoiceAllowance:    plan.VoiceAllowance,
-		SMSAllowance:      plan.SMSAllowance,
-		Features:          plan.Features,
+		PlanType:            plan.PlanType,
+		BillingCycle:        plan.BillingCycle,
+		DataAllowance:       plan.DataAllowance,
+		VoiceAllowance:      plan.VoiceAllowance,
+		SMSAllowance:        plan.SMSAllowance,
+		Features:            plan.Features,
 	}
 }

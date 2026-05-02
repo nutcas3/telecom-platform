@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -111,12 +110,7 @@ func (h *RatePlanHandler) GetRevenueAnalytics(c *gin.Context) {
 
 // GetPopularPlans handles retrieving the most popular rate plans
 func (h *RatePlanHandler) GetPopularPlans(c *gin.Context) {
-	limit := 10 // default limit
-	if limitStr := c.Query("limit"); limitStr != "" {
-		if parsedLimit, err := strconv.Atoi(limitStr); err == nil && parsedLimit > 0 {
-			limit = parsedLimit
-		}
-	}
+	limit := parsePositiveInt(c.Query("limit"), 10)
 
 	plans, err := h.service.GetPopularPlans(c.Request.Context(), limit)
 	if err != nil {

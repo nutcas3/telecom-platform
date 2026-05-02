@@ -21,9 +21,11 @@ type TenantAwareServices struct {
 
 // wrapCurrencyService creates a tenant-aware currency service
 func (m *TenantIntegrationManager) wrapCurrencyService(tenantID string) currency.BillingService {
-	// This would wrap the existing currency service with tenant isolation
-	// Implementation depends on the actual currency service structure
-	return m.currencyService // Placeholder - would need actual wrapping
+	// TODO: Implement tenant isolation for currency service
+	// The tenantID parameter should be used to filter currency operations by tenant
+	// For now, return the base service - implementation needed for multi-tenant isolation
+	_ = tenantID // Suppress unused parameter warning until implementation is complete
+	return m.currencyService
 }
 
 // TenantResourceQuotaChecker checks resource quotas before operations
