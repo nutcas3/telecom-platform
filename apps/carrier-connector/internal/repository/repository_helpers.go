@@ -102,7 +102,7 @@ func (r *GormRepository) transactionToModel(transaction *currency.Transaction) *
 
 // modelToTransaction converts database model to transaction domain model
 func (r *GormRepository) modelToTransaction(model *currency.TransactionModel) (*currency.Transaction, error) {
-	var metadata map[string]interface{}
+	var metadata map[string]any
 	if model.Metadata != "" {
 		if err := json.Unmarshal([]byte(model.Metadata), &metadata); err != nil {
 			return nil, fmt.Errorf("failed to parse metadata: %w", err)

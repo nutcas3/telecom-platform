@@ -101,7 +101,7 @@ func (s *Service) CancelSubscription(ctx context.Context, subscriptionID string,
 	subscription.UpdatedAt = now
 
 	if subscription.Metadata == nil {
-		subscription.Metadata = make(map[string]interface{})
+		subscription.Metadata = make(map[string]any)
 	}
 	subscription.Metadata["cancellation_reason"] = reason
 

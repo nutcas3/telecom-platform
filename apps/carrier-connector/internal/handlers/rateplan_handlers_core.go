@@ -48,7 +48,7 @@ type CreateRatePlanRequest struct {
 	ValidTo          *time.Time                 `json:"valid_to,omitempty"`
 	Priority         int                        `json:"priority"`
 	IsActive         bool                       `json:"is_active"`
-	Metadata         map[string]interface{}     `json:"metadata,omitempty"`
+	Metadata         map[string]any             `json:"metadata,omitempty"`
 }
 
 // UpdateRatePlanRequest represents the request to update a rate plan
@@ -72,7 +72,7 @@ type UpdateRatePlanRequest struct {
 	ValidTo          *time.Time                 `json:"valid_to,omitempty"`
 	Priority         int                        `json:"priority,omitempty"`
 	IsActive         *bool                      `json:"is_active,omitempty"`
-	Metadata         map[string]interface{}     `json:"metadata,omitempty"`
+	Metadata         map[string]any             `json:"metadata,omitempty"`
 }
 
 // RatePlanResponse represents the response for rate plan operations
@@ -91,7 +91,7 @@ type RatePlansResponse struct {
 }
 
 // writeJSONResponse writes a JSON response
-func (h *RatePlanHandler) writeJSONResponse(c *gin.Context, statusCode int, data interface{}) {
+func (h *RatePlanHandler) writeJSONResponse(c *gin.Context, statusCode int, data any) {
 	c.JSON(statusCode, data)
 }
 

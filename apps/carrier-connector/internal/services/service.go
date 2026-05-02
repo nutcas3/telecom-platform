@@ -187,7 +187,7 @@ func (s *Service) CalculateCost(ctx context.Context, req *repository.CalculateCo
 		DiscountCost: discountCost,
 		TotalCost:    totalCost,
 		Currency:     plan.Currency,
-		Breakdown: map[string]interface{}{
+		Breakdown: map[string]any{
 			"base_cost":     baseCost,
 			"overage_cost":  overageCost,
 			"discount_cost": discountCost,

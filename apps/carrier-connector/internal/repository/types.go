@@ -3,7 +3,52 @@ package repository
 import (
 	"context"
 	"time"
+
+	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/tenant"
 )
+
+// TenantRepository defines the interface for tenant data operations
+type TenantRepository interface {
+	// Tenant operations
+	CreateTenant(ctx context.Context, tenant *tenant.Tenant) error
+	GetTenant(ctx context.Context, id string) (*tenant.Tenant, error)
+	GetTenantByDomain(ctx context.Context, domain string) (*tenant.Tenant, error)
+	UpdateTenant(ctx context.Context, tenant *tenant.Tenant) error
+	DeleteTenant(ctx context.Context, id string) error
+	ListTenants(ctx context.Context, filter *tenant.TenantFilter) ([]*tenant.Tenant, error)
+	CountTenants(ctx context.Context, filter *tenant.TenantFilter) (int, error)
+
+	// Tenant user operations
+	CreateTenantUser(ctx context.Context, user *tenant.TenantUser) error
+	GetTenantUser(ctx context.Context, tenantID, userID string) (*tenant.TenantUser, error)
+	UpdateTenantUser(ctx context.Context, user *tenant.TenantUser) error
+	DeleteTenantUser(ctx context.Context, tenantID, userID string) error
+	ListTenantUsers(ctx context.Context, filter *tenant.TenantUserFilter) ([]*tenant.TenantUser, error)
+	CountTenantUsers(ctx context.Context, filter *tenant.TenantUserFilter) (int, error)
+
+	// API key operations
+	CreateAPIKey(ctx context.Context, apiKey *tenant.TenantAPIKey) error
+	GetAPIKey(ctx context.Context, id string) (*tenant.TenantAPIKey, error)
+	GetAPIKeyByHash(ctx context.Context, keyHash string) (*tenant.TenantAPIKey, error)
+	UpdateAPIKey(ctx context.Context, apiKey *tenant.TenantAPIKey) error
+	DeleteAPIKey(ctx context.Context, id string) error
+	ListAPIKeys(ctx context.Context, tenantID string) ([]*tenant.TenantAPIKey, error)
+
+	// Usage operations
+	CreateUsage(ctx context.Context, usage *tenant.TenantUsage) error
+	GetUsage(ctx context.Context, tenantID, resourceType string) (*tenant.TenantUsage, error)
+	UpdateUsage(ctx context.Context, usage *tenant.TenantUsage) error
+	ListUsage(ctx context.Context, filter *tenant.TenantUsageFilter) ([]*tenant.TenantUsage, error)
+	GetUsageStats(ctx context.Context, tenantID string) (*tenant.TenantUsageStats, error)
+
+	// Configuration operations
+	GetConfig(ctx context.Context, tenantID string) (*tenant.TenantConfig, error)
+	UpdateConfig(ctx context.Context, config *tenant.TenantConfig) error
+
+	// Event operations
+	CreateEvent(ctx context.Context, event *tenant.TenantEvent) error
+	ListEvents(ctx context.Context, tenantID string, limit int) ([]*tenant.TenantEvent, error)
+}
 
 // Repository defines the interface for rate plan data operations
 type Repository interface {
@@ -54,20 +99,20 @@ func (RatePlanUsage) TableName() string {
 
 // RatePlanSubscription represents a subscription to a rate plan
 type RatePlanSubscription struct {
-	ID               string                 `json:"id" gorm:"primaryKey"`
-	ProfileID        string                 `json:"profile_id" gorm:"index"`
-	RatePlanID       string                 `json:"rate_plan_id" gorm:"index"`
-	Status           SubscriptionStatus     `json:"status" gorm:"index"`
-	StartedAt        time.Time              `json:"started_at"`
-	EndedAt          *time.Time             `json:"ended_at,omitempty"`
-	BillingCycle     BillingCycle           `json:"billing_cycle"`
-	NextBillingDate  time.Time              `json:"next_billing_date"`
-	AutoRenew        bool                   `json:"auto_renew"`
-	CurrentCycle     time.Time              `json:"current_cycle"`
-	AppliedDiscounts []string               `json:"applied_discounts,omitempty" gorm:"serializer:json"`
-	Metadata         map[string]interface{} `json:"metadata,omitempty" gorm:"serializer:json"`
-	CreatedAt        time.Time              `json:"created_at"`
-	UpdatedAt        time.Time              `json:"updated_at"`
+	ID               string             `json:"id" gorm:"primaryKey"`
+	ProfileID        string             `json:"profile_id" gorm:"index"`
+	RatePlanID       string             `json:"rate_plan_id" gorm:"index"`
+	Status           SubscriptionStatus `json:"status" gorm:"index"`
+	StartedAt        time.Time          `json:"started_at"`
+	EndedAt          *time.Time         `json:"ended_at,omitempty"`
+	BillingCycle     BillingCycle       `json:"billing_cycle"`
+	NextBillingDate  time.Time          `json:"next_billing_date"`
+	AutoRenew        bool               `json:"auto_renew"`
+	CurrentCycle     time.Time          `json:"current_cycle"`
+	AppliedDiscounts []string           `json:"applied_discounts,omitempty" gorm:"serializer:json"`
+	Metadata         map[string]any     `json:"metadata,omitempty" gorm:"serializer:json"`
+	CreatedAt        time.Time          `json:"created_at"`
+	UpdatedAt        time.Time          `json:"updated_at"`
 }
 
 // TableName returns the table name for RatePlanSubscription
@@ -108,27 +153,27 @@ type SubscriptionFilter struct {
 
 // RatePlan represents a rate plan
 type RatePlan struct {
-	ID             string                 `json:"id" gorm:"primaryKey"`
-	Name           string                 `json:"name"`
-	Description    string                 `json:"description"`
-	CarrierID      string                 `json:"carrier_id" gorm:"index"`
-	Region         string                 `json:"region" gorm:"index"`
-	PlanType       PlanType               `json:"plan_type"`
-	BasePrice      float64                `json:"base_price"`
-	Currency       string                 `json:"currency"`
-	BillingCycle   BillingCycle           `json:"billing_cycle"`
-	DataAllowance  *DataAllowance         `json:"data_allowance,omitempty" gorm:"serializer:json"`
-	VoiceAllowance *VoiceAllowance        `json:"voice_allowance,omitempty" gorm:"serializer:json"`
-	SMSAllowance   *SMSAllowance          `json:"sms_allowance,omitempty" gorm:"serializer:json"`
-	OverageRates   *OverageRates          `json:"overage_rates,omitempty" gorm:"serializer:json"`
-	Discounts      []*Discount            `json:"discounts,omitempty" gorm:"serializer:json"`
-	ValidFrom      time.Time              `json:"valid_from"`
-	ValidTo        *time.Time             `json:"valid_to,omitempty"`
-	IsActive       bool                   `json:"is_active"`
-	Status         PlanStatus             `json:"status"`
-	Metadata       map[string]interface{} `json:"metadata,omitempty" gorm:"serializer:json"`
-	CreatedAt      time.Time              `json:"created_at"`
-	UpdatedAt      time.Time              `json:"updated_at"`
+	ID             string          `json:"id" gorm:"primaryKey"`
+	Name           string          `json:"name"`
+	Description    string          `json:"description"`
+	CarrierID      string          `json:"carrier_id" gorm:"index"`
+	Region         string          `json:"region" gorm:"index"`
+	PlanType       PlanType        `json:"plan_type"`
+	BasePrice      float64         `json:"base_price"`
+	Currency       string          `json:"currency"`
+	BillingCycle   BillingCycle    `json:"billing_cycle"`
+	DataAllowance  *DataAllowance  `json:"data_allowance,omitempty" gorm:"serializer:json"`
+	VoiceAllowance *VoiceAllowance `json:"voice_allowance,omitempty" gorm:"serializer:json"`
+	SMSAllowance   *SMSAllowance   `json:"sms_allowance,omitempty" gorm:"serializer:json"`
+	OverageRates   *OverageRates   `json:"overage_rates,omitempty" gorm:"serializer:json"`
+	Discounts      []*Discount     `json:"discounts,omitempty" gorm:"serializer:json"`
+	ValidFrom      time.Time       `json:"valid_from"`
+	ValidTo        *time.Time      `json:"valid_to,omitempty"`
+	IsActive       bool            `json:"is_active"`
+	Status         PlanStatus      `json:"status"`
+	Metadata       map[string]any  `json:"metadata,omitempty" gorm:"serializer:json"`
+	CreatedAt      time.Time       `json:"created_at"`
+	UpdatedAt      time.Time       `json:"updated_at"`
 }
 
 // TableName returns the table name for RatePlan
@@ -278,11 +323,11 @@ type SearchCriteria struct {
 
 // SubscribeRequest represents a request to subscribe to a rate plan
 type SubscribeRequest struct {
-	ProfileID        string                 `json:"profile_id"`
-	RatePlanID       string                 `json:"rate_plan_id"`
-	AutoRenew        bool                   `json:"auto_renew"`
-	AppliedDiscounts []string               `json:"applied_discounts,omitempty"`
-	Metadata         map[string]interface{} `json:"metadata,omitempty"`
+	ProfileID        string         `json:"profile_id"`
+	RatePlanID       string         `json:"rate_plan_id"`
+	AutoRenew        bool           `json:"auto_renew"`
+	AppliedDiscounts []string       `json:"applied_discounts,omitempty"`
+	Metadata         map[string]any `json:"metadata,omitempty"`
 }
 
 // RecordUsageRequest represents a request to record usage
@@ -304,12 +349,12 @@ type CalculateCostRequest struct {
 
 // RatePlanCostCalculation represents the result of a cost calculation
 type RatePlanCostCalculation struct {
-	RatePlanID   string                 `json:"rate_plan_id"`
-	BaseCost     float64                `json:"base_cost"`
-	OverageCost  float64                `json:"overage_cost"`
-	DiscountCost float64                `json:"discount_cost"`
-	TotalCost    float64                `json:"total_cost"`
-	Currency     string                 `json:"currency"`
-	Breakdown    map[string]interface{} `json:"breakdown"`
-	CalculatedAt time.Time              `json:"calculated_at"`
+	RatePlanID   string         `json:"rate_plan_id"`
+	BaseCost     float64        `json:"base_cost"`
+	OverageCost  float64        `json:"overage_cost"`
+	DiscountCost float64        `json:"discount_cost"`
+	TotalCost    float64        `json:"total_cost"`
+	Currency     string         `json:"currency"`
+	Breakdown    map[string]any `json:"breakdown"`
+	CalculatedAt time.Time      `json:"calculated_at"`
 }

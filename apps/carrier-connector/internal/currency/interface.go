@@ -68,15 +68,15 @@ type AnalyticsService interface {
 
 // BillingSummary represents a billing summary for a profile
 type BillingSummary struct {
-	ProfileID        string                 `json:"profile_id"`
-	TotalAmount      float64                `json:"total_amount"`
-	Currency         string                 `json:"currency"`
-	BaseTotalAmount  float64                `json:"base_total_amount"`
-	BaseCurrency     string                 `json:"base_currency"`
-	TransactionCount int                    `json:"transaction_count"`
-	FromDate         time.Time              `json:"from_date"`
-	ToDate           time.Time              `json:"to_date"`
-	Breakdown        map[string]interface{} `json:"breakdown"`
+	ProfileID        string         `json:"profile_id"`
+	TotalAmount      float64        `json:"total_amount"`
+	Currency         string         `json:"currency"`
+	BaseTotalAmount  float64        `json:"base_total_amount"`
+	BaseCurrency     string         `json:"base_currency"`
+	TransactionCount int            `json:"transaction_count"`
+	FromDate         time.Time      `json:"from_date"`
+	ToDate           time.Time      `json:"to_date"`
+	Breakdown        map[string]any `json:"breakdown"`
 }
 
 // CurrencyUsageStats represents statistics about currency usage

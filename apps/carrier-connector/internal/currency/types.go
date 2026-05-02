@@ -32,20 +32,20 @@ type ExchangeRate struct {
 
 // Transaction represents a financial transaction in multi-currency context
 type Transaction struct {
-	ID             string                 `json:"id" db:"id"`
-	ProfileID      string                 `json:"profile_id" db:"profile_id"`
-	SubscriptionID string                 `json:"subscription_id" db:"subscription_id"`
-	Type           TransactionType        `json:"type" db:"type"`
-	Amount         float64                `json:"amount" db:"amount"`
-	Currency       string                 `json:"currency" db:"currency"`
-	BaseAmount     float64                `json:"base_amount" db:"base_amount"`     // Amount in base currency (USD)
-	BaseCurrency   string                 `json:"base_currency" db:"base_currency"` // Base currency for reporting
-	ExchangeRate   float64                `json:"exchange_rate" db:"exchange_rate"` // Rate used for conversion
-	Description    string                 `json:"description" db:"description"`
-	Status         TransactionStatus      `json:"status" db:"status"`
-	Metadata       map[string]interface{} `json:"metadata,omitempty" db:"metadata"`
-	CreatedAt      time.Time              `json:"created_at" db:"created_at"`
-	UpdatedAt      time.Time              `json:"updated_at" db:"updated_at"`
+	ID             string            `json:"id" db:"id"`
+	ProfileID      string            `json:"profile_id" db:"profile_id"`
+	SubscriptionID string            `json:"subscription_id" db:"subscription_id"`
+	Type           TransactionType   `json:"type" db:"type"`
+	Amount         float64           `json:"amount" db:"amount"`
+	Currency       string            `json:"currency" db:"currency"`
+	BaseAmount     float64           `json:"base_amount" db:"base_amount"`     // Amount in base currency (USD)
+	BaseCurrency   string            `json:"base_currency" db:"base_currency"` // Base currency for reporting
+	ExchangeRate   float64           `json:"exchange_rate" db:"exchange_rate"` // Rate used for conversion
+	Description    string            `json:"description" db:"description"`
+	Status         TransactionStatus `json:"status" db:"status"`
+	Metadata       map[string]any    `json:"metadata,omitempty" db:"metadata"`
+	CreatedAt      time.Time         `json:"created_at" db:"created_at"`
+	UpdatedAt      time.Time         `json:"updated_at" db:"updated_at"`
 }
 
 // TransactionType defines the type of transaction

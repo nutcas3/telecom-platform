@@ -3,8 +3,7 @@ package services
 import (
 	"fmt"
 	"time"
-
-	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/repository"
+  "github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/repository"
 )
 
 func (s *Service) validateRatePlan(plan *repository.RatePlan) error {

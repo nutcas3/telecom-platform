@@ -15,7 +15,7 @@ func (h *RatePlanHandler) RegisterManagementRoutes(router *gin.RouterGroup) {
 		// Dashboard endpoints
 		management.GET("/dashboard", h.GetManagementDashboard)
 		management.GET("/overview", h.GetSystemOverview)
-		
+
 		// Rate plan management
 		management.POST("/plans/bulk", h.BulkCreateRatePlans)
 		management.PUT("/plans/bulk", h.BulkUpdateRatePlans)
@@ -23,19 +23,19 @@ func (h *RatePlanHandler) RegisterManagementRoutes(router *gin.RouterGroup) {
 		management.POST("/plans/:id/activate", h.ActivateRatePlan)
 		management.POST("/plans/:id/deactivate", h.DeactivateRatePlan)
 		management.POST("/plans/:id/duplicate", h.DuplicateRatePlan)
-		
+
 		// Subscription management
 		management.POST("/subscriptions/bulk-cancel", h.BulkCancelSubscriptions)
 		management.POST("/subscriptions/:id/suspend", h.SuspendSubscription)
 		management.POST("/subscriptions/:id/reactivate", h.ReactivateSubscription)
 		management.POST("/subscriptions/:id/change-plan", h.ChangeSubscriptionPlan)
-		
+
 		// Analytics and reporting
 		management.GET("/reports/usage", h.GetUsageReport)
 		management.GET("/reports/revenue", h.GetRevenueReport)
 		management.GET("/reports/performance", h.GetPerformanceReport)
 		management.POST("/reports/export", h.ExportReport)
-		
+
 		// Configuration and settings
 		management.GET("/config/pricing", h.GetPricingConfiguration)
 		management.PUT("/config/pricing", h.UpdatePricingConfiguration)
@@ -47,23 +47,23 @@ func (h *RatePlanHandler) RegisterManagementRoutes(router *gin.RouterGroup) {
 // GetManagementDashboard handles the management dashboard endpoint
 func (h *RatePlanHandler) GetManagementDashboard(c *gin.Context) {
 	// Get comprehensive dashboard data
-	dashboardData := map[string]interface{}{
-		"total_plans":        0,
-		"active_plans":       0,
-		"total_subscriptions": 0,
+	dashboardData := map[string]any{
+		"total_plans":          0,
+		"active_plans":         0,
+		"total_subscriptions":  0,
 		"active_subscriptions": 0,
-		"monthly_revenue":    0.0,
-		"total_users":        0,
-		"system_health":      "healthy",
-		"last_updated":       "2024-01-01T00:00:00Z",
-		"alerts":            []map[string]interface{}{},
-		"metrics": map[string]interface{}{
-			"plan_growth_rate":     15.5,
-			"subscription_growth":  23.8,
-			"revenue_growth":       18.2,
+		"monthly_revenue":      0.0,
+		"total_users":          0,
+		"system_health":        "healthy",
+		"last_updated":         "2024-01-01T00:00:00Z",
+		"alerts":               []map[string]any{},
+		"metrics": map[string]any{
+			"plan_growth_rate":    15.5,
+			"subscription_growth": 23.8,
+			"revenue_growth":      18.2,
 			"churn_rate":          2.1,
 		},
-		"recent_activities": []map[string]interface{}{
+		"recent_activities": []map[string]any{
 			{"type": "plan_created", "description": "New plan 'Premium Plus' created", "time": "2024-01-01T10:30:00Z"},
 			{"type": "subscription", "description": "25 new subscriptions today", "time": "2024-01-01T09:15:00Z"},
 			{"type": "revenue", "description": "Revenue target achieved", "time": "2024-01-01T08:45:00Z"},
@@ -71,8 +71,8 @@ func (h *RatePlanHandler) GetManagementDashboard(c *gin.Context) {
 	}
 
 	response := struct {
-		Success bool                   `json:"success"`
-		Data    map[string]interface{} `json:"data"`
+		Success bool           `json:"success"`
+		Data    map[string]any `json:"data"`
 	}{
 		Success: true,
 		Data:    dashboardData,
@@ -83,38 +83,38 @@ func (h *RatePlanHandler) GetManagementDashboard(c *gin.Context) {
 
 // GetSystemOverview handles the system overview endpoint
 func (h *RatePlanHandler) GetSystemOverview(c *gin.Context) {
-	overview := map[string]interface{}{
-		"rate_plans": map[string]interface{}{
-			"total":   156,
-			"active":  142,
-			"draft":   8,
+	overview := map[string]any{
+		"rate_plans": map[string]any{
+			"total":    156,
+			"active":   142,
+			"draft":    8,
 			"archived": 6,
 		},
-		"subscriptions": map[string]interface{}{
-			"total":    12543,
-			"active":   11892,
+		"subscriptions": map[string]any{
+			"total":     12543,
+			"active":    11892,
 			"suspended": 456,
 			"cancelled": 195,
 		},
-		"carriers": map[string]interface{}{
+		"carriers": map[string]any{
 			"total":   12,
 			"active":  11,
 			"healthy": 10,
 		},
-		"regions": map[string]interface{}{
-			"total": 45,
+		"regions": map[string]any{
+			"total":  45,
 			"active": 42,
 		},
-		"performance": map[string]interface{}{
+		"performance": map[string]any{
 			"avg_response_time": "145ms",
-			"success_rate":     "99.8%",
-			"uptime":          "99.9%",
+			"success_rate":      "99.8%",
+			"uptime":            "99.9%",
 		},
 	}
 
 	response := struct {
-		Success bool                   `json:"success"`
-		Data    map[string]interface{} `json:"data"`
+		Success bool           `json:"success"`
+		Data    map[string]any `json:"data"`
 	}{
 		Success: true,
 		Data:    overview,
@@ -134,41 +134,41 @@ func (h *RatePlanHandler) BulkCreateRatePlans(c *gin.Context) {
 		return
 	}
 
-	results := make([]map[string]interface{}, 0)
+	results := make([]map[string]any, 0)
 	for _, planReq := range req.Plans {
 		plan := &rateplan.RatePlan{
-			Name:              planReq.Name,
-			Description:       planReq.Description,
-			CarrierID:         planReq.CarrierID,
-			Region:            planReq.Region,
-			PlanType:          planReq.PlanType,
-			BasePrice:         planReq.BasePrice,
-			Currency:          planReq.Currency,
-			BillingCycle:      planReq.BillingCycle,
-			DataAllowance:     planReq.DataAllowance,
-			VoiceAllowance:    planReq.VoiceAllowance,
-			SMSAllowance:      planReq.SMSAllowance,
-			OverageRates:      planReq.OverageRates,
-			Features:          planReq.Features,
-			ActivationFee:     planReq.ActivationFee,
-			EarlyTermination:  planReq.EarlyTermination,
-			Discounts:         planReq.Discounts,
-			ValidFrom:         planReq.ValidFrom,
-			ValidTo:           planReq.ValidTo,
-			Priority:          planReq.Priority,
-			IsActive:          planReq.IsActive,
-			Metadata:          planReq.Metadata,
+			Name:             planReq.Name,
+			Description:      planReq.Description,
+			CarrierID:        planReq.CarrierID,
+			Region:           planReq.Region,
+			PlanType:         planReq.PlanType,
+			BasePrice:        planReq.BasePrice,
+			Currency:         planReq.Currency,
+			BillingCycle:     planReq.BillingCycle,
+			DataAllowance:    planReq.DataAllowance,
+			VoiceAllowance:   planReq.VoiceAllowance,
+			SMSAllowance:     planReq.SMSAllowance,
+			OverageRates:     planReq.OverageRates,
+			Features:         planReq.Features,
+			ActivationFee:    planReq.ActivationFee,
+			EarlyTermination: planReq.EarlyTermination,
+			Discounts:        planReq.Discounts,
+			ValidFrom:        planReq.ValidFrom,
+			ValidTo:          planReq.ValidTo,
+			Priority:         planReq.Priority,
+			IsActive:         planReq.IsActive,
+			Metadata:         planReq.Metadata,
 		}
 
 		createdPlan, err := h.service.CreateRatePlan(c.Request.Context(), plan)
 		if err != nil {
-			results = append(results, map[string]interface{}{
+			results = append(results, map[string]any{
 				"success": false,
 				"error":   err.Error(),
 				"plan":    planReq.Name,
 			})
 		} else {
-			results = append(results, map[string]interface{}{
+			results = append(results, map[string]any{
 				"success": true,
 				"plan_id": createdPlan.ID,
 				"plan":    planReq.Name,
@@ -177,9 +177,9 @@ func (h *RatePlanHandler) BulkCreateRatePlans(c *gin.Context) {
 	}
 
 	response := struct {
-		Success bool                     `json:"success"`
-		Message string                   `json:"message"`
-		Results []map[string]interface{} `json:"results"`
+		Success bool             `json:"success"`
+		Message string           `json:"message"`
+		Results []map[string]any `json:"results"`
 	}{
 		Success: true,
 		Message: "Bulk creation completed",
@@ -284,28 +284,28 @@ func (h *RatePlanHandler) DuplicateRatePlan(c *gin.Context) {
 
 	// Create duplicate
 	duplicatePlan := &rateplan.RatePlan{
-		Name:              req.Name,
-		Description:       req.Description,
-		CarrierID:         originalPlan.CarrierID,
-		Region:            originalPlan.Region,
-		PlanType:          originalPlan.PlanType,
-		Status:            rateplan.PlanStatusDraft,
-		BasePrice:         originalPlan.BasePrice,
-		Currency:          originalPlan.Currency,
-		BillingCycle:      originalPlan.BillingCycle,
-		DataAllowance:     originalPlan.DataAllowance,
-		VoiceAllowance:    originalPlan.VoiceAllowance,
-		SMSAllowance:      originalPlan.SMSAllowance,
-		OverageRates:      originalPlan.OverageRates,
-		Features:          originalPlan.Features,
-		ActivationFee:     originalPlan.ActivationFee,
+		Name:             req.Name,
+		Description:      req.Description,
+		CarrierID:        originalPlan.CarrierID,
+		Region:           originalPlan.Region,
+		PlanType:         originalPlan.PlanType,
+		Status:           rateplan.PlanStatusDraft,
+		BasePrice:        originalPlan.BasePrice,
+		Currency:         originalPlan.Currency,
+		BillingCycle:     originalPlan.BillingCycle,
+		DataAllowance:    originalPlan.DataAllowance,
+		VoiceAllowance:   originalPlan.VoiceAllowance,
+		SMSAllowance:     originalPlan.SMSAllowance,
+		OverageRates:     originalPlan.OverageRates,
+		Features:         originalPlan.Features,
+		ActivationFee:    originalPlan.ActivationFee,
 		EarlyTermination: originalPlan.EarlyTermination,
-		Discounts:         originalPlan.Discounts,
-		ValidFrom:         originalPlan.ValidFrom,
-		ValidTo:           originalPlan.ValidTo,
-		Priority:          originalPlan.Priority,
-		IsActive:          false,
-		Metadata:          originalPlan.Metadata,
+		Discounts:        originalPlan.Discounts,
+		ValidFrom:        originalPlan.ValidFrom,
+		ValidTo:          originalPlan.ValidTo,
+		Priority:         originalPlan.Priority,
+		IsActive:         false,
+		Metadata:         originalPlan.Metadata,
 	}
 
 	createdPlan, err := h.service.CreateRatePlan(c.Request.Context(), duplicatePlan)
@@ -315,9 +315,9 @@ func (h *RatePlanHandler) DuplicateRatePlan(c *gin.Context) {
 	}
 
 	response := struct {
-		Success bool                `json:"success"`
-		Message string              `json:"message"`
-		Data    *rateplan.RatePlan  `json:"data"`
+		Success bool               `json:"success"`
+		Message string             `json:"message"`
+		Data    *rateplan.RatePlan `json:"data"`
 	}{
 		Success: true,
 		Message: "Rate plan duplicated successfully",

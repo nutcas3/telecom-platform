@@ -12,9 +12,9 @@ import (
 
 // AnalyticsResponse represents the response for analytics operations
 type AnalyticsResponse struct {
-	Success bool                     `json:"success"`
-	Message string                   `json:"message,omitempty"`
-	Data    interface{}              `json:"data,omitempty"`
+	Success bool   `json:"success"`
+	Message string `json:"message,omitempty"`
+	Data    any    `json:"data,omitempty"`
 }
 
 // GetUsageAnalytics handles retrieving usage analytics
@@ -169,11 +169,11 @@ func (h *RatePlanHandler) GetDashboardData(c *gin.Context) {
 		return
 	}
 
-	dashboardData := map[string]interface{}{
+	dashboardData := map[string]any{
 		"popular_plans":     popularPlans,
-		"usage_analytics":    usageAnalytics,
-		"revenue_analytics":  revenueAnalytics,
-		"generated_at":       time.Now().Format(time.RFC3339),
+		"usage_analytics":   usageAnalytics,
+		"revenue_analytics": revenueAnalytics,
+		"generated_at":      time.Now().Format(time.RFC3339),
 	}
 
 	response := AnalyticsResponse{

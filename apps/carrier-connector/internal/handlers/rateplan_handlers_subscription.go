@@ -11,11 +11,11 @@ import (
 
 // SubscribeRequest represents the request to subscribe to a rate plan
 type SubscribeRequest struct {
-	ProfileID        string                 `json:"profile_id" binding:"required"`
-	RatePlanID       string                 `json:"rate_plan_id" binding:"required"`
-	AutoRenew        bool                   `json:"auto_renew"`
-	AppliedDiscounts []string               `json:"applied_discounts,omitempty"`
-	Metadata         map[string]interface{} `json:"metadata,omitempty"`
+	ProfileID        string         `json:"profile_id" binding:"required"`
+	RatePlanID       string         `json:"rate_plan_id" binding:"required"`
+	AutoRenew        bool           `json:"auto_renew"`
+	AppliedDiscounts []string       `json:"applied_discounts,omitempty"`
+	Metadata         map[string]any `json:"metadata,omitempty"`
 }
 
 // CancelSubscriptionRequest represents the request to cancel a subscription
