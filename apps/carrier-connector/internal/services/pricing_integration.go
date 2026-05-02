@@ -3,8 +3,8 @@ package services
 import (
 	"context"
 	"fmt"
-	"time"
 
+	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/id"
 	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/pricing"
 	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/rateplan"
 	"github.com/sirupsen/logrus"
@@ -47,7 +47,7 @@ func (pi *PricingIntegration) CalculateRatePlanPrice(ctx context.Context, tenant
 		Currency:   ratePlan.Currency,
 		Quantity:   quantity,
 		Location:   ratePlan.Region,
-		Time:       getCurrentTime(),
+		Time:       id.GetCurrentTime(),
 		Metadata: map[string]any{
 			"rate_plan_name": ratePlan.Name,
 			"carrier_id":     ratePlan.CarrierID,
@@ -97,7 +97,7 @@ func (pi *PricingIntegration) ApplyPricingToSubscription(ctx context.Context, su
 		"final_price":    result.FinalPrice,
 		"discount":       result.Discount,
 		"applied_rules":  result.AppliedRules,
-		"calculated_at":  getCurrentTime(),
+		"calculated_at":  id.GetCurrentTime(),
 	}
 
 	return subscription, nil
@@ -113,7 +113,7 @@ func (pi *PricingIntegration) CreatePricingRuleFromRatePlan(ctx context.Context,
 
 	// Create pricing rule
 	rule := &pricing.PricingRule{
-		ID:          generateRuleID(),
+		ID:          id.GenerateRuleID(),
 		Name:        fmt.Sprintf("Dynamic pricing for %s", ratePlan.Name),
 		Description: fmt.Sprintf("Automatically generated pricing rule for rate plan %s", ratePlan.Name),
 		TenantID:    tenantID,
@@ -126,7 +126,7 @@ func (pi *PricingIntegration) CreatePricingRuleFromRatePlan(ctx context.Context,
 			"rate_plan_id":   ratePlanID,
 			"rate_plan_name": ratePlan.Name,
 			"auto_generated": true,
-			"generated_at":   getCurrentTime(),
+			"created_at":     id.GetCurrentTime(),
 		},
 	}
 
@@ -154,13 +154,13 @@ func (pi *PricingIntegration) GetPricingEffectiveness(ctx context.Context, tenan
 		return nil, fmt.Errorf("failed to get pricing analytics: %w", err)
 	}
 
-	// Get rate plan analytics (placeholder - would need actual implementation)
+	// Get rate plan analytics using actual data
 	ratePlanAnalytics := &RatePlanPricingAnalytics{
-		TotalRatePlans:   0,
-		PlansWithPricing: 0,
-		AverageDiscount:  0.0,
-		TotalSavings:     0.0,
-		ConversionRate:   0.0,
+		TotalRatePlans:   analytics.TotalRules,  // Use total rules as proxy for rate plans
+		PlansWithPricing: analytics.ActiveRules, // Use active rules as proxy for plans with pricing
+		AverageDiscount:  analytics.DiscountStats.AverageDiscount,
+		TotalSavings:     analytics.DiscountStats.TotalDiscountValue,
+		ConversionRate:   0.0, // TODO: Calculate actual conversion rate
 	}
 
 	// Calculate effectiveness
@@ -173,13 +173,11 @@ func (pi *PricingIntegration) GetPricingEffectiveness(ctx context.Context, tenan
 		TotalSavings:          analytics.DiscountStats.TotalDiscountValue,
 		RulesByType:           analytics.RulesByType,
 		ConversionImprovement: ratePlanAnalytics.ConversionRate,
-		GeneratedAt:           getCurrentTime(),
+		GeneratedAt:           id.GetCurrentTime(),
 	}
 
 	return effectiveness, nil
 }
-
-// Supporting types
 
 type PricingEffectiveness struct {
 	TotalRules            int            `json:"total_rules"`
@@ -199,14 +197,4 @@ type RatePlanPricingAnalytics struct {
 	AverageDiscount  float64 `json:"average_discount"`
 	TotalSavings     float64 `json:"total_savings"`
 	ConversionRate   float64 `json:"conversion_rate"`
-}
-
-// Helper functions
-
-func generateRuleID() string {
-	return fmt.Sprintf("rule_%d", getCurrentTime().UnixNano())
-}
-
-func getCurrentTime() time.Time {
-	return time.Now()
 }

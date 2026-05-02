@@ -48,8 +48,8 @@ func (s *TenantServiceImpl) UpdateTenantSettings(ctx context.Context, tenantID s
 		return fmt.Errorf("failed to get tenant config: %w", err)
 	}
 
-	// Update settings
-	config.Settings = settings
+	// Update settings using helper method for validation/normalization
+	config.Settings = s.convertTenantSettings(settings)
 
 	if err := s.repository.UpdateConfig(ctx, config); err != nil {
 		return fmt.Errorf("failed to update tenant settings: %w", err)

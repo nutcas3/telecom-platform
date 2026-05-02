@@ -59,27 +59,19 @@ func (rpci *RatePlanCurrencyIntegrator) SubscribeToPlanWithCurrency(ctx context.
 		exchangeRate = conversion.ExchangeRate
 	}
 
-	subscription := &rateplan.RatePlanSubscription{
-		ProfileID:  profileID,
-		RatePlanID: planID,
-		Status:     rateplan.SubscriptionStatusActive,
-		StartedAt:  time.Now(),
-		Metadata: map[string]any{
-			"original_currency":     plan.Currency,
-			"subscription_currency": targetCurrency,
-			"original_price":        plan.BasePrice,
-			"subscription_price":    subscriptionPrice,
-			"exchange_rate":         exchangeRate,
-		},
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+	metadata := map[string]any{
+		"original_currency":     plan.Currency,
+		"subscription_currency": targetCurrency,
+		"original_price":        plan.BasePrice,
+		"subscription_price":    subscriptionPrice,
+		"exchange_rate":         exchangeRate,
 	}
 
 	subscribeReq := &rateplan.SubscribeRequest{
 		ProfileID:  profileID,
 		RatePlanID: planID,
 		AutoRenew:  true,
-		Metadata:   subscription.Metadata,
+		Metadata:   metadata,
 	}
 
 	createdSubscription, err := rpci.ratePlanService.SubscribeToPlan(ctx, subscribeReq)
@@ -169,6 +161,8 @@ func (rpci *RatePlanCurrencyIntegrator) CalculatePlanCostInCurrency(ctx context.
 }
 
 func (rpci *RatePlanCurrencyIntegrator) calculateOverageCost(ctx context.Context, plan *rateplan.RatePlan, usage *rateplan.RatePlanUsage) (float64, error) {
+	// TODO: Use context for timeout/cancellation in overage calculations
+	_ = ctx // Suppress unused parameter warning until implementation is complete
 	overageCost := 0.0
 
 	if plan.DataAllowance != nil && usage.DataUsed > plan.DataAllowance.Amount {

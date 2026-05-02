@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/id"
 	"github.com/sirupsen/logrus"
 )
 
@@ -284,7 +284,7 @@ func (tm *TenantMiddleware) LogTenantActivity(activity string) gin.HandlerFunc {
 
 		// Log tenant event
 		event := &TenantEvent{
-			ID:        generateEventID(),
+			ID:        id.GenerateEventID(),
 			TenantID:  tenantCtx.TenantID,
 			UserID:    userID,
 			EventType: TenantEventType(activity),
@@ -294,7 +294,7 @@ func (tm *TenantMiddleware) LogTenantActivity(activity string) gin.HandlerFunc {
 				"user_agent": c.Request.UserAgent(),
 				"ip_address": c.ClientIP(),
 			},
-			Timestamp: getCurrentTimestamp(),
+			Timestamp: id.GetCurrentTime(),
 		}
 
 		if err := tm.tenantService.LogTenantEvent(c.Request.Context(), event); err != nil {
@@ -306,21 +306,3 @@ func (tm *TenantMiddleware) LogTenantActivity(activity string) gin.HandlerFunc {
 }
 
 // Helper functions
-func generateEventID() string {
-	// Generate unique event ID (implementation depends on your ID generation strategy)
-	return "evt_" + generateRandomString(16)
-}
-
-func generateRandomString(length int) string {
-	// Generate random string (implementation depends on your random string generation)
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	b := make([]byte, length)
-	for i := range b {
-		b[i] = charset[i%len(charset)]
-	}
-	return string(b)
-}
-
-func getCurrentTimestamp() time.Time {
-	return time.Now()
-}

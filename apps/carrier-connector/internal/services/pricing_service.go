@@ -3,8 +3,8 @@ package services
 import (
 	"context"
 	"fmt"
-	"time"
 
+	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/id"
 	"github.com/nutcas3/telecom-platform/apps/carrier-connector/internal/pricing"
 	"github.com/sirupsen/logrus"
 )
@@ -235,7 +235,7 @@ func (s *PricingService) GetAnalytics(ctx context.Context, tenantID string) (*pr
 		ActiveRules: len(activeRules),
 		RulesByType: make(map[string]int),
 		UsageByRule: make(map[string]int64),
-		GeneratedAt: s.getCurrentTime(),
+		GeneratedAt: id.GetCurrentTime(),
 	}
 
 	// Count rules by type
@@ -255,8 +255,4 @@ func (s *PricingService) GetAnalytics(ctx context.Context, tenantID string) (*pr
 	}
 
 	return analytics, nil
-}
-
-func (s *PricingService) getCurrentTime() time.Time {
-	return time.Now()
 }

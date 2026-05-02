@@ -181,3 +181,19 @@ func (sa *SelectionAlgorithm) PredictPerformance(carrierID string, criteria *Sel
 func (sa *SelectionAlgorithm) GetCarrierPerformance(carrierID string) *PerformanceMetrics {
 	return sa.mlModel.GetCarrierPerformance(carrierID)
 }
+
+// getHighestPriorityCarrier returns the carrier with the highest priority
+func (sa *SelectionAlgorithm) getHighestPriorityCarrier(carriers []*Carrier) *Carrier {
+	if len(carriers) == 0 {
+		return nil
+	}
+
+	highestPriority := carriers[0]
+	for _, carrier := range carriers {
+		if carrier.Priority > highestPriority.Priority {
+			highestPriority = carrier
+		}
+	}
+
+	return highestPriority
+}

@@ -149,6 +149,10 @@ func (s *TenantServiceImpl) GetPerformanceAnalytics(ctx context.Context, tenantI
 }
 
 func generateUsageID(resourceType, tenantID string) string {
+	// TODO: Use resourceType and tenantID in ID generation for better traceability
+	// For now, use generic usage prefix - could be enhanced to include resource type
+	_ = resourceType // Suppress unused parameter warning until implementation is complete
+	_ = tenantID     // Suppress unused parameter warning until implementation is complete
 	return id.GeneratePrefixed("usage")
 }
 
@@ -166,6 +170,11 @@ func (s *TenantServiceImpl) parseAPIRequestEvents(events []*tenant.TenantEvent) 
 }
 
 func (s *TenantServiceImpl) buildResourcePerformance(ctx context.Context, tenantID, timeRange string) map[string]*tenant.ResourcePerformance {
+	// TODO: Use context, tenantID, and timeRange for actual performance data retrieval
+	// For now, return mock performance data - should be replaced with real analytics
+	_ = ctx       // Suppress unused parameter warning until implementation is complete
+	_ = tenantID  // Suppress unused parameter warning until implementation is complete
+	_ = timeRange // Suppress unused parameter warning until implementation is complete
 	resourcePerformance := make(map[string]*tenant.ResourcePerformance)
 
 	resourceTypes := []string{"users", "profiles", "carriers", "api_calls", "storage"}
