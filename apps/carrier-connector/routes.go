@@ -48,6 +48,13 @@ func setupRoutes(router *gin.Engine, client *es2.ES2Client, profileRepo reposito
 	registerCurrencyRoutes(api)
 	registerTenantRoutes(api, db, logger)
 	registerSMDPRoutes(api, profileRepo)
+
+	// Platform routes (009-028)
+	registerAnalyticsRoutes(api, db, logger)
+	registerWhitelabelRoutes(api, db, logger)
+	registerComplianceRoutes(api, db, logger)
+	registerExchangeRateRoutes(api, logger)
+	registerInfraRoutes(api, nil, nil)
 }
 
 // registerMVNORoutes registers MVNO onboarding and management routes.
