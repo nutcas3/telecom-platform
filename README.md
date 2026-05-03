@@ -70,8 +70,15 @@ The platform is built as a microservices architecture with the following core co
 **Developer Tools:**
 - **CLI**: Command-line interface for service orchestration, configuration, and health checks
 - **Web Dashboard**: Next.js-based management interface for network operations
-- **TypeScript SDK**: Client library for integrating with TaaS APIs
+- **Multi-Language SDKs**: Client libraries for Go, Python, TypeScript, Kotlin, Ruby, Swift, Rust, and Elixir
 - **Kubernetes Operators**: Custom resources for deploying and managing TaaS services
+
+**Analytics & Intelligence:**
+- **Churn Analysis**: ML-powered customer churn prediction with risk scoring and retention recommendations
+- **Fraud Detection**: Real-time fraud detection for account takeover, subscription fraud, payment fraud, and SIM swap attacks
+- **Market Analytics**: Market penetration analysis, competitor tracking, and growth opportunity identification
+- **Predictive Maintenance**: Infrastructure health monitoring with failure prediction and maintenance scheduling
+- **Pricing Optimization**: Dynamic pricing strategies for revenue maximization, market share, and churn reduction
 
 ### Key Features
 
@@ -270,6 +277,7 @@ pnpm dev
 ## Documentation
 
 - **[API Documentation](./docs/api-spec.yaml)**: OpenAPI 3.0 specification
+- **[SDK Documentation](./docs/sdk-usage.md)**: Multi-language SDK usage guide
 - **[Building 5G Networks](./docs/building-5g-with-taas.md)**: Complete 5G deployment guide
 - **[Airalo & eSIM Analysis](./docs/airalo-esim-operator-analysis.md)**: Commercial use case analysis
 - **[Gateway Quickstart](./docs/gateway-quickstart.md)**: API Gateway setup and configuration
