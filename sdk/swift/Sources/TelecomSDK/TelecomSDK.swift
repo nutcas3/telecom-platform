@@ -19,9 +19,9 @@ public class TelecomSDK {
     public let payments: PaymentAPI
     public let ratingPlans: RatingPlanAPI
     public let system: SystemAPI
-    public let graphql: GraphQLAPI
-    
-    // MARK: - Initialization
+    public let analytics: AnalyticsAPI
+    public let security: SecurityAPI
+    public let currency: CurrencyAPI
     
     /// Initialize a new TelecomSDK instance
     /// - Parameter config: Configuration for the SDK
@@ -36,7 +36,9 @@ public class TelecomSDK {
         self.payments = PaymentAPI(client: httpClient)
         self.ratingPlans = RatingPlanAPI(client: httpClient)
         self.system = SystemAPI(client: httpClient)
-        self.graphql = GraphQLAPI(client: httpClient)
+        self.analytics = AnalyticsAPI(client: httpClient)
+        self.security = SecurityAPI(client: httpClient)
+        self.currency = CurrencyAPI(client: httpClient)
     }
     
     // MARK: - Authentication Methods
