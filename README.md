@@ -70,8 +70,15 @@ The platform is built as a microservices architecture with the following core co
 **Developer Tools:**
 - **CLI**: Command-line interface for service orchestration, configuration, and health checks
 - **Web Dashboard**: Next.js-based management interface for network operations
-- **TypeScript SDK**: Client library for integrating with TaaS APIs
+- **Multi-Language SDKs**: Client libraries for Go, Python, TypeScript, Kotlin, Ruby, Swift, Rust, and Elixir
 - **Kubernetes Operators**: Custom resources for deploying and managing TaaS services
+
+**Analytics & Intelligence:**
+- **Churn Analysis**: ML-powered customer churn prediction with risk scoring and retention recommendations
+- **Fraud Detection**: Real-time fraud detection for account takeover, subscription fraud, payment fraud, and SIM swap attacks
+- **Market Analytics**: Market penetration analysis, competitor tracking, and growth opportunity identification
+- **Predictive Maintenance**: Infrastructure health monitoring with failure prediction and maintenance scheduling
+- **Pricing Optimization**: Dynamic pricing strategies for revenue maximization, market share, and churn reduction
 
 ### Key Features
 
@@ -206,6 +213,15 @@ telecom-platform/
 |   |-- charging-engine/     # Rust: OCS Real-time Credit Control
 |   |-- packet-gateway/      # Rust: eBPF UPF Data Plane
 |   |-- web-dashboard/       # TypeScript: Next.js Frontend
+|-- sdk/
+|   |-- go/                  # Go SDK
+|   |-- python/              # Python SDK
+|   |-- typescript/          # TypeScript SDK
+|   |-- kotlin/              # Kotlin SDK
+|   |-- ruby/                # Ruby SDK
+|   |-- swift/               # Swift SDK
+|   |-- rust/                # Rust SDK
+|   |-- elixir/              # Elixir SDK
 |-- libs/
 |   |-- shared-ts-sdk/       # TypeScript: Drop-in Widget SDK
 |   |-- proto/               # Shared Protobufs
@@ -216,6 +232,7 @@ telecom-platform/
 |   |-- traefik.yml          # Static configuration
 |   |-- dynamic/             # Dynamic middleware config
 |-- docs/                    # Architecture & API docs
+|   |-- sdk-usage.md         # Multi-language SDK documentation
 |   |-- gateway-quickstart.md # API Gateway guide
 |   |-- api-gateway.md       # Gateway implementation details
 |-- scripts/                 # Automation scripts
@@ -270,6 +287,7 @@ pnpm dev
 ## Documentation
 
 - **[API Documentation](./docs/api-spec.yaml)**: OpenAPI 3.0 specification
+- **[SDK Documentation](./docs/sdk-usage.md)**: Multi-language SDK usage guide
 - **[Building 5G Networks](./docs/building-5g-with-taas.md)**: Complete 5G deployment guide
 - **[Airalo & eSIM Analysis](./docs/airalo-esim-operator-analysis.md)**: Commercial use case analysis
 - **[Gateway Quickstart](./docs/gateway-quickstart.md)**: API Gateway setup and configuration
@@ -329,6 +347,172 @@ The API Gateway provides:
 - **Monitoring**: Real-time metrics dashboard
 
 For detailed setup, see [Gateway Quickstart Guide](./docs/gateway-quickstart.md)
+
+## Platform Architecture & Components
+
+### **API Gateway Layer**
+- **Traefik API Gateway**: Centralized entry point providing SSL termination, rate limiting, authentication, and request routing
+- **Unified HTTPS Endpoint**: All services accessible via `https://api.telecom.com`
+- **Security Middleware**: JWT authentication, security headers, compression, and retry logic
+- **Monitoring Dashboard**: Real-time metrics and service health visualization
+
+### **Core Network Services**
+
+#### **API Server (Go/Gin)**
+- **Purpose**: Central BSS (Business Support System) API
+- **Features**: Authentication, subscriber management, automation, plugin system
+- **Architecture**: Microservices with Gin framework, PostgreSQL, Redis caching
+- **Key Modules**: Handlers for analytics, payments, monitoring, RBAC, websockets
+
+#### **Carrier Connector (Go/Gin)**
+- **Purpose**: ES2+ interface for eSIM profile management and carrier integration
+- **Features**: Multi-carrier aggregation, GSMA ES2+ standards compliance, real-time eSIM provisioning
+- **Architecture**: GORM for database, ES2+ client, message queue integration
+- **Key Modules**: Pricing optimization, security (fraud detection), rate plans, MVNO support
+
+#### **Charging Engine (Rust/Axum)**
+- **Purpose**: Real-time credit control, usage tracking, and billing
+- **Features**: Redis-backed rate limiting, PostgreSQL for rate plans, circuit breakers
+- **Architecture**: High-performance Rust with tokio async runtime
+- **Key Modules**: Charging handlers, authentication, monitoring, rating plans
+
+#### **Packet Gateway (Rust/eBPF)**
+- **Purpose**: High-performance packet processing for network traffic routing and QoS enforcement
+- **Features**: eBPF-accelerated packet processing for line-rate throughput
+
+### **Supporting Infrastructure**
+- **PostgreSQL**: Persistent data storage for subscribers, automations, configuration
+- **Redis**: Distributed caching, rate limiting, session management
+- **MongoDB**: Document storage for 5G core network data
+- **RabbitMQ**: Asynchronous event-driven communication
+- **Consul**: Service discovery and health checking
+- **Vault**: Secure secret management
+
+### **Frontend Applications**
+
+#### **Web Dashboard (Next.js/TypeScript)**
+- **Purpose**: Management interface for network operations
+- **Features**: Real-time dashboard, subscriber management, analytics, pricing optimization
+- **Architecture**: React components, Tailwind CSS, API integration
+- **Key Pages**: Dashboard, analytics, pricing, subscribers, system health
+
+### **SDK Ecosystem**
+
+Multi-language SDKs for developer integration:
+- **Swift**: iOS/macOS applications with async/await support
+- **Python**: Backend integration and automation
+- **TypeScript**: Web applications and Node.js backends
+- **Go**: Microservices and CLI tools
+- **Kotlin**: Android applications
+- **Rust**: High-performance systems
+- **Elixir**: Phoenix applications
+- **Ruby**: Rails integration
+
+### **Analytics & Intelligence**
+
+#### **Advanced Analytics Modules**
+1. **Churn Analysis**: ML-powered customer churn prediction with risk scoring
+2. **Fraud Detection**: Real-time fraud detection (account takeover, subscription fraud, SIM swap attacks)
+3. **Market Analytics**: Market penetration analysis, competitor tracking
+4. **Predictive Maintenance**: Infrastructure health monitoring with failure prediction
+5. **Pricing Optimization**: Dynamic pricing strategies with elasticity calculations
+
+#### **Pricing Optimization System**
+- **Strategies**: Revenue maximization, market share, profit margin, competitive positioning, churn reduction
+- **Advanced Calculations**: 
+  - Dynamic elasticity based on rate plan characteristics
+  - Competitive index with seasonal market analysis
+  - ROI calculation with period-based adjustments
+- **Implementation**: Go services with mathematical modeling and bounded realistic values
+
+### **Commercial Applications**
+
+#### **eSIM Operators (Airalo-style)**
+- Multi-carrier aggregation across 400+ global carriers
+- Real-time eSIM provisioning via GSMA ES2+ standards
+- Usage-based billing with global rate plans
+- B2B2C model for MVNO partnerships
+
+#### **Enterprise Private Networks**
+- Industrial IoT and manufacturing connectivity
+- Campus networks for universities and hospitals
+- Critical infrastructure communications
+- Secure data sovereignty deployments
+
+#### **Telecom Service Providers**
+- MVNO enablement platform
+- Network slicing as a service
+- Edge computing integration
+- 5G core network hosting
+
+### **Data Flow Architecture**
+
+```
+Client Applications → Traefik Gateway → API Services → Backend Services
+                              ↓
+                        Authentication & Rate Limiting
+                              ↓
+                    Message Queue (RabbitMQ) for Async Events
+                              ↓
+              Database Layer (PostgreSQL, Redis, MongoDB)
+```
+
+### **Key Features Summary**
+
+- **Sovereignty & Security**: Full data sovereignty, end-to-end encryption, RBAC
+- **Performance**: eBPF-accelerated packet processing, Redis-backed caching
+- **Scalability**: Microservices architecture, horizontal scaling
+- **Developer Experience**: Multi-language SDKs, comprehensive documentation
+- **Enterprise Ready**: Monitoring, backup, security, compliance features
+
+The platform represents a **complete telecom stack** for modern cellular network operations, combining carrier-grade reliability with cloud-native architecture and advanced analytics capabilities.
+
+## API Endpoints
+
+### Analytics API
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/analytics/churn/predict` | Predict churn for a profile |
+| GET | `/api/v1/analytics/churn/metrics` | Get churn metrics |
+| GET | `/api/v1/analytics/churn/at-risk` | Get at-risk customers |
+| GET | `/api/v1/analytics/market/metrics` | Get market metrics |
+| GET | `/api/v1/analytics/market/competitors` | Get competitor analysis |
+| GET | `/api/v1/analytics/market/opportunities` | Get market opportunities |
+| GET | `/api/v1/analytics/maintenance/metrics` | Get maintenance metrics |
+| GET | `/api/v1/analytics/maintenance/assets` | Get assets health |
+| GET | `/api/v1/analytics/maintenance/alerts` | Get maintenance alerts |
+| POST | `/api/v1/analytics/maintenance/predict/:asset_id` | Predict asset failure |
+| GET | `/api/v1/analytics/pricing/metrics` | Get pricing metrics |
+| POST | `/api/v1/analytics/pricing/optimize` | Optimize pricing |
+| GET | `/api/v1/analytics/pricing/elasticity` | Get price elasticity |
+
+### Security API
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/security/fraud/analyze` | Analyze transaction for fraud |
+| POST | `/api/v1/security/fraud/alerts` | Get fraud alerts |
+| PUT | `/api/v1/security/fraud/alerts/:id` | Update alert status |
+| GET | `/api/v1/security/fraud/metrics` | Get fraud metrics |
+| GET | `/api/v1/security/fraud/patterns` | Get fraud patterns |
+| POST | `/api/v1/security/simswap/verify` | Verify SIM swap |
+| GET | `/api/v1/security/simswap/history/:profile_id` | Get SIM swap history |
+
+### Currency & Billing API
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/currency/convert` | Convert currency |
+| GET | `/api/v1/currency/exchange/:from/:to` | Get exchange rate |
+| GET | `/api/v1/currency/exchange/:from/:to/history` | Get exchange rate history |
+| GET | `/api/v1/currency/currencies` | List supported currencies |
+| POST | `/api/v1/currency/exchange/refresh` | Refresh exchange rates |
+| POST | `/api/v1/currency/billing` | Process billing |
+| GET | `/api/v1/currency/billing/history/:profile_id` | Get billing history |
+| GET | `/api/v1/currency/billing/summary/:profile_id` | Get billing summary |
+| POST | `/api/v1/currency/billing/refund/:transaction_id` | Process refund |
+| GET | `/api/v1/currency/billing/analytics` | Get billing analytics |
 
 ## Environment Variables
 

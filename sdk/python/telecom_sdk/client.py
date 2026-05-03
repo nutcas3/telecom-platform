@@ -9,8 +9,10 @@ from .api import (
     PaymentAPI,
     RatingPlanAPI,
     SystemAPI,
-    GraphQLAPI,
 )
+from .analytics import AnalyticsAPI
+from .security import SecurityAPI
+from .currency import CurrencyAPI
 from .websocket import WebSocketClient
 from .types import (
     Subscriber,
@@ -99,7 +101,9 @@ class TelecomSDK:
         self.payments = PaymentAPI(self.api_client)
         self.rating_plans = RatingPlanAPI(self.api_client)
         self.system = SystemAPI(self.api_client)
-        self.graphql = GraphQLAPI(self.api_client)
+        self.analytics = AnalyticsAPI(self.api_client)
+        self.security = SecurityAPI(self.api_client)
+        self.currency = CurrencyAPI(self.api_client)
     
     async def __aenter__(self):
         """Async context manager entry."""

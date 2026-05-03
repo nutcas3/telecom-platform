@@ -16,7 +16,7 @@ func (e *ES2Service) sendActivationRequest(ctx context.Context, req ActivationRe
 		return fmt.Errorf("failed to marshal activation request: %w", err)
 	}
 
-	url := fmt.Sprintf("%s/es2/activate", e.config.BaseURL)
+	url := fmt.Sprintf("%s/es2/%s", e.config.BaseURL, action)
 	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return fmt.Errorf("failed to create HTTP request: %w", err)

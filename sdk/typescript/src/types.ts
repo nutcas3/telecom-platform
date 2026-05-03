@@ -47,6 +47,219 @@ export interface CreateSubscriberRequest {
   euiccId?: string;
 }
 
+// Churn Analysis Types
+export enum ChurnRiskLevel {
+  Low = 'low',
+  Medium = 'medium',
+  High = 'high',
+  Critical = 'critical'
+}
+
+export interface ChurnPrediction {
+  profileId: string;
+  riskLevel: ChurnRiskLevel;
+  riskScore: number;
+  predictedChurnDate?: string;
+  reasons: string[];
+  recommendations: string[];
+  lastUpdated: string;
+}
+
+export interface ChurnMetrics {
+  period: string;
+  totalSubscribers: number;
+  churnedSubscribers: number;
+  churnRate: number;
+  monthlyChurnRate: number;
+  annualChurnRate: number;
+  averageTenureDays: number;
+  riskDistribution: Record<ChurnRiskLevel, number>;
+  generatedAt: string;
+}
+
+// Fraud Detection Types
+export enum FraudType {
+  AccountTakeover = 'account_takeover',
+  SubscriptionFraud = 'subscription_fraud',
+  PaymentFraud = 'payment_fraud',
+  UsageAnomaly = 'usage_anomaly',
+  SIMSwap = 'sim_swap'
+}
+
+export enum FraudSeverity {
+  Low = 'low',
+  Medium = 'medium',
+  High = 'high',
+  Critical = 'critical'
+}
+
+export interface FraudAlert {
+  id: string;
+  type: FraudType;
+  severity: FraudSeverity;
+  profileId: string;
+  description: string;
+  riskScore: number;
+  evidence: string[];
+  ipAddress: string;
+  timestamp: string;
+  status: string;
+  actionsTaken: string[];
+  metadata: Record<string, any>;
+}
+
+export interface FraudMetrics {
+  period: string;
+  totalAlerts: number;
+  resolvedAlerts: number;
+  falsePositives: number;
+  resolutionRatePct: number;
+  falsePositiveRatePct: number;
+  byType: Record<FraudType, number>;
+  bySeverity: Record<FraudSeverity, number>;
+  generatedAt: string;
+}
+
+export interface FraudAlertFilter {
+  type?: FraudType;
+  severity?: FraudSeverity;
+  status?: string;
+  fromDate?: string;
+  toDate?: string;
+  limit?: number;
+}
+
+// Market Analytics Types
+export interface MarketMetrics {
+  period: string;
+  totalMarketSize: number;
+  ourSubscribers: number;
+  marketSharePct: number;
+  growthRatePct: number;
+  byCountry: Record<string, CountryMetrics>;
+  byCarrier: Record<string, MarketCarrierMetrics>;
+  byDemographic: Record<string, DemoMetrics>;
+  competitorAnalysis: Record<string, CompetitorMetrics>;
+  marketOpportunities: MarketOpportunity[];
+  generatedAt: string;
+}
+
+export interface CountryMetrics {
+  country: string;
+  marketSize: number;
+  ourSubscribers: number;
+  marketSharePct: number;
+  growthRatePct: number;
+  averageRevenue: number;
+}
+
+export interface MarketCarrierMetrics {
+  carrierId: string;
+  carrierName: string;
+  subscribers: number;
+  marketSharePct: number;
+  averageRevenue: number;
+  qualityScore: number;
+}
+
+export interface DemoMetrics {
+  segment: string;
+  subscribers: number;
+  marketSharePct: number;
+  averageRevenue: number;
+  growthRatePct: number;
+}
+
+export interface CompetitorMetrics {
+  name: string;
+  marketSharePct: number;
+  subscribers: number;
+  averagePrice: number;
+  strengths: string[];
+  weaknesses: string[];
+}
+
+export interface MarketOpportunity {
+  id: string;
+  type: string;
+  description: string;
+  potentialSize: number;
+  confidence: number;
+  requiredActions: string[];
+}
+
+// Predictive Maintenance Types
+export interface PredictiveMaintenanceMetrics {
+  period: string;
+  totalAssets: number;
+  healthyAssets: number;
+  atRiskAssets: number;
+  criticalAssets: number;
+  overallHealthScore: number;
+  byAssetType: Record<string, AssetTypeMetrics>;
+  predictedFailures: PredictedFailure[];
+  maintenanceSchedule: MaintenanceTask[];
+  generatedAt: string;
+}
+
+export interface AssetTypeMetrics {
+  assetType: string;
+  total: number;
+  healthy: number;
+  atRisk: number;
+  critical: number;
+  healthScore: number;
+}
+
+export interface PredictedFailure {
+  assetId: string;
+  assetType: string;
+  failureType: string;
+  predictedDate: string;
+  confidence: number;
+  recommendedActions: string[];
+}
+
+export interface MaintenanceTask {
+  id: string;
+  assetId: string;
+  taskType: string;
+  priority: string;
+  scheduledDate: string;
+  estimatedDurationMinutes: number;
+  description: string;
+  status: string;
+}
+
+// Pricing Optimization Types
+export interface PricingOptimizationResult {
+  ratePlanId: string;
+  currentPrice: number;
+  optimalPrice: number;
+  strategy: string;
+  expectedRevenue: number;
+  expectedDemand: number;
+  priceChangePct: number;
+  reasoning: string[];
+  risks: string[];
+  recommendations: string[];
+  confidence: number;
+  generatedAt: string;
+}
+
+export interface PricingMetrics {
+  period: string;
+  totalRatePlans: number;
+  optimizedRatePlans: number;
+  averagePriceChangePct: number;
+  expectedRevenueImpactPct: number;
+  churnRateReductionPct: number;
+  priceElasticity: number;
+  competitiveIndex: number;
+  optimizationRoiPct: number;
+  generatedAt: string;
+}
+
 export interface UpdateSubscriberRequest {
   firstName?: string;
   lastName?: string;

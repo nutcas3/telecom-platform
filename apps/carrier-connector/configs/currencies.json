@@ -1,0 +1,164 @@
+{
+  "currencies": [
+    {
+      "code": "USD",
+      "name": "United States Dollar",
+      "symbol": "$",
+      "decimal_places": 2,
+      "is_active": true,
+      "supported_regions": ["US", "PR", "VI", "GU", "UM"]
+    },
+    {
+      "code": "EUR",
+      "name": "Euro",
+      "symbol": "€",
+      "decimal_places": 2,
+      "is_active": true,
+      "supported_regions": ["AT", "BE", "CY", "DE", "EE", "ES", "FI", "FR", "GR", "IE", "IT", "LU", "LV", "LT", "MT", "NL", "PT", "SK", "SI"]
+    },
+    {
+      "code": "GBP",
+      "name": "British Pound Sterling",
+      "symbol": "£",
+      "decimal_places": 2,
+      "is_active": true,
+      "supported_regions": ["GB", "GG", "IM", "JE"]
+    },
+    {
+      "code": "JPY",
+      "name": "Japanese Yen",
+      "symbol": "¥",
+      "decimal_places": 0,
+      "is_active": true,
+      "supported_regions": ["JP"]
+    },
+    {
+      "code": "CAD",
+      "name": "Canadian Dollar",
+      "symbol": "C$",
+      "decimal_places": 2,
+      "is_active": true,
+      "supported_regions": ["CA"]
+    },
+    {
+      "code": "AUD",
+      "name": "Australian Dollar",
+      "symbol": "A$",
+      "decimal_places": 2,
+      "is_active": true,
+      "supported_regions": ["AU", "CX", "CC", "HM", "KI", "NR", "TV", "NF"]
+    },
+    {
+      "code": "CHF",
+      "name": "Swiss Franc",
+      "symbol": "CHF",
+      "decimal_places": 2,
+      "is_active": true,
+      "supported_regions": ["CH", "LI"]
+    },
+    {
+      "code": "CNY",
+      "name": "Chinese Yuan",
+      "symbol": "¥",
+      "decimal_places": 2,
+      "is_active": true,
+      "supported_regions": ["CN"]
+    },
+    {
+      "code": "INR",
+      "name": "Indian Rupee",
+      "symbol": "₹",
+      "decimal_places": 2,
+      "is_active": true,
+      "supported_regions": ["IN"]
+    },
+    {
+      "code": "BRL",
+      "name": "Brazilian Real",
+      "symbol": "R$",
+      "decimal_places": 2,
+      "is_active": true,
+      "supported_regions": ["BR"]
+    },
+    {
+      "code": "MXN",
+      "name": "Mexican Peso",
+      "symbol": "$",
+      "decimal_places": 2,
+      "is_active": true,
+      "supported_regions": ["MX"]
+    },
+    {
+      "code": "SEK",
+      "name": "Swedish Krona",
+      "symbol": "kr",
+      "decimal_places": 2,
+      "is_active": true,
+      "supported_regions": ["SE"]
+    },
+    {
+      "code": "NOK",
+      "name": "Norwegian Krone",
+      "symbol": "kr",
+      "decimal_places": 2,
+      "is_active": true,
+      "supported_regions": ["NO", "SJ", "BV"]
+    },
+    {
+      "code": "DKK",
+      "name": "Danish Krone",
+      "symbol": "kr",
+      "decimal_places": 2,
+      "is_active": true,
+      "supported_regions": ["DK", "FO", "GL"]
+    },
+    {
+      "code": "SGD",
+      "name": "Singapore Dollar",
+      "symbol": "S$",
+      "decimal_places": 2,
+      "is_active": true,
+      "supported_regions": ["SG"]
+    },
+    {
+      "code": "HKD",
+      "name": "Hong Kong Dollar",
+      "symbol": "HK$",
+      "decimal_places": 2,
+      "is_active": true,
+      "supported_regions": ["HK"]
+    },
+    {
+      "code": "NZD",
+      "name": "New Zealand Dollar",
+      "symbol": "NZ$",
+      "decimal_places": 2,
+      "is_active": true,
+      "supported_regions": ["NZ", "CK", "NU", "TK", "PN"]
+    },
+    {
+      "code": "ZAR",
+      "name": "South African Rand",
+      "symbol": "R",
+      "decimal_places": 2,
+      "is_active": true,
+      "supported_regions": ["ZA", "LS", "SZ"]
+    },
+    {
+      "code": "KRW",
+      "name": "South Korean Won",
+      "symbol": "₩",
+      "decimal_places": 0,
+      "is_active": true,
+      "supported_regions": ["KR"]
+    },
+    {
+      "code": "TRY",
+      "name": "Turkish Lira",
+      "symbol": "₺",
+      "decimal_places": 2,
+      "is_active": true,
+      "supported_regions": ["TR"]
+    }
+  ]
+}

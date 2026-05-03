@@ -11,6 +11,11 @@ import {
   Settings,
   Radio,
   HeartPulse,
+  TrendingDown,
+  AlertTriangle,
+  BarChart3,
+  DollarSign,
+  Wrench,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +25,11 @@ const navItems = [
   { href: "/usage", label: "Usage & Billing", icon: Activity },
   { href: "/payments", label: "Payments", icon: CreditCard },
   { href: "/esim", label: "eSIM Profiles", icon: Radio },
+  { href: "/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/churn", label: "Churn Analysis", icon: TrendingDown },
+  { href: "/fraud", label: "Fraud Detection", icon: AlertTriangle },
+  { href: "/pricing", label: "Pricing", icon: DollarSign },
+  { href: "/maintenance", label: "Maintenance", icon: Wrench },
   { href: "/health", label: "System Health", icon: HeartPulse },
   { href: "/chaos", label: "Chaos Engineering", icon: Shield },
   { href: "/settings", label: "Settings", icon: Settings },

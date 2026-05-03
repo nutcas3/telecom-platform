@@ -5,6 +5,7 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
+	"github.com/nutcas3/telecom-platform/apps/api-server/internal/handlers"
 	"github.com/nutcas3/telecom-platform/apps/api-server/internal/middleware"
 	"github.com/nutcas3/telecom-platform/apps/api-server/internal/rbac"
 )
@@ -73,6 +74,9 @@ func registerV1Routes(router *gin.Engine, d *serverDeps) {
 		registerBillingRoutes(apiProtected, d)
 		registerConfigRoutes(apiProtected, d)
 		registerChaosRoutes(apiProtected, d)
+		registerAnalyticsRoutes(apiProtected)
+		registerSecurityRoutes(apiProtected)
+		registerCurrencyRoutes(apiProtected)
 	}
 }
 
@@ -194,4 +198,69 @@ func registerSubscriberRoutes(api *gin.RouterGroup, d *serverDeps) {
 	w.PUT("/:id", d.subscriberH.UpdateSubscriber)
 	w.POST("/:id/suspend", d.subscriberH.SuspendSubscriber)
 	w.POST("/:id/terminate", d.subscriberH.TerminateSubscriber)
+}
+
+func registerAnalyticsRoutes(api *gin.RouterGroup) {
+	h := handlers.NewAnalyticsHandler()
+	analytics := api.Group("/analytics")
+
+	// Churn Analysis
+	churn := analytics.Group("/churn")
+	churn.POST("/predict", h.PredictChurn)
+	churn.GET("/metrics", h.GetChurnMetrics)
+	churn.GET("/at-risk", h.GetAtRiskCustomers)
+
+	// Market Analytics
+	market := analytics.Group("/market")
+	market.GET("/metrics", h.GetMarketMetrics)
+	market.GET("/competitors", h.GetCompetitors)
+	market.GET("/opportunities", h.GetMarketOpportunities)
+
+	// Predictive Maintenance
+	maintenance := analytics.Group("/maintenance")
+	maintenance.GET("/metrics", h.GetMaintenanceMetrics)
+	maintenance.GET("/assets", h.GetAssetsHealth)
+	maintenance.GET("/alerts", h.GetMaintenanceAlerts)
+	maintenance.POST("/predict/:asset_id", h.PredictFailure)
+
+	// Pricing Optimization
+	pricing := analytics.Group("/pricing")
+	pricing.GET("/metrics", h.GetPricingMetrics)
+	pricing.POST("/optimize", h.OptimizePricing)
+	pricing.GET("/elasticity", h.GetPriceElasticity)
+}
+
+func registerSecurityRoutes(api *gin.RouterGroup) {
+	h := handlers.NewSecurityHandler()
+	security := api.Group("/security")
+
+	// Fraud Detection
+	fraud := security.Group("/fraud")
+	fraud.POST("/analyze", h.AnalyzeTransaction)
+	fraud.POST("/alerts", h.GetFraudAlerts)
+	fraud.PUT("/alerts/:id", h.UpdateAlertStatus)
+	fraud.GET("/metrics", h.GetFraudMetrics)
+	fraud.GET("/patterns", h.GetFraudPatterns)
+
+	// SIM Swap Protection
+	simswap := security.Group("/simswap")
+	simswap.POST("/verify", h.VerifySIMSwap)
+	simswap.GET("/history/:profile_id", h.GetSIMSwapHistory)
+}
+
+func registerCurrencyRoutes(api *gin.RouterGroup) {
+	h := handlers.NewCurrencyHandler()
+	currencyGroup := api.Group("/currency")
+
+	currencyGroup.POST("/convert", h.ConvertCurrency)
+	currencyGroup.GET("/exchange/:from/:to", h.GetExchangeRate)
+	currencyGroup.GET("/exchange/:from/:to/history", h.GetExchangeRateHistory)
+	currencyGroup.GET("/currencies", h.GetSupportedCurrencies)
+	currencyGroup.POST("/exchange/refresh", h.RefreshExchangeRates)
+
+	currencyGroup.POST("/billing", h.ProcessBilling)
+	currencyGroup.GET("/billing/history/:profile_id", h.GetBillingHistory)
+	currencyGroup.GET("/billing/summary/:profile_id", h.GetBillingSummary)
+	currencyGroup.POST("/billing/refund/:transaction_id", h.ProcessRefund)
+	currencyGroup.GET("/billing/analytics", h.GetBillingAnalytics)
 }

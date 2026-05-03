@@ -5,9 +5,11 @@ import {
   UsageAPI, 
   PaymentAPI, 
   RatingPlanAPI, 
-  SystemAPI, 
-  GraphQLAPI 
+  SystemAPI 
 } from './api';
+import { AnalyticsAPI } from './analytics';
+import { SecurityAPI } from './security';
+import { CurrencyAPI } from './currency';
 import { WebSocketClient } from './websocket';
 import { Alert, RealTimeUsageUpdate, WebSocketMessage } from './types';
 
@@ -23,7 +25,9 @@ export class TelecomSDK {
   public payments: PaymentAPI;
   public ratingPlans: RatingPlanAPI;
   public system: SystemAPI;
-  public graphql: GraphQLAPI;
+  public analytics: AnalyticsAPI;
+  public security: SecurityAPI;
+  public currency: CurrencyAPI;
 
   private constructor(config: {
     baseURL: string;
@@ -61,7 +65,9 @@ export class TelecomSDK {
     this.payments = new PaymentAPI(this.apiClient);
     this.ratingPlans = new RatingPlanAPI(this.apiClient);
     this.system = new SystemAPI(this.apiClient);
-    this.graphql = new GraphQLAPI(this.apiClient);
+    this.analytics = new AnalyticsAPI(this.apiClient);
+    this.security = new SecurityAPI(this.apiClient);
+    this.currency = new CurrencyAPI(this.apiClient);
   }
 
   static initialize(config: {

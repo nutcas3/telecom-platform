@@ -259,3 +259,237 @@ type GetSystemStatsRequest struct{}
 
 // GetHealthStatusRequest represents a gRPC request to get health status
 type GetHealthStatusRequest struct{}
+
+// ChurnRiskLevel represents the risk level of customer churn
+type ChurnRiskLevel string
+
+const (
+	ChurnRiskLow      ChurnRiskLevel = "low"
+	ChurnRiskMedium   ChurnRiskLevel = "medium"
+	ChurnRiskHigh     ChurnRiskLevel = "high"
+	ChurnRiskCritical ChurnRiskLevel = "critical"
+)
+
+// ChurnPrediction represents a churn prediction for a customer
+type ChurnPrediction struct {
+	ProfileID          string         `json:"profile_id"`
+	RiskLevel          ChurnRiskLevel `json:"risk_level"`
+	RiskScore          float64        `json:"risk_score"`
+	PredictedChurnDate *time.Time     `json:"predicted_churn_date,omitempty"`
+	Reasons            []string       `json:"reasons"`
+	Recommendations    []string       `json:"recommendations"`
+	LastUpdated        time.Time      `json:"last_updated"`
+}
+
+// ChurnMetrics represents churn analysis metrics
+type ChurnMetrics struct {
+	Period             string                   `json:"period"`
+	TotalSubscribers   int64                    `json:"total_subscribers"`
+	ChurnedSubscribers int64                    `json:"churned_subscribers"`
+	ChurnRate          float64                  `json:"churn_rate"`
+	MonthlyChurnRate   float64                  `json:"monthly_churn_rate"`
+	AnnualChurnRate    float64                  `json:"annual_churn_rate"`
+	AverageTenure      float64                  `json:"average_tenure_days"`
+	RiskDistribution   map[ChurnRiskLevel]int64 `json:"risk_distribution"`
+	GeneratedAt        time.Time                `json:"generated_at"`
+}
+
+// FraudType represents different types of fraud
+type FraudType string
+
+const (
+	FraudTypeAccountTakeover   FraudType = "account_takeover"
+	FraudTypeSubscriptionFraud FraudType = "subscription_fraud"
+	FraudTypePaymentFraud      FraudType = "payment_fraud"
+	FraudTypeUsageAnomaly      FraudType = "usage_anomaly"
+	FraudTypeSIMSwap           FraudType = "sim_swap"
+)
+
+// FraudSeverity represents the severity of fraud detection
+type FraudSeverity string
+
+const (
+	FraudSeverityLow      FraudSeverity = "low"
+	FraudSeverityMedium   FraudSeverity = "medium"
+	FraudSeverityHigh     FraudSeverity = "high"
+	FraudSeverityCritical FraudSeverity = "critical"
+)
+
+// FraudAlert represents a fraud detection alert
+type FraudAlert struct {
+	ID          string         `json:"id"`
+	Type        FraudType      `json:"type"`
+	Severity    FraudSeverity  `json:"severity"`
+	ProfileID   string         `json:"profile_id"`
+	Description string         `json:"description"`
+	RiskScore   float64        `json:"risk_score"`
+	Evidence    []string       `json:"evidence"`
+	IPAddress   string         `json:"ip_address"`
+	Timestamp   time.Time      `json:"timestamp"`
+	Status      string         `json:"status"`
+	Actions     []string       `json:"actions_taken"`
+	Metadata    map[string]any `json:"metadata"`
+}
+
+// FraudMetrics represents fraud detection metrics
+type FraudMetrics struct {
+	Period            string                  `json:"period"`
+	TotalAlerts       int64                   `json:"total_alerts"`
+	ResolvedAlerts    int64                   `json:"resolved_alerts"`
+	FalsePositives    int64                   `json:"false_positives"`
+	ResolutionRate    float64                 `json:"resolution_rate_pct"`
+	FalsePositiveRate float64                 `json:"false_positive_rate_pct"`
+	ByType            map[FraudType]int64     `json:"by_type"`
+	BySeverity        map[FraudSeverity]int64 `json:"by_severity"`
+	GeneratedAt       time.Time               `json:"generated_at"`
+}
+
+// FraudAlertFilter filters fraud alerts
+type FraudAlertFilter struct {
+	Type     FraudType     `json:"type,omitempty"`
+	Severity FraudSeverity `json:"severity,omitempty"`
+	Status   string        `json:"status,omitempty"`
+	FromDate *time.Time    `json:"from_date,omitempty"`
+	ToDate   *time.Time    `json:"to_date,omitempty"`
+	Limit    int           `json:"limit,omitempty"`
+}
+
+// MarketMetrics represents market penetration analysis
+type MarketMetrics struct {
+	Period              string                          `json:"period"`
+	TotalMarketSize     int64                           `json:"total_market_size"`
+	OurSubscribers      int64                           `json:"our_subscribers"`
+	MarketShare         float64                         `json:"market_share_pct"`
+	GrowthRate          float64                         `json:"growth_rate_pct"`
+	ByCountry           map[string]CountryMetrics       `json:"by_country"`
+	ByCarrier           map[string]MarketCarrierMetrics `json:"by_carrier"`
+	ByDemographic       map[string]DemoMetrics          `json:"by_demographic"`
+	CompetitorAnalysis  map[string]CompetitorMetrics    `json:"competitor_analysis"`
+	MarketOpportunities []MarketOpportunity             `json:"market_opportunities"`
+	GeneratedAt         time.Time                       `json:"generated_at"`
+}
+
+// CountryMetrics represents metrics by country
+type CountryMetrics struct {
+	Country        string  `json:"country"`
+	MarketSize     int64   `json:"market_size"`
+	OurSubscribers int64   `json:"our_subscribers"`
+	MarketShare    float64 `json:"market_share_pct"`
+	GrowthRate     float64 `json:"growth_rate_pct"`
+	AverageRevenue float64 `json:"average_revenue"`
+}
+
+// MarketCarrierMetrics represents metrics by carrier
+type MarketCarrierMetrics struct {
+	CarrierID      string  `json:"carrier_id"`
+	CarrierName    string  `json:"carrier_name"`
+	Subscribers    int64   `json:"subscribers"`
+	MarketShare    float64 `json:"market_share_pct"`
+	AverageRevenue float64 `json:"average_revenue"`
+	QualityScore   float64 `json:"quality_score"`
+}
+
+// DemoMetrics represents metrics by demographic
+type DemoMetrics struct {
+	Segment        string  `json:"segment"`
+	Subscribers    int64   `json:"subscribers"`
+	MarketShare    float64 `json:"market_share_pct"`
+	AverageRevenue float64 `json:"average_revenue"`
+	GrowthRate     float64 `json:"growth_rate_pct"`
+}
+
+// CompetitorMetrics represents competitor analysis
+type CompetitorMetrics struct {
+	Name         string   `json:"name"`
+	MarketShare  float64  `json:"market_share_pct"`
+	Subscribers  int64    `json:"subscribers"`
+	AveragePrice float64  `json:"average_price"`
+	Strengths    []string `json:"strengths"`
+	Weaknesses   []string `json:"weaknesses"`
+}
+
+// MarketOpportunity represents a market opportunity
+type MarketOpportunity struct {
+	ID              string   `json:"id"`
+	Type            string   `json:"type"`
+	Description     string   `json:"description"`
+	PotentialSize   int64    `json:"potential_size"`
+	Confidence      float64  `json:"confidence"`
+	RequiredActions []string `json:"required_actions"`
+}
+
+// PredictiveMaintenanceMetrics represents infrastructure health metrics
+type PredictiveMaintenanceMetrics struct {
+	Period              string                      `json:"period"`
+	TotalAssets         int64                       `json:"total_assets"`
+	HealthyAssets       int64                       `json:"healthy_assets"`
+	AtRiskAssets        int64                       `json:"at_risk_assets"`
+	CriticalAssets      int64                       `json:"critical_assets"`
+	OverallHealthScore  float64                     `json:"overall_health_score"`
+	ByAssetType         map[string]AssetTypeMetrics `json:"by_asset_type"`
+	PredictedFailures   []PredictedFailure          `json:"predicted_failures"`
+	MaintenanceSchedule []MaintenanceTask           `json:"maintenance_schedule"`
+	GeneratedAt         time.Time                   `json:"generated_at"`
+}
+
+// AssetTypeMetrics represents metrics by asset type
+type AssetTypeMetrics struct {
+	AssetType   string  `json:"asset_type"`
+	Total       int64   `json:"total"`
+	Healthy     int64   `json:"healthy"`
+	AtRisk      int64   `json:"at_risk"`
+	Critical    int64   `json:"critical"`
+	HealthScore float64 `json:"health_score"`
+}
+
+// PredictedFailure represents a predicted failure
+type PredictedFailure struct {
+	AssetID            string    `json:"asset_id"`
+	AssetType          string    `json:"asset_type"`
+	FailureType        string    `json:"failure_type"`
+	PredictedDate      time.Time `json:"predicted_date"`
+	Confidence         float64   `json:"confidence"`
+	RecommendedActions []string  `json:"recommended_actions"`
+}
+
+// MaintenanceTask represents a scheduled maintenance task
+type MaintenanceTask struct {
+	ID                string    `json:"id"`
+	AssetID           string    `json:"asset_id"`
+	TaskType          string    `json:"task_type"`
+	Priority          string    `json:"priority"`
+	ScheduledDate     time.Time `json:"scheduled_date"`
+	EstimatedDuration int       `json:"estimated_duration_minutes"`
+	Description       string    `json:"description"`
+	Status            string    `json:"status"`
+}
+
+// PricingOptimizationResult represents pricing optimization results
+type PricingOptimizationResult struct {
+	RatePlanID      string    `json:"rate_plan_id"`
+	CurrentPrice    float64   `json:"current_price"`
+	OptimalPrice    float64   `json:"optimal_price"`
+	Strategy        string    `json:"strategy"`
+	ExpectedRevenue float64   `json:"expected_revenue"`
+	ExpectedDemand  int64     `json:"expected_demand"`
+	PriceChange     float64   `json:"price_change_pct"`
+	Reasoning       []string  `json:"reasoning"`
+	Risks           []string  `json:"risks"`
+	Recommendations []string  `json:"recommendations"`
+	Confidence      float64   `json:"confidence"`
+	GeneratedAt     time.Time `json:"generated_at"`
+}
+
+// PricingMetrics represents pricing optimization metrics
+type PricingMetrics struct {
+	Period                string    `json:"period"`
+	TotalRatePlans        int64     `json:"total_rate_plans"`
+	OptimizedRatePlans    int64     `json:"optimized_rate_plans"`
+	AveragePriceChange    float64   `json:"average_price_change_pct"`
+	ExpectedRevenueImpact float64   `json:"expected_revenue_impact_pct"`
+	ChurnRateReduction    float64   `json:"churn_rate_reduction_pct"`
+	PriceElasticity       float64   `json:"price_elasticity"`
+	CompetitiveIndex      float64   `json:"competitive_index"`
+	OptimizationROI       float64   `json:"optimization_roi_pct"`
+	GeneratedAt           time.Time `json:"generated_at"`
+}

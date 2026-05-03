@@ -9,6 +9,50 @@ global:
   storageClass: ""
   # Environment: dev, staging, prod
   environment: "dev"
+  # Platform version
+  version: "2.0.0"
+
+# Analytics configuration
+analytics:
+  enabled: true
+  churn:
+    enabled: true
+    mlModel: "xgboost"
+    predictionInterval: "daily"
+    riskThresholds:
+      low: 25
+      medium: 50
+      high: 75
+  fraud:
+    enabled: true
+    realTimeDetection: true
+    alertSeverityLevels:
+      - low
+      - medium
+      - high
+      - critical
+    patterns:
+      - account_takeover
+      - subscription_fraud
+      - payment_fraud
+      - usage_anomaly
+      - sim_swap
+  market:
+    enabled: true
+    competitorTracking: true
+    updateInterval: "weekly"
+  maintenance:
+    enabled: true
+    predictiveModel: "lstm"
+    alertThreshold: 0.7
+  pricing:
+    enabled: true
+    optimizationStrategies:
+      - revenue_maximization
+      - market_share
+      - profit_margin
+      - competitive_pricing
+      - churn_reduction
   
 # Platform configuration
 platform:

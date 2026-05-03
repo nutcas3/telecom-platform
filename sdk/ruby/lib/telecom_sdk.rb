@@ -10,7 +10,9 @@ require_relative "telecom_sdk/usage_api"
 require_relative "telecom_sdk/payments_api"
 require_relative "telecom_sdk/rating_plans_api"
 require_relative "telecom_sdk/system_api"
-require_relative "telecom_sdk/graphql_api"
+require_relative "telecom_sdk/analytics_api"
+require_relative "telecom_sdk/security_api"
+require_relative "telecom_sdk/currency_api"
 
 module TelecomSDK
   class Error < StandardError; end
@@ -22,7 +24,7 @@ module TelecomSDK
   class ServerError < Error; end
 
   class Client
-    attr_reader :config, :subscribers, :usage, :payments, :rating_plans, :system, :graphql
+    attr_reader :config, :subscribers, :usage, :payments, :rating_plans, :system, :analytics, :security, :currency
 
     def initialize(config = {})
       @config = Config.new(config)
@@ -42,7 +44,9 @@ module TelecomSDK
       @payments = PaymentAPI.new(@http_client)
       @rating_plans = RatingPlanAPI.new(@http_client)
       @system = SystemAPI.new(@http_client)
-      @graphql = GraphQLAPI.new(@http_client)
+      @analytics = AnalyticsAPI.new(@http_client)
+      @security = SecurityAPI.new(@http_client)
+      @currency = CurrencyAPI.new(@http_client)
     end
 
     # Authentication methods

@@ -1,0 +1,104 @@
+{
+  "carriers": [
+    {
+      "id": "att-us",
+      "name": "AT&T US",
+      "mcc": "310",
+      "mnc": "410",
+      "country_code": "US",
+      "is_active": true,
+      "priority": 90,
+      "es2_config": {
+        "base_url": "https://es2plus.att.com",
+        "api_key": "production-api-key-att",
+        "insecure_skip_verify": false,
+        "functionality_requester_id": "telecom-platform"
+      },
+      "capabilities": {
+        "supported_profile_types": ["operational", "testing"],
+        "features": ["bulk_download", "remote_provisioning"],
+        "max_concurrent_requests": 100
+      }
+    },
+    {
+      "id": "verizon-us",
+      "name": "Verizon US",
+      "mcc": "311",
+      "mnc": "480",
+      "country_code": "US",
+      "is_active": true,
+      "priority": 85,
+      "es2_config": {
+        "base_url": "https://es2plus.verizon.com",
+        "api_key": "production-api-key-verizon",
+        "insecure_skip_verify": false,
+        "functionality_requester_id": "telecom-platform"
+      },
+      "capabilities": {
+        "supported_profile_types": ["operational", "testing"],
+        "features": ["bulk_download"],
+        "max_concurrent_requests": 80
+      }
+    },
+    {
+      "id": "tmobile-de",
+      "name": "T-Mobile Germany",
+      "mcc": "262",
+      "mnc": "01",
+      "country_code": "DE",
+      "is_active": true,
+      "priority": 75,
+      "es2_config": {
+        "base_url": "https://es2plus.t-mobile.de",
+        "api_key": "production-api-key-tmobile",
+        "insecure_skip_verify": false,
+        "functionality_requester_id": "telecom-platform"
+      },
+      "capabilities": {
+        "supported_profile_types": ["operational"],
+        "features": ["remote_provisioning"],
+        "max_concurrent_requests": 60
+      }
+    },
+    {
+      "id": "orange-fr",
+      "name": "Orange France",
+      "mcc": "208",
+      "mnc": "01",
+      "country_code": "FR",
+      "is_active": true,
+      "priority": 70,
+      "es2_config": {
+        "base_url": "https://es2plus.orange.fr",
+        "api_key": "production-api-key-orange",
+        "insecure_skip_verify": false,
+        "functionality_requester_id": "telecom-platform"
+      },
+      "capabilities": {
+        "supported_profile_types": ["operational", "testing"],
+        "features": [],
+        "max_concurrent_requests": 50
+      }
+    },
+    {
+      "id": "vodafone-uk",
+      "name": "Vodafone UK",
+      "mcc": "234",
+      "mnc": "15",
+      "country_code": "GB",
+      "is_active": true,
+      "priority": 80,
+      "es2_config": {
+        "base_url": "https://es2plus.vodafone.co.uk",
+        "api_key": "production-api-key-vodafone",
+        "insecure_skip_verify": false,
+        "functionality_requester_id": "telecom-platform"
+      },
+      "capabilities": {
+        "supported_profile_types": ["operational", "testing"],
+        "features": ["bulk_download", "remote_provisioning"],
+        "max_concurrent_requests": 75
+      }
+    }
+  ]
+}
