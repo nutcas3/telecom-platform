@@ -59,6 +59,15 @@ type OnboardingRequest struct {
 	TechnicalContact string   `json:"technical_contact"`
 }
 
+// OnboardingProgress tracks the onboarding progress
+type OnboardingProgress struct {
+	MVNOID      string           `json:"mvno_id"`
+	Steps       []OnboardingStep `json:"steps"`
+	Progress    float64          `json:"progress"`
+	StartedAt   time.Time        `json:"started_at"`
+	CompletedAt time.Time        `json:"completed_at"`
+}
+
 // OnboardingStep represents individual onboarding steps
 type OnboardingStep struct {
 	Name        string    `json:"name"`
@@ -67,11 +76,13 @@ type OnboardingStep struct {
 	Error       string    `json:"error,omitempty"`
 }
 
-// OnboardingProgress tracks the onboarding progress
-type OnboardingProgress struct {
-	MVNOID      string           `json:"mvno_id"`
-	Steps       []OnboardingStep `json:"steps"`
-	Progress    float64          `json:"progress"`
-	StartedAt   time.Time        `json:"started_at"`
-	CompletedAt time.Time        `json:"completed_at"`
+// MVNOFilter defines filtering options for MVNO queries
+type MVNOFilter struct {
+	Status        MVNOStatus `json:"status,omitempty"`
+	Plan          MVNOPlan   `json:"plan,omitempty"`
+	BusinessID    string     `json:"business_id,omitempty"`
+	Limit         int        `json:"limit,omitempty"`
+	Offset        int        `json:"offset,omitempty"`
+	CreatedAfter  *time.Time `json:"created_after,omitempty"`
+	CreatedBefore *time.Time `json:"created_before,omitempty"`
 }
