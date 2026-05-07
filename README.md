@@ -289,7 +289,7 @@ pnpm dev
 - **[API Documentation](./docs/api-spec.yaml)**: OpenAPI 3.0 specification
 - **[SDK Documentation](./docs/sdk-usage.md)**: Multi-language SDK usage guide
 - **[Building 5G Networks](./docs/building-5g-with-taas.md)**: Complete 5G deployment guide
-- **[Airalo & eSIM Analysis](./docs/airalo-esim-operator-analysis.md)**: Commercial use case analysis
+- **[eSIM Operator Analysis](./docs/esim-operator-analysis.md)**: Commercial use case analysis
 - **[Gateway Quickstart](./docs/gateway-quickstart.md)**: API Gateway setup and configuration
 - **[API Gateway Guide](./docs/api-gateway.md)**: Implementation details and patterns
 - **[Architecture Guide](./docs/architecture.md)**: System design and data flows
