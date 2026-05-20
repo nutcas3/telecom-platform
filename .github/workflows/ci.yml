@@ -50,7 +50,7 @@ jobs:
         env:
           DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db?sslmode=disable
         working-directory: .
-        run: goose postgres $DATABASE_URL up migrations
+        run: goose -dir migrations postgres "$DATABASE_URL" up
 
       - name: Run linter
         working-directory: apps/api-server
@@ -162,7 +162,7 @@ jobs:
         working-directory: .
         env:
           DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db?sslmode=disable
-        run: goose postgres $DATABASE_URL up migrations
+        run: goose -dir migrations postgres "$DATABASE_URL" up
 
       - name: Run tests
         working-directory: apps/charging-engine
@@ -223,7 +223,7 @@ jobs:
         working-directory: .
         env:
           DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db?sslmode=disable
-        run: goose postgres $DATABASE_URL up migrations
+        run: goose -dir migrations postgres "$DATABASE_URL" up
 
       - name: Run tests
         working-directory: apps/packet-gateway
